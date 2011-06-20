@@ -12,6 +12,7 @@
 #include "ndf.h"
 #include "star/hds.h"
 #include "sae_par.h"
+#include "prm_par.h"
 
 // Removes locators once they are no longer needed
 static void PyDelLoc(void *ptr)
@@ -647,21 +648,303 @@ pyndf_end(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 };
 
+// open an existing or new NDF file
 static PyObject* 
 pyndf_open(PyObject *self, PyObject *args)
 {
     const char *name;
-    if(!PyArg_ParseTuple(args, "s:pyndf_find", &name))
-	return NULL;
+	const char *mode = "READ";
+	const char *stat = "OLD";
+    if(!PyArg_ParseTuple(args, "s|ss:pyndf_open", &name, &mode, &stat))
+		return NULL;
+	// check for allowed values of mode and stat
+	if(strcmp(mode,"READ") != 0 && strcmp(mode,"WRITE") != 0 && strcmp(mode,"UPDATE") != 0)
+		return NULL;
+	if(strcmp(stat,"OLD") != 0 && strcmp(stat,"NEW") != 0 && strcmp(stat,"UNKNOWN") != 0)
+		return NULL;
     int indf, place;
     int status = SAI__OK;
-    ndfOpen( NULL, name, "READ", "OLD", &indf, &place, &status);
+    ndfOpen( NULL, name, mode, stat, &indf, &place, &status);
     if(status != SAI__OK) return NULL;
     return Py_BuildValue("ii", indf, place);
 };
 
-// Reads an NDF into a numpy array
+// create a new NDF (simple) structure
+static PyObject*
+pyndf_new(PyObject *self, PyObject *args)
+{
+	// use ultracam defaults
+	const char *ftype = "_REAL";
+	int ndim, indf, place;
+	PyObject* lb;
+	PyObject* ub;
+	if(!PyArg_ParseTuple(args, "iisiOO:pyndf_new", &indf, &place, &ftype, &ndim, &lb, &ub))
+		return NULL;
+	if(ndim < 0 || ndim > 7)
+		return NULL;
+	// TODO: check for ftype here
+	int status = SAI__OK;
+	PyArrayObject* lower = (PyArrayObject*) PyArray_FROM_OTF(lb, NPY_UINT, NPY_IN_ARRAY | NPY_FORCECAST);
+	PyArrayObject* upper = (PyArrayObject*) PyArray_FROM_OTF(ub, NPY_UINT, NPY_IN_ARRAY | NPY_FORCECAST);
+	if (!lower || !upper)
+		return NULL;
+	if(PyArray_SIZE(lower) != ndim || PyArray_SIZE(upper) != ndim)
+		return NULL;
+	ndfNew(ftype,ndim,(int*)PyArray_DATA(lower),(int*)PyArray_DATA(upper),&place,&indf,&status); // placeholder annulled by this routine
+	if(status != SAI__OK)
+		return NULL;
+	Py_DECREF(lower);
+	Py_DECREF(upper);
+	return Py_BuildValue("i",indf);
+}
 
+// this copies a block of memory from a numpy array to a memory address
+static PyObject*
+pyndf_numpytoptr(PyObject *self, PyObject *args)
+{
+	PyObject *npy, *ptrobj;
+	PyArrayObject *npyarray;
+	int el;
+	size_t bytes;
+	const char *ftype;
+	if(!PyArg_ParseTuple(args, "OOis:pyndf_numpytoptr",&npy,&ptrobj,&el,&ftype))
+		return NULL;
+	void *ptr = PyCObject_AsVoidPtr(ptrobj);
+	if (el <= 0 || ptr == NULL)
+		return NULL;
+	if(strcmp(ftype,"_INTEGER") == 0) {
+		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_INT, NPY_IN_ARRAY | NPY_FORCECAST);
+		bytes = sizeof(int);
+	} else if(strcmp(ftype,"_REAL") == 0) {
+		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_FLOAT, NPY_IN_ARRAY | NPY_FORCECAST);
+		bytes = sizeof(float);
+	} else if(strcmp(ftype,"_DOUBLE") == 0) {
+		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_DOUBLE, NPY_IN_ARRAY | NPY_FORCECAST);
+		bytes = sizeof(double);
+	} else if(strcmp(ftype,"_BYTE") == 0) {
+		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_BYTE, NPY_IN_ARRAY | NPY_FORCECAST);
+		bytes = sizeof(char);
+	} else if(strcmp(ftype,"_UBYTE") == 0) {
+		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_UBYTE, NPY_IN_ARRAY | NPY_FORCECAST);
+		bytes = sizeof(char);
+	} else {
+		return NULL;
+	}
+	memcpy(ptr,PyArray_DATA(npyarray),el*bytes);
+	Py_DECREF(npyarray);
+	Py_RETURN_NONE;
+}
+
+// check an HDS type
+inline int checkHDStype(const char *type)
+{
+	if(strcmp(type,"_INTEGER") != 0 && strcmp(type,"_REAL") != 0 && strcmp(type,"_DOUBLE") != 0 &&
+			strcmp(type,"_LOGICAL") != 0 && strcmp(type,"_WORD") != 0 && strcmp(type,"UWORD") != 0 &&
+			strcmp(type,"_BYTE") != 0 && strcmp(type,"_UBYTE") != 0 && strcmp(type,"_CHAR") != 0 &&
+			strncmp(type,"_CHAR*",6) != 0)
+		return 0;
+	else
+		return 1;
+}
+
+// create a new NDF extension
+static PyObject*
+pyndf_xnew(PyObject *self, PyObject *args)
+{
+	int indf, ndim = 0;
+	const char *xname, *type;
+	PyObject *dim;
+	if(!PyArg_ParseTuple(args, "iss|iO:pyndf_xnew", &indf, &xname, &type, &ndim, &dim))
+		return NULL;
+	int status = SAI__OK;
+	HDSLoc *loc = NULL;
+	// perform checks if we're not making an extension header
+	if(ndim != 0) {
+		// check for HDS types
+		if (!checkHDStype(type))
+			return NULL;
+		// need dims if it's not an ext
+		if(ndim < 1 || dim == NULL)
+			return NULL;
+		PyArrayObject *npydim = (PyArrayObject*) PyArray_FROM_OTF(dim,NPY_INT,NPY_IN_ARRAY|NPY_FORCECAST);
+		if (PyArray_SIZE(npydim) != ndim)
+			return NULL;
+		ndfXnew(indf,xname,type,ndim,(int*)PyArray_DATA(npydim),&loc,&status);
+		Py_DECREF(npydim);
+	} else {
+		// making an ext/struct
+		ndfXnew(indf,xname,type,0,0,&loc,&status);
+	}
+	if(status != SAI__OK) {
+		PyErr_SetString(PyExc_IOError,"status is not SAI__OK");
+		return NULL;
+	}
+	PyObject* pobj = PyCObject_FromVoidPtr(loc, PyDelLoc);
+	return Py_BuildValue("O",pobj);
+}
+
+static PyObject*
+pyndf_getbadpixval(PyObject *self, PyObject *args)
+{
+	const char *type;
+	if(!PyArg_ParseTuple(args, "s:pyndf_getpadpixval", &type))
+		return NULL;
+	if (strcmp(type,"_DOUBLE") == 0)
+		return Py_BuildValue("f",VAL__BADD);
+	else if (strcmp(type,"_REAL") == 0)
+		return Py_BuildValue("f",VAL__BADR);
+	else if (strcmp(type,"_INTEGER") == 0)
+		return Py_BuildValue("i",VAL__BADI);
+	else
+		return NULL;
+}
+
+// make a new primitive
+static PyObject*
+pydat_new(PyObject *self, PyObject *args)
+{
+	PyObject *dimobj,*locobj;
+	const char *type, *name;
+	int ndim;
+	if(!PyArg_ParseTuple(args, "OssiO:pydat_new", &locobj, &name, &type, &ndim, &dimobj))
+		return NULL;
+	HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(locobj);
+	if(!checkHDStype(type))
+		return NULL;
+	int status = SAI__OK;
+	if (ndim > 0) {
+		PyArrayObject *npydim = (PyArrayObject*) PyArray_FROM_OTF(dimobj,NPY_INT,NPY_IN_ARRAY|NPY_FORCECAST);
+		hdsdim *dims = (hdsdim*)PyArray_DATA(npydim);
+		datNew(loc,name,type,ndim,dims,&status);
+		Py_DECREF(npydim);
+	} else {
+		datNew(loc,name,type,0,0,&status);
+	}
+	if(status != SAI__OK)
+		return NULL;
+	Py_RETURN_NONE;
+}
+
+
+// write a primitive
+static PyObject*
+pydat_put(PyObject *self, PyObject *args)
+{
+	PyObject *value, *locobj, *dimobj;
+	PyArrayObject *npyval;
+	const char* type;
+	int ndim;
+	if(!PyArg_ParseTuple(args,"OsiOO:pydat_put",&locobj,&type,&ndim,&dimobj,&value))
+		return NULL;
+	if(!checkHDStype(type))
+		return NULL;
+	HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(locobj);
+	// create a pointer to an array of the appropriate data type
+	if(strcmp(type,"_INTEGER") == 0) {
+		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_INT, NPY_IN_ARRAY | NPY_FORCECAST);
+	} else if(strcmp(type,"_REAL") == 0) {
+		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_FLOAT, NPY_IN_ARRAY | NPY_FORCECAST);
+	} else if(strcmp(type,"_DOUBLE") == 0) {
+		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_DOUBLE, NPY_IN_ARRAY | NPY_FORCECAST);
+	} else if(strcmp(type,"_BYTE") == 0) {
+		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_BYTE, NPY_IN_ARRAY | NPY_FORCECAST);
+	} else if(strcmp(type,"_UBYTE") == 0) {
+		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_UBYTE, NPY_IN_ARRAY | NPY_FORCECAST);
+	} else if(strncmp(type,"_CHAR*",6) == 0) {
+		npyval = (PyArrayObject*) PyArray_FROM_OT(value, NPY_STRING);
+	} else {
+		return NULL;
+	}
+	void *valptr = PyArray_DATA(npyval);
+	int status = SAI__OK;
+	if (ndim > 0) {
+		// npydim is 1-D array stating the size of each dimension ie. npydim = numpy.array([1072 1072])
+		// these are stored in an hdsdim type (note these are declared as signed)
+		PyArrayObject *npydim = (PyArrayObject*) PyArray_FROM_OTF(dimobj,NPY_INT,NPY_IN_ARRAY|NPY_FORCECAST);
+		hdsdim *dims = (hdsdim*)PyArray_DATA(npydim);
+		datPut(loc,type,ndim,dims,valptr,&status);
+		Py_DECREF(npydim);
+	} else {
+		datPut(loc,type,0,0,valptr,&status);
+	}
+	if(status != SAI__OK)
+		return NULL;
+	Py_DECREF(npyval);
+	Py_RETURN_NONE;
+}
+
+static PyObject*
+pydat_putc(PyObject *self, PyObject *args)
+{
+	PyObject *strobj,*locobj;
+	int strlen;
+	if(!PyArg_ParseTuple(args,"OOi:pydat_putc",&locobj,&strobj,&strlen))
+		return NULL;
+	HDSLoc *loc = (HDSLoc*)PyCObject_AsVoidPtr(locobj);
+	PyArrayObject *npystr = (PyArrayObject*) PyArray_FROM_OTF(strobj,NPY_STRING,NPY_FORCECAST);
+	char *strptr = PyArray_DATA(npystr);
+	int status = SAI__OK;
+	datPutC(loc,0,0,strptr,(size_t)strlen,&status);
+	if(status != SAI__OK)
+		return NULL;
+	Py_DECREF(npystr);
+	Py_RETURN_NONE;
+}
+
+// map access to array component
+static PyObject*
+pyndf_map(PyObject *self, PyObject* args)
+{
+	int indf, el;
+	void* ptr;
+	const char* comp;
+	const char* type;
+	const char* mmod;
+	if(!PyArg_ParseTuple(args,"isss:pyndf_map",&indf,&comp,&type,&mmod))
+		return NULL;
+	int status = SAI__OK;
+	if(indf < 0)
+		return NULL;
+	if(strcmp(comp,"DATA") != 0 && strcmp(comp,"QUALITY") != 0 &&
+			strcmp(comp,"VARIANCE") != 0 && strcmp(comp,"ERROR") != 0)
+		return NULL;
+	if(strcmp(mmod,"READ") != 0 && strcmp(mmod,"UPDATE") != 0 &&
+			strcmp(mmod,"WRITE") != 0)
+		return NULL;
+	if(!checkHDStype(type))
+		return NULL;
+	// can't use QUALITY with anything but a _UBYTE
+	if(strcmp(comp,"QUALITY") == 0 && strcmp(type,"_UBYTE") != 0)
+		return NULL;
+	ndfMap(indf,comp,type,mmod,&ptr,&el,&status);
+	if(status != SAI__OK)
+		return NULL;
+	PyObject* ptrobj = PyCObject_FromVoidPtr(ptr,NULL);
+	return Py_BuildValue("Oi",ptrobj,el);
+}
+
+// unmap an NDF or mapped array
+static PyObject*
+pyndf_unmap(PyObject* self, PyObject* args)
+{
+	int indf;
+	const char* comp;
+	if(!PyArg_ParseTuple(args,"is:pyndf_unmap",&indf,&comp))
+		return NULL;
+	int status = SAI__OK;
+	if(indf < 0)
+		return NULL;
+	if(strcmp(comp,"DATA") != 0 && strcmp(comp,"QUALITY") != 0 &&
+			strcmp(comp,"VARIANCE") != 0 && strcmp(comp,"AXIS") != 0 &&
+			strcmp(comp,"*") != 0)
+		return NULL;
+	ndfUnmap(indf,comp,&status);
+	if(status != SAI__OK)
+		return NULL;
+	Py_RETURN_NONE;
+}
+
+// Reads an NDF into a numpy array
 static PyObject* 
 pyndf_read(PyObject *self, PyObject *args)
 {
@@ -909,6 +1192,33 @@ static PyMethodDef NdfMethods[] = {
 
     {"ndf_xstat", pyndf_xstat, METH_VARARGS, 
      "state = ndf_xstat(indf, xname) -- determine whether extension xname exists."},
+
+	{"ndf_new", pyndf_new, METH_VARARGS,
+		"(place,indf) = ndf_new(ftype,ndim,lbnd,ubnd,place) -- create a new simple ndf structure."},
+
+	{"ndf_xnew", pyndf_xnew, METH_VARARGS,
+		"loc = ndf_xnew(indf,xname,type,ndim,dim) -- create a new ndf extension."},
+
+	{"dat_put", pydat_put, METH_VARARGS,
+		"status = dat_put(loc,type,ndim,dim,value) -- write a primitive inside an ndf."},
+
+	{"dat_new", pydat_new, METH_VARARGS,
+		"dat_new(loc,name,type,ndim,dim) -- create a primitive given a locator."},
+
+	{"ndf_map", pyndf_map, METH_VARARGS,
+		"(pointer,elements) = ndf_map(indf,comp,type,mmod) -- map access to array component."},
+
+	{"ndf_unmap", pyndf_unmap, METH_VARARGS,
+		"status = ndf_unmap(indf,comp) -- unmap an NDF or mapped NDF array."},
+
+	{"ndf_numpytoptr", pyndf_numpytoptr, METH_VARARGS,
+		"ndf_numpytoptr(array,pointer,elements,type) -- write numpy array to mapped pointer elements."},
+
+	{"dat_putc", pydat_putc, METH_VARARGS,
+		"ndf_putc(loc,string) -- write a character string to primitive at locator."},
+
+	{"ndf_getbadpixval", pyndf_getbadpixval, METH_VARARGS,
+		"ndf_getbadpixval(type) -- return a bad pixel value for given ndf data type."},
 
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
