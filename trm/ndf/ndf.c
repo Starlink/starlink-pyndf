@@ -5,6 +5,10 @@
 #include <Python.h>
 #include "numpy/arrayobject.h"
 
+// Wrap the PyCObject -> PyCapsule transition to allow
+// this to build with python2.
+#include "npy_3kcompat.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -14,8 +18,13 @@
 #include "sae_par.h"
 #include "prm_par.h"
 
+#if PY_VERSION_HEX >= 0x03000000
+# define USE_PY3K
+#endif
+
 // Removes locators once they are no longer needed
-static void PyDelLoc(void *ptr)
+
+static void PyDelLoc_ptr(void *ptr)
 {
     HDSLoc* loc = (HDSLoc*)ptr;
     int status = SAI__OK;
@@ -23,6 +32,20 @@ static void PyDelLoc(void *ptr)
     printf("Inside PyDelLoc\n");
     return;
 }
+
+// Need a PyCapsule version for Python3
+
+#ifdef USE_PY3K
+static void PyDelLoc( PyObject *cap )
+{
+  PyDelLoc_ptr( PyCapsule_GetPointer( cap, NULL ));
+}
+#else
+static void PyDelLoc( void * ptr )
+{
+  PyDelLoc_ptr(ptr);
+}
+#endif
 
 // Translates from Python's axis number into the one NDF expects
 // Needed because of inversion of C and Fortran arrays.
@@ -55,7 +78,7 @@ pydat_annul(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(pobj);
+    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
     int status = SAI__OK;    
     datAnnul(&loc, &status);
     if(status != SAI__OK) return NULL;
@@ -70,7 +93,7 @@ pydat_cell(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc1 = (HDSLoc*)PyCObject_AsVoidPtr(pobj1);
+    HDSLoc* loc1 = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj1);
 
     // Attempt to convert the input to something useable
     PyArrayObject *sub = (PyArrayObject *) PyArray_ContiguousFromAny(osub, NPY_INT, 1, 1);
@@ -90,7 +113,7 @@ pydat_cell(PyObject *self, PyObject *args)
     if(status != SAI__OK) goto fail;
 
     // PyCObject to pass pointer along to other wrappers
-    PyObject *pobj2 = PyCObject_FromVoidPtr(loc2, PyDelLoc);
+    PyObject *pobj2 = NpyCapsule_FromVoidPtr(loc2, PyDelLoc);
     Py_DECREF(sub);
     return Py_BuildValue("O", pobj2);
 
@@ -109,7 +132,7 @@ pydat_index(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc1 = (HDSLoc*)PyCObject_AsVoidPtr(pobj);
+    HDSLoc* loc1 = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
     HDSLoc* loc2 = NULL;
 
     int status = SAI__OK;    
@@ -117,7 +140,7 @@ pydat_index(PyObject *self, PyObject *args)
     if(status != SAI__OK) return NULL;
 
     // PyCObject to pass pointer along to other wrappers
-    PyObject *pobj2 = PyCObject_FromVoidPtr(loc2, PyDelLoc);
+    PyObject *pobj2 = NpyCapsule_FromVoidPtr(loc2, PyDelLoc);
     return Py_BuildValue("O", pobj2);
 
 };
@@ -131,7 +154,7 @@ pydat_find(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc1 = (HDSLoc*)PyCObject_AsVoidPtr(pobj1);
+    HDSLoc* loc1 = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj1);
     HDSLoc* loc2 = NULL;
 
     int status = SAI__OK;    
@@ -139,7 +162,7 @@ pydat_find(PyObject *self, PyObject *args)
     if(status != SAI__OK) return NULL;
 
     // PyCObject to pass pointer along to other wrappers
-    PyObject *pobj2 = PyCObject_FromVoidPtr(loc2, PyDelLoc);
+    PyObject *pobj2 = NpyCapsule_FromVoidPtr(loc2, PyDelLoc);
     return Py_BuildValue("O", pobj2);
 };
 
@@ -151,7 +174,7 @@ pydat_get(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(pobj);
+    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
 
     // guard against structures
     int state, status = SAI__OK;
@@ -237,7 +260,7 @@ pydat_name(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(pobj);
+    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
 
     char name_str[DAT__SZNAM+1];
     int status = SAI__OK;
@@ -254,7 +277,7 @@ pydat_ncomp(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(pobj);
+    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
 
     int status = SAI__OK, ncomp;
     datNcomp(loc, &ncomp, &status);
@@ -271,7 +294,7 @@ pydat_shape(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(pobj);
+    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
 
     const int NDIMX=7;
     int ndim;
@@ -309,7 +332,7 @@ pydat_state(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(pobj);
+    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
 
     int status = SAI__OK, state;
     datState(loc, &state, &status);
@@ -325,7 +348,7 @@ pydat_struc(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(pobj);
+    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
 
     // guard against structures
     int state, status = SAI__OK;
@@ -342,7 +365,7 @@ pydat_type(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(pobj);
+    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
 
     char typ_str[DAT__SZTYP+1];
     int status = SAI__OK;
@@ -359,7 +382,7 @@ pydat_valid(PyObject *self, PyObject *args)
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(pobj);
+    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
     int state, status = SAI__OK;    
     datValid(loc, &state, &status);
     if(status != SAI__OK) return NULL;
@@ -709,7 +732,7 @@ pyndf_numpytoptr(PyObject *self, PyObject *args)
 	const char *ftype;
 	if(!PyArg_ParseTuple(args, "OOis:pyndf_numpytoptr",&npy,&ptrobj,&el,&ftype))
 		return NULL;
-	void *ptr = PyCObject_AsVoidPtr(ptrobj);
+	void *ptr = NpyCapsule_AsVoidPtr(ptrobj);
 	if (el <= 0 || ptr == NULL)
 		return NULL;
 	if(strcmp(ftype,"_INTEGER") == 0) {
@@ -779,7 +802,7 @@ pyndf_xnew(PyObject *self, PyObject *args)
 		PyErr_SetString(PyExc_IOError,"status is not SAI__OK");
 		return NULL;
 	}
-	PyObject* pobj = PyCObject_FromVoidPtr(loc, PyDelLoc);
+	PyObject* pobj = NpyCapsule_FromVoidPtr(loc, PyDelLoc);
 	return Py_BuildValue("O",pobj);
 }
 
@@ -808,7 +831,7 @@ pydat_new(PyObject *self, PyObject *args)
 	int ndim;
 	if(!PyArg_ParseTuple(args, "OssiO:pydat_new", &locobj, &name, &type, &ndim, &dimobj))
 		return NULL;
-	HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(locobj);
+	HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(locobj);
 	if(!checkHDStype(type))
 		return NULL;
 	int status = SAI__OK;
@@ -838,7 +861,7 @@ pydat_put(PyObject *self, PyObject *args)
 		return NULL;
 	if(!checkHDStype(type))
 		return NULL;
-	HDSLoc* loc = (HDSLoc*)PyCObject_AsVoidPtr(locobj);
+	HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(locobj);
 	// create a pointer to an array of the appropriate data type
 	if(strcmp(type,"_INTEGER") == 0) {
 		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_INT, NPY_IN_ARRAY | NPY_FORCECAST);
@@ -880,7 +903,7 @@ pydat_putc(PyObject *self, PyObject *args)
 	int strlen;
 	if(!PyArg_ParseTuple(args,"OOi:pydat_putc",&locobj,&strobj,&strlen))
 		return NULL;
-	HDSLoc *loc = (HDSLoc*)PyCObject_AsVoidPtr(locobj);
+	HDSLoc *loc = (HDSLoc*)NpyCapsule_AsVoidPtr(locobj);
 	PyArrayObject *npystr = (PyArrayObject*) PyArray_FROM_OTF(strobj,NPY_STRING,NPY_FORCECAST);
 	char *strptr = PyArray_DATA(npystr);
 	int status = SAI__OK;
@@ -919,7 +942,7 @@ pyndf_map(PyObject *self, PyObject* args)
 	ndfMap(indf,comp,type,mmod,&ptr,&el,&status);
 	if(status != SAI__OK)
 		return NULL;
-	PyObject* ptrobj = PyCObject_FromVoidPtr(ptr,NULL);
+	PyObject* ptrobj = NpyCapsule_FromVoidPtr(ptr,NULL);
 	return Py_BuildValue("Oi",ptrobj,el);
 }
 
@@ -1051,7 +1074,7 @@ pyndf_xloc(PyObject *self, PyObject *args)
     if(status != SAI__OK) return NULL;
 
     // PyCObject to pass pointer along to other wrappers
-    PyObject *pobj = PyCObject_FromVoidPtr(loc, PyDelLoc);
+    PyObject *pobj = NpyCapsule_FromVoidPtr(loc, PyDelLoc);
     return Py_BuildValue("O", pobj);
 };
 
@@ -1223,10 +1246,39 @@ static PyMethodDef NdfMethods[] = {
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
+#ifdef USE_PY3K
+
+#define RETVAL m
+
+static struct PyModuleDef moduledef = {
+  PyModuleDef_HEAD_INIT,
+  "_ndf",
+  NULL,
+  -1,
+  NdfMethods,
+  NULL,
+  NULL,
+  NULL,
+  NULL
+};
+
+PyObject *PyInit__ndf(void)
+#else
+
+#define RETVAL
+
 PyMODINIT_FUNC
 init_ndf(void)
+#endif
 {
+    PyObject *m;
 
-    (void) Py_InitModule("_ndf", NdfMethods);
+#ifdef USE_PY3K
+    m = PyModule_Create(&moduledef);
+#else
+    m = Py_InitModule("_ndf", NdfMethods);
+#endif
     import_array();
+
+    return RETVAL;
 }

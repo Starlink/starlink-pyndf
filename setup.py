@@ -9,14 +9,14 @@ include_dirs = []
 
 # need to direct to where includes and libraries are
 # use starlink command ndf_link to generate library list. Need to strip off '-l' from each one
-if os.environ.has_key('STARLINK_DIR'):
+if 'STARLINK_DIR' in os.environ:
     os.environ['PATH'] = os.path.join(os.environ['STARLINK_DIR'], 'bin') + ':' + os.environ['PATH']
     libraries = subprocess.Popen(['ndf_link',''], shell=True, stdout=subprocess.PIPE, env=os.environ).communicate()[0].split()
-    libraries = [x[2:] for x in libraries]
+    libraries = [x[2:].decode('ascii') for x in libraries]
     library_dirs.append(os.path.join(os.environ['STARLINK_DIR'], 'lib'))
     include_dirs.append(os.path.join(os.environ['STARLINK_DIR'], 'include'))
 else:
-    print >>sys.stderr, "Environment variable STARLINK_DIR not defined!"
+    print("Environment variable STARLINK_DIR not defined!")
     exit(1)
 
 include_dirs.append(numpy.get_include())

@@ -38,7 +38,7 @@ information behaviour of Ndf is not what you want. You should not
 normally need these low level routines.
 """
 
-from _ndf import *
+from ._ndf import *
 
 import re
 import numpy as n
