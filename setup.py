@@ -32,7 +32,7 @@ ndf = Extension('starlink.ndf._ndf',
                 sources              = [os.path.join('starlink', 'ndf', 'ndf.c')]
                 )
 
-setup(name='starlink.ndf',
+setup(name='starlink-pyndf',
       version='0.2',
       packages =['starlink','starlink.ndf'],
       ext_modules=[ndf],
