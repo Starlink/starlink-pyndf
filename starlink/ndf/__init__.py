@@ -7,9 +7,9 @@ The STARLINK ndf library is used to access STARLINK's HDS files with
 extension .sdf. This package enables read access to such files.
 For instance, you can read in an ndf file using:
 
-import trm.ndf
+import starlink.ndf
 
-ndf = trm.ndf.Ndf('image')
+ndf = starlink.ndf.Ndf('image')
 
 See documentation on the Ndf class for how to access the various components.
 Ndf is the main class and reads in entire Ndf files in a recursive manner.  In
@@ -96,7 +96,7 @@ class Ndf(object):
         since it is identically ordered and more consistent with taking sub-sections using
         Python as in
 
-        ndf = trm.ndf.Ndf('image')
+        ndf = starlink.ndf.Ndf('image')
         subim = image.data[0:5,0:4,0:3]
 
         The following attributes are created:

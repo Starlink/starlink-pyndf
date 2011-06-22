@@ -21,26 +21,26 @@ else:
 
 include_dirs.append(numpy.get_include())
 
-ndf = Extension('trm.ndf._ndf',
+ndf = Extension('starlink.ndf._ndf',
                 define_macros        = [('MAJOR_VERSION', '0'),
-                                        ('MINOR_VERSION', '1')],
+                                        ('MINOR_VERSION', '2')],
                 undef_macros         = ['USE_NUMARRAY'],
                 include_dirs         = include_dirs,
                 library_dirs         = library_dirs,
                 runtime_library_dirs = library_dirs,
                 libraries            = libraries,
-                sources              = [os.path.join('trm', 'ndf', 'ndf.c')]
+                sources              = [os.path.join('starlink', 'ndf', 'ndf.c')]
                 )
 
-setup(name='trm.ndf',
-      version='0.1',
-      packages =['trm','trm.ndf'],
+setup(name='starlink.ndf',
+      version='0.2',
+      packages =['starlink','starlink.ndf'],
       ext_modules=[ndf],
 
       # metadata
       author='Tom Marsh',
       author_email='t.r.marsh@warwick.ac.uk',
-      description='Python interface to ndf libraries',
+      description='Python interface to Starlink ndf libraries',
       url='http://www.astro.warwick.ac.uk/',
 
       )
