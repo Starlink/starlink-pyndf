@@ -13,3 +13,6 @@ class TestFullRead(unittest.TestCase):
 
     def test_title(self):
         self.assertEqual( self.ndf.title, 'Test Data' )
+
+    def test_units(self):
+        self.assertEqual( self.ndf.units, 'counts' )

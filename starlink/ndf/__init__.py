@@ -107,6 +107,7 @@ class Ndf(object):
         axes    -- Axis components
         label   -- label string
         title   -- title string
+        units   -- data unit string
         head    -- header/extensions, a dictionary
         """
         object.__init__(self)
@@ -148,6 +149,7 @@ class Ndf(object):
             self.var   = ndf_read(indf,'Var')
             self.label = ndf_cget(indf,'Label')
             self.title = ndf_cget(indf,'Title')
+            self.units  = ndf_cget(indf,'Units')
 
             # Read the axes
             self.axes = []
