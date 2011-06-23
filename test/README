@@ -1,0 +1,14 @@
+This is the directory of tests.
+
+I'm still too new to Python to work out how to run the unit tests
+*before* the module is installed (seems like the right thing to do and
+it surprises me that setup.py doesn't have a "tests" target). Tests
+fail in the parent directory currently because Python seems to load
+the modules from the source tree rather than the build tree so the
+_ndf.so part of the library will not load. The workaround is to cd
+into this test directory after installing and run:
+
+  python3.2 -m unittest discover
+
+-- 
+Tim Jenness
