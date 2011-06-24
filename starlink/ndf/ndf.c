@@ -14,9 +14,12 @@
 
 // NDF includes
 #include "ndf.h"
+#include "mers.h"
 #include "star/hds.h"
 #include "sae_par.h"
 #include "prm_par.h"
+
+static PyObject * StarlinkNDFError = NULL;
 
 #if PY_VERSION_HEX >= 0x03000000
 # define USE_PY3K
@@ -68,6 +71,71 @@ static int tr_iaxis(int indf, int iaxis, int *status)
     return ndim-iaxis;
 }
 
+// Extracts the contexts of the EMS error stack and raises an
+// exception. Returns true if an exception was raised else
+// false. Can be called as:
+//   if (raiseNDFException(&status)) return NULL;
+// The purpose of this routine is to flush errors and close
+// the error context with an errEnd(). errBegin has be called
+// in the code that is about to call Starlink routines.
+
+#include "dat_err.h"
+#include "ndf_err.h"
+
+static int
+raiseNDFException( int *status )
+{
+  char param[ERR__SZPAR+1];
+  char opstr[ERR__SZMSG+1];
+  int parlen = 0;
+  int oplen = 0;
+  size_t stringlen = 1;
+  PyObject * thisexc = NULL;
+  char * errstring = NULL;
+
+  if (*status == SAI__OK) return 0;
+
+  // We can translate some internal errors into standard python exceptions
+  switch (*status) {
+  case DAT__FILNF:
+    thisexc = PyExc_IOError;
+    break;
+  default:
+    thisexc = StarlinkNDFError;
+  }
+
+  // Start with a nul terminated buffer
+  errstring = malloc( stringlen );
+  if (!errstring) PyErr_NoMemory();
+  errstring[0] = '\0';
+
+  // Build up a string with the full error message
+  while (*status != SAI__OK && errstring) {
+    errLoad( param, sizeof(param), &parlen, opstr, sizeof(opstr), &oplen, status );
+    if (*status != SAI__OK) {
+      char *newstring;
+      stringlen += oplen + 1;
+      newstring = realloc( errstring, stringlen );
+      if (newstring) {
+        errstring = newstring;
+        strcat( errstring, opstr );
+        strcat( errstring, "\n" );
+     } else {
+        if (errstring) free(errstring);
+        PyErr_NoMemory();
+      }
+    }
+  }
+
+  if (errstring) {
+    PyErr_SetString( thisexc, errstring );
+    free(errstring);
+  }
+
+  errEnd(status);
+  return 1;
+}
+
 // Now onto main routines
 
 static PyObject* 
@@ -80,8 +148,9 @@ pydat_annul(PyObject *self, PyObject *args)
     // Recover C-pointer passed via Python
     HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
     int status = SAI__OK;    
+    errBegin(&status);
     datAnnul(&loc, &status);
-    if(status != SAI__OK) return NULL;
+    if(raiseNDFException(&status)) return NULL;
     Py_RETURN_NONE;
 };
 
@@ -107,7 +176,7 @@ pydat_cell(PyObject *self, PyObject *args)
 
     HDSLoc* loc2 = NULL;
     int status = SAI__OK;
-    
+    errBegin(&status);
     // Finally run the routine
     datCell(loc1, ndim, rdim, &loc2, &status);
     if(status != SAI__OK) goto fail;
@@ -118,7 +187,7 @@ pydat_cell(PyObject *self, PyObject *args)
     return Py_BuildValue("O", pobj2);
 
 fail:    
-
+    raiseNDFException(&status);
     Py_XDECREF(sub);
     return NULL;
 };
@@ -136,8 +205,9 @@ pydat_index(PyObject *self, PyObject *args)
     HDSLoc* loc2 = NULL;
 
     int status = SAI__OK;    
+    errBegin(&status);
     datIndex(loc1, index+1, &loc2, &status);
-    if(status != SAI__OK) return NULL;
+    if(raiseNDFException(&status)) return NULL;
 
     // PyCObject to pass pointer along to other wrappers
     PyObject *pobj2 = NpyCapsule_FromVoidPtr(loc2, PyDelLoc);
@@ -158,8 +228,9 @@ pydat_find(PyObject *self, PyObject *args)
     HDSLoc* loc2 = NULL;
 
     int status = SAI__OK;    
+    errBegin(&status);
     datFind(loc1, name, &loc2, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
 
     // PyCObject to pass pointer along to other wrappers
     PyObject *pobj2 = NpyCapsule_FromVoidPtr(loc2, PyDelLoc);
@@ -178,8 +249,9 @@ pydat_get(PyObject *self, PyObject *args)
 
     // guard against structures
     int state, status = SAI__OK;
+    errBegin(&status);
     datStruc(loc, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     if(state){
 	PyErr_SetString(PyExc_IOError, "dat_get error: cannot use on structures");
 	return NULL;
@@ -194,7 +266,7 @@ pydat_get(PyObject *self, PyObject *args)
     int ndim;
     hdsdim tdim[NDIMX];
     datShape(loc, NDIMX, tdim, &ndim, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
 
     PyArrayObject* arr = NULL;
 
@@ -216,7 +288,7 @@ pydat_get(PyObject *self, PyObject *args)
 	// work out the number of bytes
 	size_t nbytes;
 	datLen(loc, &nbytes, &status);
-	if(status != SAI__OK) goto fail;
+	if (status != SAI__OK) goto fail;
 
 	int ncdim = 1+ndim;
 	int cdim[ncdim];
@@ -246,7 +318,7 @@ pydat_get(PyObject *self, PyObject *args)
     return PyArray_Return(arr);
 
 fail:    
-
+    raiseNDFException(&status);
     Py_XDECREF(arr);
     return NULL;
 
@@ -264,8 +336,9 @@ pydat_name(PyObject *self, PyObject *args)
 
     char name_str[DAT__SZNAM+1];
     int status = SAI__OK;
+    errBegin(&status);
     datName(loc, name_str, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", name_str);
 };
 
@@ -280,8 +353,9 @@ pydat_ncomp(PyObject *self, PyObject *args)
     HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
 
     int status = SAI__OK, ncomp;
+    errBegin(&status);
     datNcomp(loc, &ncomp, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
 
     return Py_BuildValue("i", ncomp);
 };
@@ -300,8 +374,9 @@ pydat_shape(PyObject *self, PyObject *args)
     int ndim;
     hdsdim tdim[NDIMX];
     int status = SAI__OK;
+    errBegin(&status);
     datShape(loc, NDIMX, tdim, &ndim, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
 
     // Return None in this case
     if(ndim == 0) Py_RETURN_NONE;
@@ -319,7 +394,7 @@ pydat_shape(PyObject *self, PyObject *args)
     for(i=0; i<ndim; i++) sdata[i] = tdim[ndim-i-1];
     return Py_BuildValue("N", PyArray_Return(dim));
 
-fail:    
+fail:
     Py_XDECREF(dim);
     return NULL;
 };
@@ -335,8 +410,9 @@ pydat_state(PyObject *self, PyObject *args)
     HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
 
     int status = SAI__OK, state;
+    errBegin(&status);
     datState(loc, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("i", state);
 };
 
@@ -352,8 +428,9 @@ pydat_struc(PyObject *self, PyObject *args)
 
     // guard against structures
     int state, status = SAI__OK;
+    errBegin(&status);
     datStruc(loc, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("i", state);
 };
 
@@ -369,8 +446,9 @@ pydat_type(PyObject *self, PyObject *args)
 
     char typ_str[DAT__SZTYP+1];
     int status = SAI__OK;
+    errBegin(&status);
     datType(loc, typ_str, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", typ_str);
 };
 
@@ -384,8 +462,9 @@ pydat_valid(PyObject *self, PyObject *args)
     // Recover C-pointer passed via Python
     HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
     int state, status = SAI__OK;    
+    errBegin(&status);
     datValid(loc, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
 
     return Py_BuildValue("i", state);
 };
@@ -401,9 +480,9 @@ pyndf_acget(PyObject *self, PyObject *args)
     // Return None if component does not exist
     int state, status = SAI__OK;
     int naxis = tr_iaxis(indf, iaxis, &status);
-
+    errBegin(&status);
     ndfAstat(indf, comp, naxis, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     if(!state)
 	Py_RETURN_NONE;
 
@@ -411,7 +490,7 @@ pyndf_acget(PyObject *self, PyObject *args)
     ndfAclen(indf, comp, naxis, &clen, &status);
     char value[clen+1];
     ndfAcget(indf, comp, naxis, value, clen+1, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", value);
 };
 
@@ -425,8 +504,9 @@ pyndf_aform(PyObject *self, PyObject *args)
     int status = SAI__OK;
     int naxis = tr_iaxis(indf, iaxis, &status);
     char value[30];
+    errBegin(&status);
     ndfAform(indf, comp, naxis, value, 30, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", value);
 };
 
@@ -437,8 +517,9 @@ pyndf_annul(PyObject *self, PyObject *args)
     if(!PyArg_ParseTuple(args, "i:pyndf_annul", &indf))
 	return NULL;
     int status = SAI__OK;
+    errBegin(&status);
     ndfAnnul(&indf, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     Py_RETURN_NONE;
 };
 
@@ -450,8 +531,9 @@ pyndf_anorm(PyObject *self, PyObject *args)
 	return NULL;
     int state, status = SAI__OK;
     int naxis = tr_iaxis(indf, iaxis, &status);
+    errBegin(&status);
     ndfAnorm(indf, naxis, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("i", state);
 };
 
@@ -469,15 +551,16 @@ pyndf_aread(PyObject *self, PyObject *args)
 
     // Return None if component does not exist
     int state;
+    errBegin(&status);
     ndfAstat(indf, comp, naxis, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     if(!state) Py_RETURN_NONE;
 
     // Get dimensions
     const int NDIMX = 10;
     int idim[NDIMX], ndim;
     ndfDim(indf, NDIMX, idim, &ndim, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
 
     // get number for particular axis in question.
     int nelem = idim[naxis-1];
@@ -486,7 +569,7 @@ pyndf_aread(PyObject *self, PyObject *args)
     const int MXLEN=33;
     char type[MXLEN];
     ndfAtype(indf, comp, naxis, type, MXLEN, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
 
     // Create array of correct dimensions and type to save data to
     size_t nbyte;
@@ -512,7 +595,7 @@ pyndf_aread(PyObject *self, PyObject *args)
     int nread;
     void *pntr[1];
     ndfAmap(indf, comp, naxis, type, MMOD, pntr, &nread, &status);
-    if(status != SAI__OK) goto fail;
+    if (status != SAI__OK) goto fail;
     if(nelem != nread){
 	printf("nread = %d, nelem = %d, iaxis = %d, %d\n",nread,nelem,iaxis,naxis);
 	PyErr_SetString(PyExc_IOError, "ndf_aread error: number of elements different from number expected");
@@ -524,7 +607,7 @@ pyndf_aread(PyObject *self, PyObject *args)
     return Py_BuildValue("N", PyArray_Return(arr));
 
 fail:
-    
+    raiseNDFException(&status);
     Py_XDECREF(arr);
     return NULL;
 
@@ -539,8 +622,9 @@ pyndf_astat(PyObject *self, PyObject *args)
 	return NULL;
     int state, status = SAI__OK;
     int naxis = tr_iaxis(indf, iaxis, &status);
+    errBegin(&status);
     ndfAstat(indf, comp, naxis, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("i", state);
 };
 
@@ -549,8 +633,9 @@ pyndf_init(PyObject *self, PyObject *args)
 {
     int argc = 0, status = SAI__OK;
     char **argv = NULL;
+    errBegin(&status);
     ndfInit(argc, argv, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     Py_RETURN_NONE;
 };
 
@@ -577,6 +662,7 @@ pyndf_bound(PyObject *self, PyObject *args)
 	goto fail;
 
     int status = SAI__OK;
+    errBegin(&status);
     ndfBound(indf, NDIMX, lbnd, ubnd, &ndim, &status ); 
     if(status != SAI__OK) goto fail;
 
@@ -595,7 +681,7 @@ pyndf_bound(PyObject *self, PyObject *args)
     return Py_BuildValue("N", PyArray_Return(bound));
 
 fail:
-    
+    raiseNDFException(&status);
     if(lbnd != NULL) free(lbnd);
     if(ubnd != NULL) free(ubnd);
     Py_XDECREF(bound);
@@ -612,17 +698,18 @@ pyndf_cget(PyObject *self, PyObject *args)
 
     // Return None if component does not exist
     int state, status = SAI__OK;
+    errBegin(&status);
     ndfState(indf, comp, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     if(!state)
 	Py_RETURN_NONE;
 
     int clen;
     ndfClen(indf, comp, &clen, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     char value[clen+1];
     ndfCget(indf, comp, value, clen+1, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", value);
 };
 
@@ -641,6 +728,7 @@ pyndf_dim(PyObject *self, PyObject *args)
 	goto fail;
 
     int status = SAI__OK;
+    errBegin(&status);
     ndfDim(indf, NDIMX, idim, &ndim, &status ); 
     if(status != SAI__OK) goto fail;
 
@@ -655,7 +743,7 @@ pyndf_dim(PyObject *self, PyObject *args)
     return Py_BuildValue("N", PyArray_Return(dim));
 
 fail:
-    
+    raiseNDFException(&status);
     if(idim != NULL) free(idim);
     Py_XDECREF(dim);
     return NULL;
@@ -667,6 +755,7 @@ pyndf_end(PyObject *self, PyObject *args)
 //    if(!PyArg_ParseTuple(args, "i:pyndf_end"))
 //	return NULL;
     int status = SAI__OK;
+    errBegin(&status);
     ndfEnd(&status);
     Py_RETURN_NONE;
 };
@@ -681,14 +770,19 @@ pyndf_open(PyObject *self, PyObject *args)
     if(!PyArg_ParseTuple(args, "s|ss:pyndf_open", &name, &mode, &stat))
 		return NULL;
 	// check for allowed values of mode and stat
-	if(strcmp(mode,"READ") != 0 && strcmp(mode,"WRITE") != 0 && strcmp(mode,"UPDATE") != 0)
-		return NULL;
-	if(strcmp(stat,"OLD") != 0 && strcmp(stat,"NEW") != 0 && strcmp(stat,"UNKNOWN") != 0)
-		return NULL;
+    if(strcmp(mode,"READ") != 0 && strcmp(mode,"WRITE") != 0 && strcmp(mode,"UPDATE") != 0) {
+        PyErr_SetString( PyExc_ValueError, "Incorrect mode for ndf_open");
+        return NULL;
+    }
+    if(strcmp(stat,"OLD") != 0 && strcmp(stat,"NEW") != 0 && strcmp(stat,"UNKNOWN") != 0) {
+        PyErr_SetString( PyExc_ValueError, "Unknown status string for ndf_open" );
+        return NULL;
+    }
     int indf, place;
     int status = SAI__OK;
+    errBegin(&status);
     ndfOpen( NULL, name, mode, stat, &indf, &place, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("ii", indf, place);
 };
 
@@ -713,8 +807,9 @@ pyndf_new(PyObject *self, PyObject *args)
 		return NULL;
 	if(PyArray_SIZE(lower) != ndim || PyArray_SIZE(upper) != ndim)
 		return NULL;
+        errBegin(&status);
 	ndfNew(ftype,ndim,(int*)PyArray_DATA(lower),(int*)PyArray_DATA(upper),&place,&indf,&status); // placeholder annulled by this routine
-	if(status != SAI__OK)
+	if (raiseNDFException(&status))
 		return NULL;
 	Py_DECREF(lower);
 	Py_DECREF(upper);
@@ -792,16 +887,15 @@ pyndf_xnew(PyObject *self, PyObject *args)
 		PyArrayObject *npydim = (PyArrayObject*) PyArray_FROM_OTF(dim,NPY_INT,NPY_IN_ARRAY|NPY_FORCECAST);
 		if (PyArray_SIZE(npydim) != ndim)
 			return NULL;
+                errBegin(&status);
 		ndfXnew(indf,xname,type,ndim,(int*)PyArray_DATA(npydim),&loc,&status);
 		Py_DECREF(npydim);
 	} else {
 		// making an ext/struct
+                errBegin(&status);
 		ndfXnew(indf,xname,type,0,0,&loc,&status);
 	}
-	if(status != SAI__OK) {
-		PyErr_SetString(PyExc_IOError,"status is not SAI__OK");
-		return NULL;
-	}
+        if (raiseNDFException(&status)) return NULL;
 	PyObject* pobj = NpyCapsule_FromVoidPtr(loc, PyDelLoc);
 	return Py_BuildValue("O",pobj);
 }
@@ -835,6 +929,7 @@ pydat_new(PyObject *self, PyObject *args)
 	if(!checkHDStype(type))
 		return NULL;
 	int status = SAI__OK;
+        errBegin(&status);
 	if (ndim > 0) {
 		PyArrayObject *npydim = (PyArrayObject*) PyArray_FROM_OTF(dimobj,NPY_INT,NPY_IN_ARRAY|NPY_FORCECAST);
 		hdsdim *dims = (hdsdim*)PyArray_DATA(npydim);
@@ -843,7 +938,7 @@ pydat_new(PyObject *self, PyObject *args)
 	} else {
 		datNew(loc,name,type,0,0,&status);
 	}
-	if(status != SAI__OK)
+	if (raiseNDFException(&status))
 		return NULL;
 	Py_RETURN_NONE;
 }
@@ -880,6 +975,7 @@ pydat_put(PyObject *self, PyObject *args)
 	}
 	void *valptr = PyArray_DATA(npyval);
 	int status = SAI__OK;
+        errBegin(&status);
 	if (ndim > 0) {
 		// npydim is 1-D array stating the size of each dimension ie. npydim = numpy.array([1072 1072])
 		// these are stored in an hdsdim type (note these are declared as signed)
@@ -890,7 +986,7 @@ pydat_put(PyObject *self, PyObject *args)
 	} else {
 		datPut(loc,type,0,0,valptr,&status);
 	}
-	if(status != SAI__OK)
+	if (raiseNDFException(&status))
 		return NULL;
 	Py_DECREF(npyval);
 	Py_RETURN_NONE;
@@ -907,8 +1003,9 @@ pydat_putc(PyObject *self, PyObject *args)
 	PyArrayObject *npystr = (PyArrayObject*) PyArray_FROM_OTF(strobj,NPY_STRING,NPY_FORCECAST);
 	char *strptr = PyArray_DATA(npystr);
 	int status = SAI__OK;
+        errBegin(&status);
 	datPutC(loc,0,0,strptr,(size_t)strlen,&status);
-	if(status != SAI__OK)
+	if (raiseNDFException(&status))
 		return NULL;
 	Py_DECREF(npystr);
 	Py_RETURN_NONE;
@@ -929,18 +1026,27 @@ pyndf_map(PyObject *self, PyObject* args)
 	if(indf < 0)
 		return NULL;
 	if(strcmp(comp,"DATA") != 0 && strcmp(comp,"QUALITY") != 0 &&
-			strcmp(comp,"VARIANCE") != 0 && strcmp(comp,"ERROR") != 0)
-		return NULL;
+           strcmp(comp,"VARIANCE") != 0 && strcmp(comp,"ERROR") != 0) {
+                PyErr_SetString( PyExc_ValueError, "Unsupported NDF data component" );
+                return NULL;
+        }
 	if(strcmp(mmod,"READ") != 0 && strcmp(mmod,"UPDATE") != 0 &&
-			strcmp(mmod,"WRITE") != 0)
+           strcmp(mmod,"WRITE") != 0) {
+                PyErr_SetString( PyExc_ValueError, "Unsupported NDF update mode" );
 		return NULL;
-	if(!checkHDStype(type))
+        }
+	if(!checkHDStype(type)) {
+                PyErr_SetString( PyExc_ValueError, "Unsupported HDS data type" );
 		return NULL;
+        }
 	// can't use QUALITY with anything but a _UBYTE
-	if(strcmp(comp,"QUALITY") == 0 && strcmp(type,"_UBYTE") != 0)
+	if(strcmp(comp,"QUALITY") == 0 && strcmp(type,"_UBYTE") != 0) {
+                PyErr_SetString( PyExc_ValueError, "QUALITY requires type _UBYTE" );
 		return NULL;
+        }
+        errBegin(&status);
 	ndfMap(indf,comp,type,mmod,&ptr,&el,&status);
-	if(status != SAI__OK)
+	if (raiseNDFException(&status))
 		return NULL;
 	PyObject* ptrobj = NpyCapsule_FromVoidPtr(ptr,NULL);
 	return Py_BuildValue("Oi",ptrobj,el);
@@ -959,10 +1065,13 @@ pyndf_unmap(PyObject* self, PyObject* args)
 		return NULL;
 	if(strcmp(comp,"DATA") != 0 && strcmp(comp,"QUALITY") != 0 &&
 			strcmp(comp,"VARIANCE") != 0 && strcmp(comp,"AXIS") != 0 &&
-			strcmp(comp,"*") != 0)
+                        strcmp(comp,"*") != 0) {
+                PyErr_SetString( PyExc_ValueError, "Unsupported NDF data component to unmap" );
 		return NULL;
+        }
+        errBegin(&status);
 	ndfUnmap(indf,comp,&status);
-	if(status != SAI__OK)
+	if (raiseNDFException(&status))
 		return NULL;
 	Py_RETURN_NONE;
 }
@@ -985,8 +1094,9 @@ pyndf_read(PyObject *self, PyObject *args)
 
     // Return None if component does not exist
     int state, status = SAI__OK;
+    errBegin(&status);
     ndfState(indf, comp, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     if(!state)
 	Py_RETURN_NONE;
 
@@ -999,7 +1109,7 @@ pyndf_read(PyObject *self, PyObject *args)
 
     int ndim;
     ndfDim(indf, NDIMX, idim, &ndim, &status);
-    if(status != SAI__OK) goto fail; 
+    if (status != SAI__OK) goto fail; 
 
     // Reverse order to account for C vs Fortran
     for(i=0; i<ndim; i++) rdim[i] = idim[ndim-i-1];
@@ -1042,7 +1152,7 @@ pyndf_read(PyObject *self, PyObject *args)
     return Py_BuildValue("N", PyArray_Return(arr));
 
 fail:
-    
+    raiseNDFException(&status);
     Py_XDECREF(arr);
     return NULL;
 };
@@ -1056,8 +1166,9 @@ pyndf_state(PyObject *self, PyObject *args)
     if(!PyArg_ParseTuple(args, "is:pyndf_state", &indf, &comp))
 	return NULL;
     int state, status = SAI__OK;
+    errBegin(&status);
     ndfState(indf, comp, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("i", state);
 };
 
@@ -1070,8 +1181,9 @@ pyndf_xloc(PyObject *self, PyObject *args)
 	return NULL;
     HDSLoc* loc = NULL;
     int status = SAI__OK;
+    errBegin(&status);
     ndfXloc(indf, xname, mode, &loc, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
 
     // PyCObject to pass pointer along to other wrappers
     PyObject *pobj = NpyCapsule_FromVoidPtr(loc, PyDelLoc);
@@ -1087,8 +1199,9 @@ pyndf_xname(PyObject *self, PyObject *args)
 
     char xname[nlen+1];
     int status = SAI__OK;
+    errBegin(&status);
     ndfXname(indf, nex+1, xname, nlen+1, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", xname);
 };
 
@@ -1099,8 +1212,9 @@ pyndf_xnumb(PyObject *self, PyObject *args)
     if(!PyArg_ParseTuple(args, "i:pyndf_xnumb", &indf))
 	return NULL;
     int status = SAI__OK, nextn;
+    errBegin(&status);
     ndfXnumb(indf, &nextn, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
 
     return Py_BuildValue("i", nextn);
 };
@@ -1113,8 +1227,9 @@ pyndf_xstat(PyObject *self, PyObject *args)
     if(!PyArg_ParseTuple(args, "isi:pyndf_xstat", &indf, &xname))
 	return NULL;
     int state, status = SAI__OK;
+    errBegin(&status);
     ndfXstat(indf, xname, &state, &status);
-    if(status != SAI__OK) return NULL;
+    if (raiseNDFException(&status)) return NULL;
 
     return Py_BuildValue("i", state);
 };
@@ -1279,6 +1394,10 @@ init_ndf(void)
     m = Py_InitModule("_ndf", NdfMethods);
 #endif
     import_array();
+
+    StarlinkNDFError = PyErr_NewException("starlink.ndf.error", NULL, NULL);
+    Py_INCREF(StarlinkNDFError);
+    PyModule_AddObject(m, "error", StarlinkNDFError);
 
     return RETVAL;
 }
