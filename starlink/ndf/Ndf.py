@@ -1,4 +1,5 @@
 from ._ndf import *
+import starlink.hds as hds
 from .Axis import *
 
 import re
@@ -104,7 +105,7 @@ class Ndf(object):
                 xname = ndf_xname(indf, nex)
                 loc1 = ndf_xloc(indf, xname, 'READ')
                 _read_hds(loc1, self.head)
-                dat_annul(loc1)
+                hds.dat_annul(loc1)
 
             ndf_end()
         except:
@@ -114,9 +115,9 @@ class Ndf(object):
 def _read_hds(loc, head, array=False):
     """Recursive reader of an HDS starting from locator = loc"""
 
-    name = dat_name(loc)
-    if dat_struc(loc):
-        dims = dat_shape(loc)
+    name = hds.dat_name(loc)
+    if hds.dat_struc(loc):
+        dims = hds.dat_shape(loc)
         if dims != None:
             head[name] = _create_md_struc(dims)
             sub = n.zeros(dims.size, int)
@@ -126,13 +127,13 @@ def _read_hds(loc, head, array=False):
                 h = head
             else:
                 h = head[name] = {}
-            ncomp = dat_ncomp(loc)
+            ncomp = hds.dat_ncomp(loc)
             for ncmp in range(ncomp):
-                loc1 = dat_index(loc, ncmp)
+                loc1 = hds.dat_index(loc, ncmp)
                 _read_hds(loc1, h, array)
-                dat_annul(loc1)
-    elif dat_state(loc):
-        head[name] = dat_get(loc)
+                hds.dat_annul(loc1)
+    elif hds.dat_state(loc):
+        head[name] = hds.dat_get(loc)
 
 def _create_md_struc(dims):
     """Creates a multi-dimensional list of dictionaries to represent multi-dimensional structures"""
@@ -148,9 +149,9 @@ def _read_md_struc(mds, loc, dims, sub):
         for mdst in mds:
             _read_md_struc(mdst, loc, dims, sub)
     else:
-        loc1 = dat_cell(loc, sub)
+        loc1 = hds.dat_cell(loc, sub)
         _read_hds(loc1, mds, True)
-        dat_annul(loc1)
+        hds.dat_annul(loc1)
 
         # update index array for next element
         sub[-1] += 1

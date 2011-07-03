@@ -50,11 +50,21 @@ ndf = Extension('starlink.ndf._ndf',
                 sources              = [os.path.join('starlink', 'ndf', 'ndf.c')]
                 )
 
+hds = Extension('starlink.hds',
+                define_macros        = [('MAJOR_VERSION', '0'),
+                                        ('MINOR_VERSION', '2')],
+                undef_macros         = ['USE_NUMARRAY'],
+                include_dirs         = include_dirs,
+                library_dirs         = library_dirs,
+                runtime_library_dirs = library_dirs,
+                libraries            = libraries,
+                sources              = [os.path.join('starlink', 'hds.c')]
+                )
+
 setup(name='starlink-pyndf',
       version='0.2',
       packages =['starlink','starlink.ndf'],
-      ext_modules=[ndf],
-
+      ext_modules=[ndf,hds],
       # metadata
       author='Tom Marsh',
       author_email='t.r.marsh@warwick.ac.uk',

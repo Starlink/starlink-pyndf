@@ -1,5 +1,6 @@
 import unittest
 import starlink.ndf as ndf
+import starlink.hds as hds
 import numpy
 import os.path
 import os
@@ -35,6 +36,9 @@ class TestSimpleNDF(unittest.TestCase):
 
         # create PAMELA extension
         loc = ndf.ndf_xnew(newindf,'PAMELA','STRUCT')
+
+        name = hds.dat_name(loc)
+        self.assertEqual( name, "PAMELA" )
 
         ccd = numpy.zeros([5,5])
 
