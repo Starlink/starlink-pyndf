@@ -39,7 +39,7 @@ else:
 
 include_dirs.append(numpy.get_include())
 
-ndf = Extension('starlink.ndf._ndf',
+ndf = Extension('starlink.ndf.api',
                 define_macros        = [('MAJOR_VERSION', '0'),
                                         ('MINOR_VERSION', '2')],
                 undef_macros         = ['USE_NUMARRAY'],

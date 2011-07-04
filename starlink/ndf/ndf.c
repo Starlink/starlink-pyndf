@@ -1,5 +1,8 @@
 //
 // Python/C interface file for ndf files
+//
+// This implements a class such that the NDF identifier is used
+// as an object.
 
 /*
     Copyright 2009-2011 Tom Marsh
@@ -24,6 +27,7 @@
 //
 
 #include <Python.h>
+#include "structmember.h"
 #include "numpy/arrayobject.h"
 
 // Wrap the PyCObject -> PyCapsule transition to allow
@@ -45,6 +49,63 @@ static PyObject * StarlinkNDFError = NULL;
 #if PY_VERSION_HEX >= 0x03000000
 # define USE_PY3K
 #endif
+
+// Define a NDF object
+
+typedef struct {
+    PyObject_HEAD
+    int _ndfid;
+    int _place;
+} NDF;
+
+// Prototypes
+
+static PyObject *
+NDF_create_object( int ndfid, int place );
+
+// Deallocator of this object
+// - we do annul the NDF identifier
+
+static void
+NDF_dealloc(NDF* self)
+{
+    int status = SAI__OK;
+    errBegin(&status);
+    if (self->_ndfid != NDF__NOID) ndfAnnul( &self->_ndfid, &status);
+    if (status != SAI__OK) errAnnul(&status);
+    errEnd(&status);
+    Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+// Allocator of an NDF object
+
+static PyObject *
+NDF_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    NDF *self;
+
+    self = (NDF *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->_ndfid = NDF__NOID;
+        self->_place = NDF__NOPL;
+    }
+
+    return (PyObject *)self;
+}
+
+// __init__ method
+
+static int
+NDF_init(NDF *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"_ndfid", "_place", NULL};
+
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|ii", kwlist,
+                                      &self->_ndfid, &self->_place ))
+        return -1;
+
+    return 0;
+}
 
 // Removes locators once they are no longer needed
 
@@ -160,96 +221,94 @@ raiseNDFException( int *status )
 // Now onto main routines
 
 static PyObject* 
-pyndf_acget(PyObject *self, PyObject *args)
+pyndf_acget(NDF *self, PyObject *args)
 {
     const char *comp;
-    int indf, iaxis;
-    if(!PyArg_ParseTuple(args, "isi:pyndf_acget", &indf, &comp, &iaxis))
+    int iaxis;
+    if(!PyArg_ParseTuple(args, "si:pyndf_acget", &comp, &iaxis))
 	return NULL;
 
     // Return None if component does not exist
     int state, status = SAI__OK;
-    int naxis = tr_iaxis(indf, iaxis, &status);
+    int naxis = tr_iaxis(self->_ndfid, iaxis, &status);
     errBegin(&status);
-    ndfAstat(indf, comp, naxis, &state, &status);
+    ndfAstat(self->_ndfid, comp, naxis, &state, &status);
     if (raiseNDFException(&status)) return NULL;
     if(!state)
 	Py_RETURN_NONE;
 
     int clen;
-    ndfAclen(indf, comp, naxis, &clen, &status);
+    ndfAclen(self->_ndfid, comp, naxis, &clen, &status);
     char value[clen+1];
-    ndfAcget(indf, comp, naxis, value, clen+1, &status);
+    ndfAcget(self->_ndfid, comp, naxis, value, clen+1, &status);
     if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", value);
 };
 
 static PyObject* 
-pyndf_aform(PyObject *self, PyObject *args)
+pyndf_aform(NDF *self, PyObject *args)
 {
     const char *comp;
-    int indf, iaxis;
-    if(!PyArg_ParseTuple(args, "isi:pyndf_aform", &indf, &comp, &iaxis))
+    int iaxis;
+    if(!PyArg_ParseTuple(args, "si:pyndf_aform", &comp, &iaxis))
 	return NULL;
     int status = SAI__OK;
-    int naxis = tr_iaxis(indf, iaxis, &status);
+    int naxis = tr_iaxis(self->_ndfid, iaxis, &status);
     char value[30];
     errBegin(&status);
-    ndfAform(indf, comp, naxis, value, 30, &status);
+    ndfAform(self->_ndfid, comp, naxis, value, 30, &status);
     if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", value);
 };
 
+// THINK - THIS IS A DESTRUCTOR
 static PyObject* 
-pyndf_annul(PyObject *self, PyObject *args)
+pyndf_annul(NDF *self)
 {
-    int indf;
-    if(!PyArg_ParseTuple(args, "i:pyndf_annul", &indf))
-	return NULL;
     int status = SAI__OK;
     errBegin(&status);
-    ndfAnnul(&indf, &status);
+    ndfAnnul(&self->_ndfid, &status);
     if (raiseNDFException(&status)) return NULL;
     Py_RETURN_NONE;
 };
 
 static PyObject* 
-pyndf_anorm(PyObject *self, PyObject *args)
+pyndf_anorm(NDF *self, PyObject *args)
 {
-    int indf, iaxis;
-    if(!PyArg_ParseTuple(args, "ii:pyndf_anorm", &indf, &iaxis))
+    int iaxis;
+    if(!PyArg_ParseTuple(args, "i:pyndf_anorm", &iaxis))
 	return NULL;
     int state, status = SAI__OK;
-    int naxis = tr_iaxis(indf, iaxis, &status);
     errBegin(&status);
-    ndfAnorm(indf, naxis, &state, &status);
+    int naxis = tr_iaxis(self->_ndfid, iaxis, &status);
+    ndfAnorm(self->_ndfid, naxis, &state, &status);
     if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("i", state);
 };
 
 static PyObject* 
-pyndf_aread(PyObject *self, PyObject *args)
+pyndf_aread(NDF *self, PyObject *args)
 {
-    int indf, iaxis;
+    int iaxis;
     const char *MMOD = "READ";
     const char *comp;
-    if(!PyArg_ParseTuple(args, "isi:pyndf_aread", &indf, &comp, &iaxis))
+    if(!PyArg_ParseTuple(args, "si:pyndf_aread", &comp, &iaxis))
 	return NULL;
 
     int status = SAI__OK;
-    int naxis = tr_iaxis(indf, iaxis, &status);
+    errBegin(&status);
+    int naxis = tr_iaxis(self->_ndfid, iaxis, &status);
 
     // Return None if component does not exist
     int state;
-    errBegin(&status);
-    ndfAstat(indf, comp, naxis, &state, &status);
+    ndfAstat(self->_ndfid, comp, naxis, &state, &status);
     if (raiseNDFException(&status)) return NULL;
     if(!state) Py_RETURN_NONE;
 
     // Get dimensions
     const int NDIMX = 10;
     int idim[NDIMX], ndim;
-    ndfDim(indf, NDIMX, idim, &ndim, &status);
+    ndfDim(self->_ndfid, NDIMX, idim, &ndim, &status);
     if (raiseNDFException(&status)) return NULL;
 
     // get number for particular axis in question.
@@ -258,7 +317,7 @@ pyndf_aread(PyObject *self, PyObject *args)
     // Determine the data type
     const int MXLEN=33;
     char type[MXLEN];
-    ndfAtype(indf, comp, naxis, type, MXLEN, &status);
+    ndfAtype(self->_ndfid, comp, naxis, type, MXLEN, &status);
     if (raiseNDFException(&status)) return NULL;
 
     // Create array of correct dimensions and type to save data to
@@ -284,7 +343,7 @@ pyndf_aread(PyObject *self, PyObject *args)
     // map, store, unmap
     int nread;
     void *pntr[1];
-    ndfAmap(indf, comp, naxis, type, MMOD, pntr, &nread, &status);
+    ndfAmap(self->_ndfid, comp, naxis, type, MMOD, pntr, &nread, &status);
     if (status != SAI__OK) goto fail;
     if(nelem != nread){
 	printf("nread = %d, nelem = %d, iaxis = %d, %d\n",nread,nelem,iaxis,naxis);
@@ -292,7 +351,7 @@ pyndf_aread(PyObject *self, PyObject *args)
 	goto fail;
     }
     memcpy(arr->data, pntr[0], nelem*nbyte);
-    ndfAunmp(indf, comp, naxis, &status);
+    ndfAunmp(self->_ndfid, comp, naxis, &status);
 
     return Py_BuildValue("N", PyArray_Return(arr));
 
@@ -304,22 +363,23 @@ fail:
 };
 
 static PyObject* 
-pyndf_astat(PyObject *self, PyObject *args)
+pyndf_astat(NDF *self, PyObject *args)
 {
     const char *comp;
-    int indf, iaxis;
-    if(!PyArg_ParseTuple(args, "isi:pyndf_astat", &indf, &comp, &iaxis))
+    int iaxis;
+    if(!PyArg_ParseTuple(args, "si:pyndf_astat", &comp, &iaxis))
 	return NULL;
     int state, status = SAI__OK;
-    int naxis = tr_iaxis(indf, iaxis, &status);
     errBegin(&status);
-    ndfAstat(indf, comp, naxis, &state, &status);
+    int naxis = tr_iaxis(self->_ndfid, iaxis, &status);
+
+    ndfAstat(self->_ndfid, comp, naxis, &state, &status);
     if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("i", state);
 };
 
 static PyObject* 
-pyndf_init(PyObject *self, PyObject *args)
+pyndf_init(NDF *self, PyObject *args)
 {
     int argc = 0, status = SAI__OK;
     char **argv = NULL;
@@ -330,30 +390,28 @@ pyndf_init(PyObject *self, PyObject *args)
 };
 
 static PyObject* 
-pyndf_begin(PyObject *self, PyObject *args)
+pyndf_begin(NDF *self)
 {
     ndfBegin();
     Py_RETURN_NONE;
 };
 
 static PyObject* 
-pyndf_bound(PyObject *self, PyObject *args)
+pyndf_bound(NDF *self)
 {
-    int indf, i;
-    if(!PyArg_ParseTuple(args, "i:pyndf_bound", &indf))
-	return NULL;
+    int i;
 
     PyArrayObject* bound = NULL;
     int ndim;
     const int NDIMX=20;
-    int *lbnd = (int *)malloc(NDIMX*sizeof(int));
-    int *ubnd = (int *)malloc(NDIMX*sizeof(int));
+    int *lbnd = malloc(NDIMX*sizeof(int));
+    int *ubnd = malloc(NDIMX*sizeof(int));
     if(lbnd == NULL || ubnd == NULL)
 	goto fail;
 
     int status = SAI__OK;
     errBegin(&status);
-    ndfBound(indf, NDIMX, lbnd, ubnd, &ndim, &status ); 
+    ndfBound(self->_ndfid, NDIMX, lbnd, ubnd, &ndim, &status ); 
     if(status != SAI__OK) goto fail;
 
     npy_intp odim[2];
@@ -379,36 +437,33 @@ fail:
 };
 
 static PyObject* 
-pyndf_cget(PyObject *self, PyObject *args)
+pyndf_cget(NDF *self, PyObject *args)
 {
     const char *comp;
-    int indf;
-    if(!PyArg_ParseTuple(args, "is:pyndf_cget", &indf, &comp))
+    if(!PyArg_ParseTuple(args, "s:pyndf_cget", &comp))
 	return NULL;
 
     // Return None if component does not exist
     int state, status = SAI__OK;
     errBegin(&status);
-    ndfState(indf, comp, &state, &status);
+    ndfState(self->_ndfid, comp, &state, &status);
     if (raiseNDFException(&status)) return NULL;
     if(!state)
 	Py_RETURN_NONE;
 
     int clen;
-    ndfClen(indf, comp, &clen, &status);
+    ndfClen(self->_ndfid, comp, &clen, &status);
     if (raiseNDFException(&status)) return NULL;
     char value[clen+1];
-    ndfCget(indf, comp, value, clen+1, &status);
+    ndfCget(self->_ndfid, comp, value, clen+1, &status);
     if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", value);
 };
 
 static PyObject* 
-pyndf_dim(PyObject *self, PyObject *args)
+pyndf_dim(NDF *self)
 {
-    int indf, i;
-    if(!PyArg_ParseTuple(args, "i:pyndf_dim", &indf))
-	return NULL;
+    int i;
 
     PyArrayObject* dim = NULL;
     int ndim;
@@ -419,7 +474,7 @@ pyndf_dim(PyObject *self, PyObject *args)
 
     int status = SAI__OK;
     errBegin(&status);
-    ndfDim(indf, NDIMX, idim, &ndim, &status ); 
+    ndfDim(self->_ndfid, NDIMX, idim, &ndim, &status ); 
     if(status != SAI__OK) goto fail;
 
     npy_intp odim[1];
@@ -440,19 +495,18 @@ fail:
 };
 
 static PyObject* 
-pyndf_end(PyObject *self, PyObject *args)
+pyndf_end(NDF *self)
 {
-//    if(!PyArg_ParseTuple(args, "i:pyndf_end"))
-//	return NULL;
     int status = SAI__OK;
     errBegin(&status);
     ndfEnd(&status);
+    if (raiseNDFException(&status)) return NULL;
     Py_RETURN_NONE;
 };
 
 // open an existing or new NDF file
 static PyObject* 
-pyndf_open(PyObject *self, PyObject *args)
+pyndf_open(NDF *self, PyObject *args)
 {
     const char *name;
 	const char *mode = "READ";
@@ -471,21 +525,23 @@ pyndf_open(PyObject *self, PyObject *args)
     int indf, place;
     int status = SAI__OK;
     errBegin(&status);
+    indf = NDF__NOID;
+    place = NDF__NOPL;
     ndfOpen( NULL, name, mode, stat, &indf, &place, &status);
     if (raiseNDFException(&status)) return NULL;
-    return Py_BuildValue("ii", indf, place);
+    return NDF_create_object( indf, place );
 };
 
 // create a new NDF (simple) structure
 static PyObject*
-pyndf_new(PyObject *self, PyObject *args)
+pyndf_new(NDF *self, PyObject *args)
 {
 	// use ultracam defaults
 	const char *ftype = "_REAL";
-	int ndim, indf, place;
+	int ndim;
 	PyObject* lb;
 	PyObject* ub;
-	if(!PyArg_ParseTuple(args, "iisiOO:pyndf_new", &indf, &place, &ftype, &ndim, &lb, &ub))
+	if(!PyArg_ParseTuple(args, "siOO:pyndf_new", &ftype, &ndim, &lb, &ub))
 		return NULL;
 	if(ndim < 0 || ndim > 7)
 		return NULL;
@@ -498,17 +554,18 @@ pyndf_new(PyObject *self, PyObject *args)
 	if(PyArray_SIZE(lower) != ndim || PyArray_SIZE(upper) != ndim)
 		return NULL;
         errBegin(&status);
-	ndfNew(ftype,ndim,(int*)PyArray_DATA(lower),(int*)PyArray_DATA(upper),&place,&indf,&status); // placeholder annulled by this routine
-	if (raiseNDFException(&status))
-		return NULL;
+        int indf = NDF__NOID;
+	ndfNew(ftype,ndim,(int*)PyArray_DATA(lower),(int*)PyArray_DATA(upper),&self->_place,&indf,&status); // placeholder annulled by this routine
 	Py_DECREF(lower);
 	Py_DECREF(upper);
-	return Py_BuildValue("i",indf);
+	if (raiseNDFException(&status))
+		return NULL;
+	return NDF_create_object( indf, NDF__NOPL);
 }
 
 // this copies a block of memory from a numpy array to a memory address
 static PyObject*
-pyndf_numpytoptr(PyObject *self, PyObject *args)
+pyndf_numpytoptr(NDF *self, PyObject *args)
 {
 	PyObject *npy, *ptrobj;
 	PyArrayObject *npyarray;
@@ -557,12 +614,12 @@ inline int checkHDStype(const char *type)
 
 // create a new NDF extension
 static PyObject*
-pyndf_xnew(PyObject *self, PyObject *args)
+pyndf_xnew(NDF *self, PyObject *args)
 {
-	int indf, ndim = 0;
+	int ndim = 0;
 	const char *xname, *type;
 	PyObject *dim;
-	if(!PyArg_ParseTuple(args, "iss|iO:pyndf_xnew", &indf, &xname, &type, &ndim, &dim))
+	if(!PyArg_ParseTuple(args, "ss|iO:pyndf_xnew", &xname, &type, &ndim, &dim))
 		return NULL;
 	int status = SAI__OK;
 	HDSLoc *loc = NULL;
@@ -578,12 +635,12 @@ pyndf_xnew(PyObject *self, PyObject *args)
 		if (PyArray_SIZE(npydim) != ndim)
 			return NULL;
                 errBegin(&status);
-		ndfXnew(indf,xname,type,ndim,(int*)PyArray_DATA(npydim),&loc,&status);
+		ndfXnew(self->_ndfid,xname,type,ndim,(int*)PyArray_DATA(npydim),&loc,&status);
 		Py_DECREF(npydim);
 	} else {
 		// making an ext/struct
                 errBegin(&status);
-		ndfXnew(indf,xname,type,0,0,&loc,&status);
+		ndfXnew(self->_ndfid,xname,type,0,0,&loc,&status);
 	}
         if (raiseNDFException(&status)) return NULL;
 	PyObject* pobj = NpyCapsule_FromVoidPtr(loc, PyDelLoc);
@@ -591,7 +648,7 @@ pyndf_xnew(PyObject *self, PyObject *args)
 }
 
 static PyObject*
-pyndf_getbadpixval(PyObject *self, PyObject *args)
+pyndf_getbadpixval(NDF *self, PyObject *args)
 {
 	const char *type;
 	if(!PyArg_ParseTuple(args, "s:pyndf_getpadpixval", &type))
@@ -608,18 +665,16 @@ pyndf_getbadpixval(PyObject *self, PyObject *args)
 
 // map access to array component
 static PyObject*
-pyndf_map(PyObject *self, PyObject* args)
+pyndf_map(NDF *self, PyObject* args)
 {
-	int indf, el;
+	int el;
 	void* ptr;
 	const char* comp;
 	const char* type;
 	const char* mmod;
-	if(!PyArg_ParseTuple(args,"isss:pyndf_map",&indf,&comp,&type,&mmod))
+	if(!PyArg_ParseTuple(args,"sss:pyndf_map",&comp,&type,&mmod))
 		return NULL;
 	int status = SAI__OK;
-	if(indf < 0)
-		return NULL;
 	if(strcmp(comp,"DATA") != 0 && strcmp(comp,"QUALITY") != 0 &&
            strcmp(comp,"VARIANCE") != 0 && strcmp(comp,"ERROR") != 0) {
                 PyErr_SetString( PyExc_ValueError, "Unsupported NDF data component" );
@@ -640,7 +695,7 @@ pyndf_map(PyObject *self, PyObject* args)
 		return NULL;
         }
         errBegin(&status);
-	ndfMap(indf,comp,type,mmod,&ptr,&el,&status);
+	ndfMap(self->_ndfid,comp,type,mmod,&ptr,&el,&status);
 	if (raiseNDFException(&status))
 		return NULL;
 	PyObject* ptrobj = NpyCapsule_FromVoidPtr(ptr,NULL);
@@ -649,15 +704,12 @@ pyndf_map(PyObject *self, PyObject* args)
 
 // unmap an NDF or mapped array
 static PyObject*
-pyndf_unmap(PyObject* self, PyObject* args)
+pyndf_unmap(NDF* self, PyObject* args)
 {
-	int indf;
 	const char* comp;
-	if(!PyArg_ParseTuple(args,"is:pyndf_unmap",&indf,&comp))
+	if(!PyArg_ParseTuple(args,"s:pyndf_unmap",&comp))
 		return NULL;
 	int status = SAI__OK;
-	if(indf < 0)
-		return NULL;
 	if(strcmp(comp,"DATA") != 0 && strcmp(comp,"QUALITY") != 0 &&
 			strcmp(comp,"VARIANCE") != 0 && strcmp(comp,"AXIS") != 0 &&
                         strcmp(comp,"*") != 0) {
@@ -665,7 +717,7 @@ pyndf_unmap(PyObject* self, PyObject* args)
 		return NULL;
         }
         errBegin(&status);
-	ndfUnmap(indf,comp,&status);
+	ndfUnmap(self->_ndfid,comp,&status);
 	if (raiseNDFException(&status))
 		return NULL;
 	Py_RETURN_NONE;
@@ -673,11 +725,11 @@ pyndf_unmap(PyObject* self, PyObject* args)
 
 // Reads an NDF into a numpy array
 static PyObject* 
-pyndf_read(PyObject *self, PyObject *args)
+pyndf_read(NDF *self, PyObject *args)
 {
-    int indf, i;
+    int i;
     const char *comp;
-    if(!PyArg_ParseTuple(args, "is:pyndf_read", &indf, &comp))
+    if(!PyArg_ParseTuple(args, "s:pyndf_read", &comp))
 	return NULL;
 
     // series of declarations in an attempt to avoid problem with
@@ -690,7 +742,7 @@ pyndf_read(PyObject *self, PyObject *args)
     // Return None if component does not exist
     int state, status = SAI__OK;
     errBegin(&status);
-    ndfState(indf, comp, &state, &status);
+    ndfState(self->_ndfid, comp, &state, &status);
     if (raiseNDFException(&status)) return NULL;
     if(!state)
 	Py_RETURN_NONE;
@@ -703,14 +755,14 @@ pyndf_read(PyObject *self, PyObject *args)
     npy_intp rdim[NDIMX];
 
     int ndim;
-    ndfDim(indf, NDIMX, idim, &ndim, &status);
+    ndfDim(self->_ndfid, NDIMX, idim, &ndim, &status);
     if (status != SAI__OK) goto fail; 
 
     // Reverse order to account for C vs Fortran
     for(i=0; i<ndim; i++) rdim[i] = idim[ndim-i-1];
 
     // Determine the data type
-    ndfType(indf, comp, type, MXLEN+1, &status);
+    ndfType(self->_ndfid, comp, type, MXLEN+1, &status);
     if(status != SAI__OK) goto fail;
 
     // Create array of correct dimensions and type to save data to
@@ -731,17 +783,17 @@ pyndf_read(PyObject *self, PyObject *args)
 
     // get number of elements, allocate space, map, store
 
-    ndfSize(indf, &npix, &status);
+    ndfSize(self->_ndfid, &npix, &status);
     if(status != SAI__OK) goto fail;
     void *pntr[1];
-    ndfMap(indf, comp, type, "READ", pntr, &nelem, &status);
+    ndfMap(self->_ndfid, comp, type, "READ", pntr, &nelem, &status);
     if(status != SAI__OK) goto fail;
     if(nelem != npix){
 	PyErr_SetString(PyExc_IOError, "ndf_read error: number of elements different from number expected");
 	goto fail;
     }
     memcpy(arr->data, pntr[0], npix*nbyte);
-    ndfUnmap(indf, comp, &status);
+    ndfUnmap(self->_ndfid, comp, &status);
     if(status != SAI__OK) goto fail;
 
     return Py_BuildValue("N", PyArray_Return(arr));
@@ -754,30 +806,28 @@ fail:
 
 
 static PyObject* 
-pyndf_state(PyObject *self, PyObject *args)
+pyndf_state(NDF *self, PyObject *args)
 {
     const char *comp;
-    int indf;
-    if(!PyArg_ParseTuple(args, "is:pyndf_state", &indf, &comp))
+    if(!PyArg_ParseTuple(args, "s:pyndf_state", &comp))
 	return NULL;
     int state, status = SAI__OK;
     errBegin(&status);
-    ndfState(indf, comp, &state, &status);
+    ndfState(self->_ndfid, comp, &state, &status);
     if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("i", state);
 };
 
 static PyObject* 
-pyndf_xloc(PyObject *self, PyObject *args)
+pyndf_xloc(NDF *self, PyObject *args)
 {
     const char *xname, *mode;
-    int indf;
-    if(!PyArg_ParseTuple(args, "iss:pyndf_xloc", &indf, &xname, &mode))
+    if(!PyArg_ParseTuple(args, "ss:pyndf_xloc", &xname, &mode))
 	return NULL;
     HDSLoc* loc = NULL;
     int status = SAI__OK;
     errBegin(&status);
-    ndfXloc(indf, xname, mode, &loc, &status);
+    ndfXloc(self->_ndfid, xname, mode, &loc, &status);
     if (raiseNDFException(&status)) return NULL;
 
     // PyCObject to pass pointer along to other wrappers
@@ -786,131 +836,197 @@ pyndf_xloc(PyObject *self, PyObject *args)
 };
 
 static PyObject* 
-pyndf_xname(PyObject *self, PyObject *args)
+pyndf_xname(NDF *self, PyObject *args)
 {
-    int indf, nex, nlen = 32;
-    if(!PyArg_ParseTuple(args, "ii|i:pyndf_xname", &indf, &nex, &nlen))
+    int nex, nlen = 32;
+    if(!PyArg_ParseTuple(args, "i|i:pyndf_xname", &nex, &nlen))
 	return NULL;
 
     char xname[nlen+1];
     int status = SAI__OK;
     errBegin(&status);
-    ndfXname(indf, nex+1, xname, nlen+1, &status);
+    ndfXname(self->_ndfid, nex+1, xname, nlen+1, &status);
     if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", xname);
 };
 
 static PyObject* 
-pyndf_xnumb(PyObject *self, PyObject *args)
+pyndf_xnumb(NDF *self)
 {
-    int indf;
-    if(!PyArg_ParseTuple(args, "i:pyndf_xnumb", &indf))
-	return NULL;
     int status = SAI__OK, nextn;
     errBegin(&status);
-    ndfXnumb(indf, &nextn, &status);
+    ndfXnumb(self->_ndfid, &nextn, &status);
     if (raiseNDFException(&status)) return NULL;
 
     return Py_BuildValue("i", nextn);
 };
 
 static PyObject* 
-pyndf_xstat(PyObject *self, PyObject *args)
+pyndf_xstat(NDF *self, PyObject *args)
 {
     const char *xname;
-    int indf;
-    if(!PyArg_ParseTuple(args, "isi:pyndf_xstat", &indf, &xname))
+    if(!PyArg_ParseTuple(args, "si:pyndf_xstat", &xname))
 	return NULL;
     int state, status = SAI__OK;
     errBegin(&status);
-    ndfXstat(indf, xname, &state, &status);
+    ndfXstat(self->_ndfid, xname, &state, &status);
     if (raiseNDFException(&status)) return NULL;
 
     return Py_BuildValue("i", state);
 };
 
+//
+//
+//  END OF METHODS - NOW DEFINE ATTRIBUTES AND MODULES
+//
+
+// Define the attributes
+
+static PyMemberDef NDF_members[] = {
+    {"_ndfid", T_INT, offsetof(NDF, _ndfid), 0,
+     "NDF Identifier"},
+    {"_place", T_INT, offsetof(NDF, _place), 0,
+     "NDF Place holder"},
+    {NULL}  /* Sentinel */
+};
+
+
 // The methods
 
-static PyMethodDef NdfMethods[] = {
+static PyMethodDef NDF_methods[] = {
 
+    {"acget", (PyCFunction)pyndf_acget, METH_VARARGS, 
+     "value = indf.acget(comp, iaxis) -- returns character component comp of axis iaxis (starts at 0), None if comp does not exist."},
 
-    {"ndf_acget", pyndf_acget, METH_VARARGS, 
-     "value = ndf_acget(indf, comp, iaxis) -- returns character component comp of axis iaxis (starts at 0), None if comp does not exist."},
+    {"aform", (PyCFunction)pyndf_aform, METH_VARARGS, 
+     "value = indf.aform(comp, iaxis) -- returns storage form of an axis (iaxis starts at 0)."},
 
-    {"ndf_aform", pyndf_aform, METH_VARARGS, 
-     "value = ndf_aform(indf, comp, iaxis) -- returns storage form of an axis (iaxis starts at 0)."},
+    {"annul", (PyCFunction)pyndf_annul, METH_NOARGS, 
+     "indf.annul() -- annuls the NDF identifier."},
 
-    {"ndf_annul", pyndf_annul, METH_VARARGS, 
-     "ndf_annul(indf) -- annuls the NDF identifier."},
+    {"anorm", (PyCFunction)pyndf_anorm, METH_VARARGS, 
+     "state = indf.anorm(iaxis) -- determine axis normalisation flag (iaxis=-1 ORs all flags)."},
 
-    {"ndf_anorm", pyndf_anorm, METH_VARARGS, 
-     "state = ndf_anorm(indf, iaxis) -- determine axis normalisation flag (iaxis=-1 ORs all flags)."},
+    {"aread", (PyCFunction)pyndf_aread, METH_VARARGS, 
+     "arr = indf.aread(comp,iaxis) -- reads component comp of axis iaxis. Returns None if does not exist"},
 
-    {"ndf_aread", pyndf_aread, METH_VARARGS, 
-     "arr = ndf_aread(indf,comp,iaxis) -- reads component comp of axis iaxis. Returns None if does not exist"},
+    {"astat", (PyCFunction)pyndf_astat, METH_VARARGS, 
+     "state = indf.astat(comp, iaxis) -- determine the state of an NDF axis component (iaxis starts at 0)."},
 
-    {"ndf_astat", pyndf_astat, METH_VARARGS, 
-     "state = ndf_astat(indf, comp, iaxis) -- determine the state of an NDF axis component (iaxis starts at 0)."},
+    {"init", (PyCFunction)pyndf_init, METH_NOARGS, 
+     "ndf.init() -- initialises the C ndf system."},
 
-    {"ndf_init", pyndf_init, METH_VARARGS, 
-     "ndf_init() -- initialises the C ndf system."},
+    {"begin", (PyCFunction)pyndf_begin, METH_NOARGS, 
+     "ndf.begin() -- starts a new NDF context."},
 
-    {"ndf_begin", pyndf_begin, METH_VARARGS, 
-     "ndf_begin() -- starts a new NDF context."},
+    {"bound", (PyCFunction)pyndf_bound, METH_NOARGS, 
+     "bound = indf.bound() -- returns pixel bounds, (2,ndim) array."},
 
-    {"ndf_bound", pyndf_bound, METH_VARARGS, 
-     "bound = ndf_bound(indf) -- returns pixel bounds, (2,ndim) array."},
+    {"cget", (PyCFunction)pyndf_cget, METH_VARARGS, 
+     "value = indf.cget(comp) -- returns character component comp as a string, None if comp does not exist."},
 
-    {"ndf_cget", pyndf_cget, METH_VARARGS, 
-     "value = ndf_cget(indf, comp) -- returns character component comp as a string, None if comp does not exist."},
+    {"dim", (PyCFunction)pyndf_dim, METH_NOARGS, 
+     "dim = indf.dim() -- returns dimensions as 1D array."},
 
-    {"ndf_dim", pyndf_dim, METH_VARARGS, 
-     "dim = ndf_dim(indf) -- returns dimensions as 1D array."},
+    {"end", (PyCFunction)pyndf_end, METH_NOARGS, 
+     "ndf.end() -- ends the current NDF context."},
 
-    {"ndf_end", pyndf_end, METH_VARARGS, 
-     "ndf_end() -- ends the current NDF context."},
+    {"open", (PyCFunction)pyndf_open, METH_VARARGS, 
+     "indf = ndf.open(name) -- opens an NDF file."},
 
-    {"ndf_open", pyndf_open, METH_VARARGS, 
-     "(indf,place) = ndf_open(name) -- opens an NDF file."},
+    {"read", (PyCFunction)pyndf_read, METH_VARARGS, 
+     "arr = indf.read(comp) -- reads component comp of an NDF (e.g. dat or var). Returns None if it does not exist."},
 
-    {"ndf_read", pyndf_read, METH_VARARGS, 
-     "arr = ndf_read(indf,comp) -- reads component comp of an NDF (e.g. dat or var). Returns None if it does not exist."},
+    {"state", (PyCFunction)pyndf_state, METH_VARARGS, 
+     "state = indf.state(comp) -- determine the state of an NDF component."},
 
-    {"ndf_state", pyndf_state, METH_VARARGS, 
-     "state = ndf_state(indf, comp) -- determine the state of an NDF component."},
+    {"xloc", (PyCFunction)pyndf_xloc, METH_VARARGS, 
+     "loc = indf.xloc(xname, mode) -- return HDS locator."},
 
-    {"ndf_xloc", pyndf_xloc, METH_VARARGS, 
-     "loc = ndf_xloc(indf, xname, mode) -- return HDS locator."},
+    {"xname", (PyCFunction)pyndf_xname, METH_VARARGS, 
+     "xname = indf.xname(n) -- return name of extension n (starting from 0)."},
 
-    {"ndf_xname", pyndf_xname, METH_VARARGS, 
-     "xname = ndf_xname(indf, n) -- return name of extension n (starting from 0)."},
+    {"xnumb", (PyCFunction)pyndf_xnumb, METH_NOARGS, 
+     "nextn = indf.xnumb() -- return number of extensions."},
 
-    {"ndf_xnumb", pyndf_xnumb, METH_VARARGS, 
-     "nextn = ndf_xnumb(indf) -- return number of extensions."},
+    {"xstat", (PyCFunction)pyndf_xstat, METH_VARARGS, 
+     "state = indf.xstat(xname) -- determine whether extension xname exists."},
 
-    {"ndf_xstat", pyndf_xstat, METH_VARARGS, 
-     "state = ndf_xstat(indf, xname) -- determine whether extension xname exists."},
+    {"new", (PyCFunction)pyndf_new, METH_VARARGS,
+     "ondf = indf.new(ftype,ndim,lbnd,ubnd) -- create a new simple ndf structure."},
 
-	{"ndf_new", pyndf_new, METH_VARARGS,
-		"(place,indf) = ndf_new(ftype,ndim,lbnd,ubnd,place) -- create a new simple ndf structure."},
+    {"xnew", (PyCFunction)pyndf_xnew, METH_VARARGS,
+     "loc = indf.xnew(xname,type,ndim,dim) -- create a new ndf extension."},
 
-	{"ndf_xnew", pyndf_xnew, METH_VARARGS,
-		"loc = ndf_xnew(indf,xname,type,ndim,dim) -- create a new ndf extension."},
+    {"map", (PyCFunction)pyndf_map, METH_VARARGS,
+     "(pointer,elements) = indf.map(comp,type,mmod) -- map access to array component."},
 
-	{"ndf_map", pyndf_map, METH_VARARGS,
-		"(pointer,elements) = ndf_map(indf,comp,type,mmod) -- map access to array component."},
+    {"unmap", (PyCFunction)pyndf_unmap, METH_VARARGS,
+     "status = indf.unmap(comp) -- unmap an NDF or mapped NDF array."},
 
-	{"ndf_unmap", pyndf_unmap, METH_VARARGS,
-		"status = ndf_unmap(indf,comp) -- unmap an NDF or mapped NDF array."},
+    {"ndf_numpytoptr", (PyCFunction)pyndf_numpytoptr, METH_VARARGS,
+     "ndf_numpytoptr(array,pointer,elements,type) -- write numpy array to mapped pointer elements."},
 
-	{"ndf_numpytoptr", pyndf_numpytoptr, METH_VARARGS,
-		"ndf_numpytoptr(array,pointer,elements,type) -- write numpy array to mapped pointer elements."},
-
-	{"ndf_getbadpixval", pyndf_getbadpixval, METH_VARARGS,
-		"ndf_getbadpixval(type) -- return a bad pixel value for given ndf data type."},
+    {"ndf_getbadpixval", (PyCFunction)pyndf_getbadpixval, METH_VARARGS,
+     "ndf_getbadpixval(type) -- return a bad pixel value for given ndf data type."},
 
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
+
+static PyTypeObject NDFType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "starlink.ndf.api",             /* tp_name */
+    sizeof(NDF),             /* tp_basicsize */
+    0,                         /* tp_itemsize */
+    (destructor)NDF_dealloc, /* tp_dealloc */
+    0,                         /* tp_print */
+    0,                         /* tp_getattr */
+    0,                         /* tp_setattr */
+    0,                         /* tp_reserved */
+    0,                         /* tp_repr */
+    0,                         /* tp_as_number */
+    0,                         /* tp_as_sequence */
+    0,                         /* tp_as_mapping */
+    0,                         /* tp_hash  */
+    0,                         /* tp_call */
+    0,                         /* tp_str */
+    0,                         /* tp_getattro */
+    0,                         /* tp_setattro */
+    0,                         /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT |
+        Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    "Raw API for NDF access",           /* tp_doc */
+    0,		               /* tp_traverse */
+    0,		               /* tp_clear */
+    0,		               /* tp_richcompare */
+    0,		               /* tp_weaklistoffset */
+    0,		               /* tp_iter */
+    0,		               /* tp_iternext */
+    NDF_methods,             /* tp_methods */
+    NDF_members,             /* tp_members */
+    0,                         /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)NDF_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    NDF_new,                 /* tp_new */
+};
+
+// Helper to create an object with an NDF identifier and placeholder
+
+static PyObject *
+NDF_create_object( int ndfid, int place )
+{
+  NDF * self = (NDF*)NDF_new( &NDFType, NULL, NULL );
+  self->_ndfid = ndfid;
+  self->_place = place;
+  return (PyObject*)self;
+}
+
+
 
 #ifdef USE_PY3K
 
@@ -918,31 +1034,35 @@ static PyMethodDef NdfMethods[] = {
 
 static struct PyModuleDef moduledef = {
   PyModuleDef_HEAD_INIT,
-  "_ndf",
-  NULL,
+  "api",
+  "Raw NDF API",
   -1,
-  NdfMethods,
+  NDF_methods,
   NULL,
   NULL,
   NULL,
   NULL
 };
 
-PyObject *PyInit__ndf(void)
+PyObject *PyInit_api(void)
 #else
 
 #define RETVAL
 
 PyMODINIT_FUNC
-init_ndf(void)
+init_api(void)
 #endif
 {
     PyObject *m;
 
 #ifdef USE_PY3K
+
+    if (PyType_Ready(&NDFType) < 0)
+        return NULL;
+
     m = PyModule_Create(&moduledef);
 #else
-    m = Py_InitModule("_ndf", NdfMethods);
+    m = Py_InitModule("api", NDF_Methods);
 #endif
     import_array();
 

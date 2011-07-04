@@ -58,7 +58,3 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 
-from ._ndf import *
-from .Axis import Axis
-from .Ndf import Ndf
-

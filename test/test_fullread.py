@@ -1,12 +1,12 @@
 import unittest
-import starlink.ndf as ndf
+from starlink.ndf.Ndf import Ndf
 import os.path
 
 class TestFullRead(unittest.TestCase):
 
     def setUp(self):
         # Read the NDF for each test
-        self.ndf = ndf.Ndf( os.path.join('data','ndf_test.sdf') )
+        self.ndf = Ndf( os.path.join('data','ndf_test.sdf') )
 
     def test_label(self):
         self.assertEqual( self.ndf.label, 'Signal' )

@@ -1,6 +1,6 @@
-from ._ndf import *
+import starlink.ndf.api as ndf
 import starlink.hds as hds
-from .Axis import *
+from starlink.ndf.Axis import Axis
 
 import re
 import numpy as n
@@ -82,16 +82,16 @@ class Ndf(object):
             fname = nname
 
         # OK, get on with NDF stuff
-        ndf_init()
-        ndf_begin()
+        ndf.init()
+        ndf.begin()
         try:
-            (indf,place) = ndf_open(fname)
-            self.data  = ndf_read(indf,'Dat')
-            self.bound = ndf_bound(indf)
-            self.var   = ndf_read(indf,'Var')
-            self.label = ndf_cget(indf,'Label')
-            self.title = ndf_cget(indf,'Title')
-            self.units  = ndf_cget(indf,'Units')
+            indf = ndf.open(fname)
+            self.data  = indf.read('Dat')
+            self.bound = indf.bound()
+            self.var   = indf.read('Var')
+            self.label = indf.cget('Label')
+            self.title = indf.cget('Title')
+            self.units  = indf.cget('Units')
 
             # Read the axes
             self.axes = []
@@ -100,16 +100,16 @@ class Ndf(object):
 
             # Read the extensions
             self.head = {}
-            nextn = ndf_xnumb(indf)
+            nextn = indf.xnumb()
             for nex in range(nextn):
-                xname = ndf_xname(indf, nex)
-                loc1 = ndf_xloc(indf, xname, 'READ')
+                xname = indf.xname(nex)
+                loc1 = indf.xloc(xname, 'READ')
                 _read_hds(loc1, self.head)
                 hds.dat_annul(loc1)
 
-            ndf_end()
+            ndf.end()
         except:
-            ndf_end()
+            ndf.end()
             raise
 
 def _read_hds(loc, head, array=False):
