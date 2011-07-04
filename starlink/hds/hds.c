@@ -24,11 +24,12 @@
 //
 
 #include <Python.h>
+#include "structmember.h"
 #include "numpy/arrayobject.h"
 
 // Wrap the PyCObject -> PyCapsule transition to allow
 // this to build with python2.
-#include "ndf/npy_3kcompat.h"
+#include "../ndf/npy_3kcompat.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -40,11 +41,78 @@
 #include "sae_par.h"
 #include "prm_par.h"
 
-static PyObject * StarlinkNDFError = NULL;
+static PyObject * StarlinkHDSError = NULL;
 
 #if PY_VERSION_HEX >= 0x03000000
 # define USE_PY3K
 #endif
+
+// Define an HDS object
+
+typedef struct {
+    PyObject_HEAD
+    PyObject * _locator;
+} HDSObject;
+
+// Prototypes
+
+static PyObject *
+HDS_create_object( HDSLoc * loc );
+static HDSLoc *
+HDS_retrieve_locator( HDSObject * self );
+static PyObject*
+pydat_transfer(PyObject *self, PyObject *args);
+
+// Deallocator. Need to see how this interacts with the PyCapsule deallocator
+
+static void
+HDS_dealloc(HDSObject * self)
+{
+    Py_XDECREF(self->_locator);
+    Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+// Allocator of an HDS object
+
+static PyObject *
+HDS_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    HDSObject *self;
+
+    self = (HDSObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+      self->_locator = Py_None;
+      if (self->_locator == NULL) {
+        Py_DECREF(self);
+        return NULL;
+      }
+    }
+
+    return (PyObject *)self;
+}
+
+// __init__ method
+
+static int
+HDS_init(HDSObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *_locator = NULL;
+    static char *kwlist[] = {"_locator", NULL};
+
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist,
+                                      &_locator ))
+        return -1;
+
+    if (_locator) {
+      PyObject * tmp = self->_locator;
+      Py_INCREF(_locator);
+      self->_locator = _locator;
+      Py_XDECREF(tmp);
+    }
+
+    return 0;
+}
+
 
 // Removes locators once they are no longer needed
 
@@ -71,31 +139,11 @@ static void PyDelLoc( void * ptr )
 }
 #endif
 
-// Translates from Python's axis number into the one NDF expects
-// Needed because of inversion of C and Fortran arrays.
-// Requires knowing the number of dimensions.
-
-static int tr_iaxis(int indf, int iaxis, int *status)
-{
-    if(iaxis == -1) return 0;
-
-    // Get dimensions
-    const int NDIMX = 10;
-    int ndim, idim[NDIMX];
-    ndfDim(indf, NDIMX, idim, &ndim, status);
-    if(*status != SAI__OK) return -1;
-    if(iaxis < -1 || iaxis > ndim-1){
-	PyErr_SetString(PyExc_IOError, "tr_axis: axis number too out of range");
-	*status = SAI__ERROR;
-	return -1;
-    }
-    return ndim-iaxis;
-}
 
 // Extracts the contexts of the EMS error stack and raises an
 // exception. Returns true if an exception was raised else
 // false. Can be called as:
-//   if (raiseNDFException(&status)) return NULL;
+//   if (raiseHDSException(&status)) return NULL;
 // The purpose of this routine is to flush errors and close
 // the error context with an errEnd(). errBegin has be called
 // in the code that is about to call Starlink routines.
@@ -104,7 +152,7 @@ static int tr_iaxis(int indf, int iaxis, int *status)
 #include "ndf_err.h"
 
 static int
-raiseNDFException( int *status )
+raiseHDSException( int *status )
 {
   char param[ERR__SZPAR+1];
   char opstr[ERR__SZMSG+1];
@@ -122,7 +170,7 @@ raiseNDFException( int *status )
     thisexc = PyExc_IOError;
     break;
   default:
-    thisexc = StarlinkNDFError;
+    thisexc = StarlinkHDSError;
   }
 
   // Start with a nul terminated buffer
@@ -159,31 +207,29 @@ raiseNDFException( int *status )
 
 // Now onto main routines
 
-static PyObject* 
-pydat_annul(PyObject *self, PyObject *args)
-{
-    PyObject* pobj;
-    if(!PyArg_ParseTuple(args, "O:pydat_annul", &pobj))
-	return NULL; 
+// Destructor. Needs thought.
 
+static PyObject* 
+pydat_annul(HDSObject *self)
+{
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
-    int status = SAI__OK;    
+    HDSLoc* loc = HDS_retrieve_locator(self);
+    int status = SAI__OK;
     errBegin(&status);
     datAnnul(&loc, &status);
-    if(raiseNDFException(&status)) return NULL;
+    if(raiseHDSException(&status)) return NULL;
     Py_RETURN_NONE;
 };
 
 static PyObject* 
-pydat_cell(PyObject *self, PyObject *args)
+pydat_cell(HDSObject *self, PyObject *args)
 {
     PyObject *pobj1, *osub;
-    if(!PyArg_ParseTuple(args, "OO:pydat_cell", &pobj1, &osub))
-	return NULL; 
+    if(!PyArg_ParseTuple(args, "O:pydat_cell", &osub))
+	return NULL;
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc1 = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj1);
+    HDSLoc* loc1 = HDS_retrieve_locator(self);
 
     // Attempt to convert the input to something useable
     PyArrayObject *sub = (PyArrayObject *) PyArray_ContiguousFromAny(osub, NPY_INT, 1, 1);
@@ -203,76 +249,66 @@ pydat_cell(PyObject *self, PyObject *args)
     if(status != SAI__OK) goto fail;
 
     // PyCObject to pass pointer along to other wrappers
-    PyObject *pobj2 = NpyCapsule_FromVoidPtr(loc2, PyDelLoc);
     Py_DECREF(sub);
-    return Py_BuildValue("O", pobj2);
+    return HDS_create_object(loc2);
 
 fail:    
-    raiseNDFException(&status);
+    raiseHDSException(&status);
     Py_XDECREF(sub);
     return NULL;
 };
 
 static PyObject* 
-pydat_index(PyObject *self, PyObject *args)
+pydat_index(HDSObject *self, PyObject *args)
 {
     PyObject* pobj;
     int index;
-    if(!PyArg_ParseTuple(args, "Oi:pydat_index", &pobj, &index))
+    if(!PyArg_ParseTuple(args, "i:pydat_index", &index))
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc1 = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
+    HDSLoc* loc1 = HDS_retrieve_locator(self);
     HDSLoc* loc2 = NULL;
 
     int status = SAI__OK;    
     errBegin(&status);
     datIndex(loc1, index+1, &loc2, &status);
-    if(raiseNDFException(&status)) return NULL;
-
-    // PyCObject to pass pointer along to other wrappers
-    PyObject *pobj2 = NpyCapsule_FromVoidPtr(loc2, PyDelLoc);
-    return Py_BuildValue("O", pobj2);
-
+    if(raiseHDSException(&status)) return NULL;
+    return HDS_create_object(loc2);
 };
 
 static PyObject* 
-pydat_find(PyObject *self, PyObject *args)
+pydat_find(HDSObject *self, PyObject *args)
 {
     PyObject* pobj1;
     const char* name;
-    if(!PyArg_ParseTuple(args, "Os:pydat_find", &pobj1, &name))
+    if(!PyArg_ParseTuple(args, "s:pydat_find", &name))
 	return NULL; 
 
     // Recover C-pointer passed via Python
-    HDSLoc* loc1 = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj1);
+    HDSLoc* loc1 = HDS_retrieve_locator( self );
     HDSLoc* loc2 = NULL;
 
     int status = SAI__OK;    
     errBegin(&status);
     datFind(loc1, name, &loc2, &status);
-    if (raiseNDFException(&status)) return NULL;
+    if (raiseHDSException(&status)) return NULL;
 
     // PyCObject to pass pointer along to other wrappers
-    PyObject *pobj2 = NpyCapsule_FromVoidPtr(loc2, PyDelLoc);
-    return Py_BuildValue("O", pobj2);
+    return HDS_create_object(loc2);
 };
 
 static PyObject* 
-pydat_get(PyObject *self, PyObject *args)
+pydat_get(HDSObject *self)
 {
-    PyObject* pobj;
-    if(!PyArg_ParseTuple(args, "O:pydat_get", &pobj))
-	return NULL; 
-
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
+    HDSLoc* loc = HDS_retrieve_locator(self);
 
     // guard against structures
     int state, status = SAI__OK;
     errBegin(&status);
     datStruc(loc, &state, &status);
-    if (raiseNDFException(&status)) return NULL;
+    if (raiseHDSException(&status)) return NULL;
     if(state){
 	PyErr_SetString(PyExc_IOError, "dat_get error: cannot use on structures");
 	return NULL;
@@ -287,7 +323,7 @@ pydat_get(PyObject *self, PyObject *args)
     int ndim;
     hdsdim tdim[NDIMX];
     datShape(loc, NDIMX, tdim, &ndim, &status);
-    if (raiseNDFException(&status)) return NULL;
+    if (raiseHDSException(&status)) return NULL;
 
     PyArrayObject* arr = NULL;
 
@@ -339,57 +375,45 @@ pydat_get(PyObject *self, PyObject *args)
     return PyArray_Return(arr);
 
 fail:    
-    raiseNDFException(&status);
+    raiseHDSException(&status);
     Py_XDECREF(arr);
     return NULL;
 
 };
 
 static PyObject* 
-pydat_name(PyObject *self, PyObject *args)
+pydat_name(HDSObject *self)
 {
-    PyObject* pobj;
-    if(!PyArg_ParseTuple(args, "O:pydat_name", &pobj))
-	return NULL; 
-
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
+    HDSLoc* loc = HDS_retrieve_locator(self);
 
     char name_str[DAT__SZNAM+1];
     int status = SAI__OK;
     errBegin(&status);
     datName(loc, name_str, &status);
-    if (raiseNDFException(&status)) return NULL;
+    if (raiseHDSException(&status)) return NULL;
     return Py_BuildValue("s", name_str);
 };
 
 static PyObject* 
-pydat_ncomp(PyObject *self, PyObject *args)
+pydat_ncomp(HDSObject *self)
 {
-    PyObject* pobj;
-    if(!PyArg_ParseTuple(args, "O:pydat_ncomp", &pobj))
-	return NULL; 
-
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
+    HDSLoc* loc = HDS_retrieve_locator(self);
 
     int status = SAI__OK, ncomp;
     errBegin(&status);
     datNcomp(loc, &ncomp, &status);
-    if (raiseNDFException(&status)) return NULL;
+    if (raiseHDSException(&status)) return NULL;
 
     return Py_BuildValue("i", ncomp);
 };
 
 static PyObject* 
-pydat_shape(PyObject *self, PyObject *args)
+pydat_shape(HDSObject *self)
 {
-    PyObject* pobj;
-    if(!PyArg_ParseTuple(args, "O:pydat_type", &pobj))
-	return NULL; 
-
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
+    HDSLoc* loc = HDS_retrieve_locator(self);
 
     const int NDIMX=7;
     int ndim;
@@ -397,7 +421,7 @@ pydat_shape(PyObject *self, PyObject *args)
     int status = SAI__OK;
     errBegin(&status);
     datShape(loc, NDIMX, tdim, &ndim, &status);
-    if (raiseNDFException(&status)) return NULL;
+    if (raiseHDSException(&status)) return NULL;
 
     // Return None in this case
     if(ndim == 0) Py_RETURN_NONE;
@@ -421,71 +445,56 @@ fail:
 };
 
 static PyObject* 
-pydat_state(PyObject *self, PyObject *args)
+pydat_state(HDSObject *self, PyObject *args)
 {
-    PyObject* pobj;
-    if(!PyArg_ParseTuple(args, "O:pydat_state", &pobj))
-	return NULL; 
-
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
+    HDSLoc* loc = HDS_retrieve_locator(self);
 
     int status = SAI__OK, state;
     errBegin(&status);
     datState(loc, &state, &status);
-    if (raiseNDFException(&status)) return NULL;
+    if (raiseHDSException(&status)) return NULL;
     return Py_BuildValue("i", state);
 };
 
 static PyObject* 
-pydat_struc(PyObject *self, PyObject *args)
+pydat_struc(HDSObject *self)
 {
-    PyObject* pobj;
-    if(!PyArg_ParseTuple(args, "O:pydat_get", &pobj))
-	return NULL; 
-
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
+    HDSLoc* loc = HDS_retrieve_locator(self);
 
     // guard against structures
     int state, status = SAI__OK;
     errBegin(&status);
     datStruc(loc, &state, &status);
-    if (raiseNDFException(&status)) return NULL;
+    if (raiseHDSException(&status)) return NULL;
     return Py_BuildValue("i", state);
 };
 
 static PyObject* 
-pydat_type(PyObject *self, PyObject *args)
+pydat_type(HDSObject *self)
 {
-    PyObject* pobj;
-    if(!PyArg_ParseTuple(args, "O:pydat_type", &pobj))
-	return NULL; 
-
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
+    HDSLoc* loc = HDS_retrieve_locator(self);
 
     char typ_str[DAT__SZTYP+1];
     int status = SAI__OK;
     errBegin(&status);
     datType(loc, typ_str, &status);
-    if (raiseNDFException(&status)) return NULL;
+    if (raiseHDSException(&status)) return NULL;
     return Py_BuildValue("s", typ_str);
 };
 
 static PyObject* 
-pydat_valid(PyObject *self, PyObject *args)
+pydat_valid(HDSObject *self)
 {
-    PyObject* pobj;
-    if(!PyArg_ParseTuple(args, "O:pydat_valid", &pobj))
-	return NULL; 
-
     // Recover C-pointer passed via Python
-    HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(pobj);
+    HDSLoc* loc = HDS_retrieve_locator(self);
+
     int state, status = SAI__OK;    
     errBegin(&status);
     datValid(loc, &state, &status);
-    if (raiseNDFException(&status)) return NULL;
+    if (raiseHDSException(&status)) return NULL;
 
     return Py_BuildValue("i", state);
 };
@@ -505,14 +514,14 @@ inline int checkHDStype(const char *type)
 
 // make a new primitive
 static PyObject*
-pydat_new(PyObject *self, PyObject *args)
+pydat_new(HDSObject *self, PyObject *args)
 {
-	PyObject *dimobj,*locobj;
+	PyObject *dimobj;
 	const char *type, *name;
 	int ndim;
-	if(!PyArg_ParseTuple(args, "OssiO:pydat_new", &locobj, &name, &type, &ndim, &dimobj))
+	if(!PyArg_ParseTuple(args, "ssiO:pydat_new", &name, &type, &ndim, &dimobj))
 		return NULL;
-	HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(locobj);
+	HDSLoc* loc = HDS_retrieve_locator(self);
 	if(!checkHDStype(type))
 		return NULL;
 	int status = SAI__OK;
@@ -525,7 +534,7 @@ pydat_new(PyObject *self, PyObject *args)
 	} else {
 		datNew(loc,name,type,0,0,&status);
 	}
-	if (raiseNDFException(&status))
+	if (raiseHDSException(&status))
 		return NULL;
 	Py_RETURN_NONE;
 }
@@ -533,17 +542,17 @@ pydat_new(PyObject *self, PyObject *args)
 
 // write a primitive
 static PyObject*
-pydat_put(PyObject *self, PyObject *args)
+pydat_put(HDSObject *self, PyObject *args)
 {
-	PyObject *value, *locobj, *dimobj;
+	PyObject *value, *dimobj;
 	PyArrayObject *npyval;
 	const char* type;
 	int ndim;
-	if(!PyArg_ParseTuple(args,"OsiOO:pydat_put",&locobj,&type,&ndim,&dimobj,&value))
+	if(!PyArg_ParseTuple(args,"siOO:pydat_put",&type,&ndim,&dimobj,&value))
 		return NULL;
 	if(!checkHDStype(type))
 		return NULL;
-	HDSLoc* loc = (HDSLoc*)NpyCapsule_AsVoidPtr(locobj);
+	HDSLoc* loc = HDS_retrieve_locator(self);
 	// create a pointer to an array of the appropriate data type
 	if(strcmp(type,"_INTEGER") == 0) {
 		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_INT, NPY_IN_ARRAY | NPY_FORCECAST);
@@ -573,84 +582,165 @@ pydat_put(PyObject *self, PyObject *args)
 	} else {
 		datPut(loc,type,0,0,valptr,&status);
 	}
-	if (raiseNDFException(&status))
+	if (raiseHDSException(&status))
 		return NULL;
 	Py_DECREF(npyval);
 	Py_RETURN_NONE;
 }
 
 static PyObject*
-pydat_putc(PyObject *self, PyObject *args)
+pydat_putc(HDSObject *self, PyObject *args)
 {
 	PyObject *strobj,*locobj;
 	int strlen;
-	if(!PyArg_ParseTuple(args,"OOi:pydat_putc",&locobj,&strobj,&strlen))
+	if(!PyArg_ParseTuple(args,"Oi:pydat_putc",&strobj,&strlen))
 		return NULL;
-	HDSLoc *loc = (HDSLoc*)NpyCapsule_AsVoidPtr(locobj);
+	HDSLoc *loc = HDS_retrieve_locator(self);
 	PyArrayObject *npystr = (PyArrayObject*) PyArray_FROM_OTF(strobj,NPY_STRING,NPY_FORCECAST);
 	char *strptr = PyArray_DATA(npystr);
 	int status = SAI__OK;
         errBegin(&status);
 	datPutC(loc,0,0,strptr,(size_t)strlen,&status);
-	if (raiseNDFException(&status))
+	if (raiseHDSException(&status))
 		return NULL;
 	Py_DECREF(npystr);
 	Py_RETURN_NONE;
 }
 
+//
+//
+//  END OF METHODS - NOW DEFINE ATTRIBUTES AND MODULES
+
+static PyMemberDef HDS_members[] = {
+  {"_locator", T_OBJECT_EX, offsetof(HDSObject, _locator), 0,
+   "HDS Locator"},
+  {NULL} /* Sentinel */
+};
 
 // The methods
 
-static PyMethodDef HDSMethods[] = {
+static PyMethodDef HDS_methods[] = {
 
-    {"dat_annul", pydat_annul, METH_VARARGS, 
-     "dat_annul(loc) -- annuls the HDS locator."},
+  {"annul", (PyCFunction)pydat_annul, METH_NOARGS,
+   "hdsloc.annul() -- annuls the HDS locator."},
 
-    {"dat_cell", pydat_cell, METH_VARARGS, 
-     "loc2 = dat_cell(loc1, sub) -- returns locator of a cell of an array."},
+  {"_transfer", (PyCFunction)pydat_transfer, METH_VARARGS,
+   "starlink.hds.api.transfer(xloc) -- transfer HDS locator from NDF."},
 
-    {"dat_index", pydat_index, METH_VARARGS, 
-     "loc2 = dat_index(loc1, index) -- returns locator of index'th component (starts at 0)."},
+  {"cell", (PyCFunction)pydat_cell, METH_VARARGS,
+   "loc2 = hdsloc1.cell(sub) -- returns locator of a cell of an array."},
 
-    {"dat_find", pydat_find, METH_VARARGS, 
-     "loc2 = dat_find(loc1, name) -- finds a named component, returns locator."},
+  {"index", (PyCFunction)pydat_index, METH_VARARGS,
+   "loc2 = hdsloc1.index(index) -- returns locator of index'th component (starts at 0)."},
 
-    {"dat_get", pydat_get, METH_VARARGS, 
-     "value = dat_get(loc) -- get data associated with locator regardless of type."},
+  {"find", (PyCFunction)pydat_find, METH_VARARGS,
+   "loc2 = hdsloc1.find(name) -- finds a named component, returns locator."},
 
-    {"dat_name", pydat_name, METH_VARARGS, 
-     "name_str = dat_name(loc) -- returns name of components."},
+  {"get", (PyCFunction)pydat_get, METH_NOARGS,
+   "value = hdsloc.get() -- get data associated with locator regardless of type."},
 
-    {"dat_ncomp", pydat_ncomp, METH_VARARGS, 
-     "ncomp = dat_ncomp(loc) -- return number of components."},
+  {"name", (PyCFunction)pydat_name, METH_NOARGS,
+   "name_str = hdsloc.name() -- returns name of components."},
 
-    {"dat_shape", pydat_shape, METH_VARARGS, 
-     "dim = dat_shape(loc) -- returns shape of the component. dim=None for a scalar"},
+  {"ncomp", (PyCFunction)pydat_ncomp, METH_NOARGS,
+   "ncomp = hdsloc.ncomp() -- return number of components."},
 
-    {"dat_state", pydat_state, METH_VARARGS, 
-     "state = dat_state(loc) -- determine the state of an HDS component."},
+  {"shape", (PyCFunction)pydat_shape, METH_NOARGS,
+   "dim = loc.shape() -- returns shape of the component. dim=None for a scalar"},
 
-    {"dat_struc", pydat_struc, METH_VARARGS, 
-     "state = dat_struc(loc) -- is the component a structure."},
+  {"state", (PyCFunction)pydat_state, METH_NOARGS,
+   "state = hdsloc.state() -- determine the state of an HDS component."},
 
-    {"dat_type", pydat_type, METH_VARARGS, 
-     "typ_str = dat_type(loc) -- returns type of the component"},
+  {"struc", (PyCFunction)pydat_struc, METH_NOARGS,
+   "state = hdsloc.struc() -- is the component a structure."},
 
-    {"dat_valid", pydat_valid, METH_VARARGS, 
-     "state = dat_valid(loc) -- is locator valid?"},
+  {"type", (PyCFunction)pydat_type, METH_NOARGS,
+   "typ_str = hdsloc.type() -- returns type of the component"},
 
+  {"valid", (PyCFunction)pydat_valid, METH_NOARGS,
+   "state = hdsloc.valid() -- is locator valid?"},
 
-	{"dat_put", pydat_put, METH_VARARGS,
-		"status = dat_put(loc,type,ndim,dim,value) -- write a primitive inside an ndf."},
+  {"put", (PyCFunction)pydat_put, METH_VARARGS,
+   "status = hdsloc.put(type,ndim,dim,value) -- write a primitive inside an hds item."},
 
-	{"dat_new", pydat_new, METH_VARARGS,
-		"dat_new(loc,name,type,ndim,dim) -- create a primitive given a locator."},
+  {"new", (PyCFunction)pydat_new, METH_VARARGS,
+   "hdsloc.new(name,type,ndim,dim) -- create a primitive given a locator."},
 
-	{"dat_putc", pydat_putc, METH_VARARGS,
-		"ndf_putc(loc,string) -- write a character string to primitive at locator."},
+  {"putc", (PyCFunction)pydat_putc, METH_VARARGS,
+   "hdsloc.putc(string) -- write a character string to primitive at locator."},
 
-    {NULL, NULL, 0, NULL} /* Sentinel */
+  {NULL, NULL, 0, NULL} /* Sentinel */
 };
+
+static PyTypeObject HDSType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "starlink.hds.api",             /* tp_name */
+    sizeof(HDSObject),             /* tp_basicsize */
+    0,                         /* tp_itemsize */
+    (destructor)HDS_dealloc, /* tp_dealloc */
+    0,                         /* tp_print */
+    0,                         /* tp_getattr */
+    0,                         /* tp_setattr */
+    0,                         /* tp_reserved */
+    0,                         /* tp_repr */
+    0,                         /* tp_as_number */
+    0,                         /* tp_as_sequence */
+    0,                         /* tp_as_mapping */
+    0,                         /* tp_hash  */
+    0,                         /* tp_call */
+    0,                         /* tp_str */
+    0,                         /* tp_getattro */
+    0,                         /* tp_setattro */
+    0,                         /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT |
+        Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    "Raw API for HDS access",           /* tp_doc */
+    0,		               /* tp_traverse */
+    0,		               /* tp_clear */
+    0,		               /* tp_richcompare */
+    0,		               /* tp_weaklistoffset */
+    0,		               /* tp_iter */
+    0,		               /* tp_iternext */
+    HDS_methods,             /* tp_methods */
+    HDS_members,             /* tp_members */
+    0,                         /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)HDS_init,      /* tp_init */
+    0,                         /* tp_alloc */
+    HDS_new,                 /* tp_new */
+};
+
+// Helper to create an object with an HDS locator
+
+static PyObject *
+HDS_create_object( HDSLoc * locator )
+{
+  PyObject * pobj;
+  HDSObject * self = (HDSObject*)HDS_new( &HDSType, NULL, NULL );
+  pobj = NpyCapsule_FromVoidPtr( locator, PyDelLoc );
+  HDS_init( self, Py_BuildValue("O", pobj ), NULL);
+
+  return (PyObject*)self;
+}
+
+static HDSLoc *
+HDS_retrieve_locator( HDSObject *self)
+{
+  return (HDSLoc*)NpyCapsule_AsVoidPtr(self->_locator);
+}
+
+static PyObject*
+pydat_transfer(PyObject *self, PyObject *args)
+{
+  HDSObject * newself = (HDSObject*)HDS_new( &HDSType, NULL, NULL );
+  if (!newself) return NULL;
+  HDS_init( newself, args, NULL);
+  return (PyObject*)newself;
+}
 
 #ifdef USE_PY3K
 
@@ -658,37 +748,40 @@ static PyMethodDef HDSMethods[] = {
 
 static struct PyModuleDef moduledef = {
   PyModuleDef_HEAD_INIT,
-  "hds",
-  NULL,
+  "api",
+  "Raw HDS API",
   -1,
-  HDSMethods,
+  HDS_methods,
   NULL,
   NULL,
   NULL,
   NULL
 };
 
-PyObject *PyInit_hds(void)
+PyObject *PyInit_api(void)
 #else
 
 #define RETVAL
 
 PyMODINIT_FUNC
-init_hds(void)
+init_api(void)
 #endif
 {
     PyObject *m;
 
+    if (PyType_Ready(&HDSType) < 0)
+        return NULL;
+
 #ifdef USE_PY3K
     m = PyModule_Create(&moduledef);
 #else
-    m = Py_InitModule("hds", HDSMethods);
+    m = Py_InitModule("api", HDS_methods);
 #endif
     import_array();
 
-    StarlinkNDFError = PyErr_NewException("starlink.ndf.error", NULL, NULL);
-    Py_INCREF(StarlinkNDFError);
-    PyModule_AddObject(m, "error", StarlinkNDFError);
+    StarlinkHDSError = PyErr_NewException("starlink.hds.error", NULL, NULL);
+    Py_INCREF(StarlinkHDSError);
+    PyModule_AddObject(m, "error", StarlinkHDSError);
 
     return RETVAL;
 }

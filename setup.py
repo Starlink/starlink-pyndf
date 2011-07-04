@@ -50,7 +50,7 @@ ndf = Extension('starlink.ndf.api',
                 sources              = [os.path.join('starlink', 'ndf', 'ndf.c')]
                 )
 
-hds = Extension('starlink.hds',
+hds = Extension('starlink.hds.api',
                 define_macros        = [('MAJOR_VERSION', '0'),
                                         ('MINOR_VERSION', '2')],
                 undef_macros         = ['USE_NUMARRAY'],
@@ -58,12 +58,12 @@ hds = Extension('starlink.hds',
                 library_dirs         = library_dirs,
                 runtime_library_dirs = library_dirs,
                 libraries            = libraries,
-                sources              = [os.path.join('starlink', 'hds.c')]
+                sources              = [os.path.join('starlink', 'hds','hds.c')]
                 )
 
 setup(name='starlink-pyndf',
       version='0.2',
-      packages =['starlink','starlink.ndf'],
+      packages =['starlink','starlink.ndf','starlink.hds'],
       ext_modules=[ndf,hds],
       # metadata
       author='Tom Marsh',

@@ -1,5 +1,5 @@
 import starlink.ndf.api as ndf
-import starlink.hds as hds
+import starlink.hds.api as hds
 from starlink.ndf.Axis import Axis
 
 import re
@@ -104,8 +104,9 @@ class Ndf(object):
             for nex in range(nextn):
                 xname = indf.xname(nex)
                 loc1 = indf.xloc(xname, 'READ')
-                _read_hds(loc1, self.head)
-                hds.dat_annul(loc1)
+                hdsloc = hds._transfer(loc1)
+                _read_hds(hdsloc, self.head)
+                hdsloc.annul()
 
             ndf.end()
         except:
@@ -115,9 +116,9 @@ class Ndf(object):
 def _read_hds(loc, head, array=False):
     """Recursive reader of an HDS starting from locator = loc"""
 
-    name = hds.dat_name(loc)
-    if hds.dat_struc(loc):
-        dims = hds.dat_shape(loc)
+    name = loc.name()
+    if loc.struc():
+        dims = loc.shape()
         if dims != None:
             head[name] = _create_md_struc(dims)
             sub = n.zeros(dims.size, int)
@@ -127,13 +128,13 @@ def _read_hds(loc, head, array=False):
                 h = head
             else:
                 h = head[name] = {}
-            ncomp = hds.dat_ncomp(loc)
+            ncomp = loc.ncomp()
             for ncmp in range(ncomp):
-                loc1 = hds.dat_index(loc, ncmp)
+                loc1 = loc.index(ncmp)
                 _read_hds(loc1, h, array)
-                hds.dat_annul(loc1)
-    elif hds.dat_state(loc):
-        head[name] = hds.dat_get(loc)
+                loc1.annul()
+    elif loc.state():
+        head[name] = loc.get()
 
 def _create_md_struc(dims):
     """Creates a multi-dimensional list of dictionaries to represent multi-dimensional structures"""
@@ -149,9 +150,9 @@ def _read_md_struc(mds, loc, dims, sub):
         for mdst in mds:
             _read_md_struc(mdst, loc, dims, sub)
     else:
-        loc1 = hds.dat_cell(loc, sub)
+        loc1 = loc.cell(sub)
         _read_hds(loc1, mds, True)
-        hds.dat_annul(loc1)
+        loc1.annul()
 
         # update index array for next element
         sub[-1] += 1
