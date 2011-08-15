@@ -1062,7 +1062,7 @@ init_api(void)
 
     m = PyModule_Create(&moduledef);
 #else
-    m = Py_InitModule("api", NDF_Methods);
+    m = Py_InitModule("api", NDF_methods);
 #endif
     import_array();
 
