@@ -740,12 +740,9 @@ static PyTypeObject HDSType = {
 static PyObject *
 HDS_create_object( HDSLoc * locator )
 {
-  PyObject * pobj;
   HDSObject * self = (HDSObject*)HDS_new( &HDSType, NULL, NULL );
-  pobj = NpyCapsule_FromVoidPtr( locator, PyDelLoc );
-  HDS_init( self, Py_BuildValue("O", pobj ), NULL);
-
-  return (PyObject*)self;
+  self->_locator = NpyCapsule_FromVoidPtr( locator, PyDelLoc );
+  return Py_BuildValue("O", self);
 }
 
 static HDSLoc *
