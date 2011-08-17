@@ -5,16 +5,13 @@ import os.path
 class TestExceptions(unittest.TestCase):
 
     def test_filnf(self):
-        with self.assertRaises(IOError):
-            indf = ndf.open('shouldnotbepresent','READ','OLD')
+        self.assertRaises(IOError, ndf.open, 'shouldnotbepresent', 'READ', 'OLD')
 
     def test_badmode(self):
-        with self.assertRaises(ValueError):
-            indf = ndf.open('badmode', 'UNKNOWN', 'OLD')
+        self.assertRaises(ValueError, ndf.open, 'badmode', 'UNKNOWN', 'OLD')
 
     def test_badstate(self):
-        with self.assertRaises(ValueError):
-            indf = ndf.open('badmode', 'READ', 'VERYOLD')
+        self.assertRaises(ValueError, ndf.open, 'badmode', 'READ', 'VERYOLD')
 
 """
 License
