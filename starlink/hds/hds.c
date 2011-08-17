@@ -730,7 +730,11 @@ HDS_create_object( HDSLoc * locator )
 static HDSLoc *
 HDS_retrieve_locator( HDSObject *self)
 {
-  return (HDSLoc*)NpyCapsule_AsVoidPtr(self->_locator);
+  if (self) {
+    return (HDSLoc*)NpyCapsule_AsVoidPtr(self->_locator);
+  } else {
+    return NULL;
+  }
 }
 
 static PyObject*
