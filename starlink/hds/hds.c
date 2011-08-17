@@ -69,7 +69,7 @@ static void
 HDS_dealloc(HDSObject * self)
 {
     Py_XDECREF(self->_locator);
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    PyObject_Del(self);
 }
 
 // Allocator of an HDS object
@@ -79,7 +79,7 @@ HDS_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     HDSObject *self;
 
-    self = (HDSObject *)type->tp_alloc(type, 0);
+    self = (HDSObject *) _PyObject_New( type );
     if (self != NULL) {
       self->_locator = Py_None;
       if (self->_locator == NULL) {
@@ -764,7 +764,7 @@ PyObject *PyInit_api(void)
 #define RETVAL
 
 PyMODINIT_FUNC
-init_api(void)
+initapi(void)
 #endif
 {
     PyObject *m;

@@ -74,7 +74,7 @@ NDF_dealloc(NDF* self)
     if (self->_ndfid != NDF__NOID) ndfAnnul( &self->_ndfid, &status);
     if (status != SAI__OK) errAnnul(&status);
     errEnd(&status);
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    PyObject_Del( self );
 }
 
 // Allocator of an NDF object
@@ -84,7 +84,7 @@ NDF_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     NDF *self;
 
-    self = (NDF *)type->tp_alloc(type, 0);
+    self = (NDF *) _PyObject_New( type );
     if (self != NULL) {
         self->_ndfid = NDF__NOID;
         self->_place = NDF__NOPL;
@@ -1050,7 +1050,7 @@ PyObject *PyInit_api(void)
 #define RETVAL
 
 PyMODINIT_FUNC
-init_api(void)
+initapi(void)
 #endif
 {
     PyObject *m;
