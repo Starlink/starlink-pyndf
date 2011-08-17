@@ -97,20 +97,19 @@ static int
 HDS_init(HDSObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *_locator = NULL;
-    static char *kwlist[] = {"_locator", NULL};
+    int result = -1;
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist,
-                                      &_locator ))
-        return -1;
-
-    if (_locator) {
-      PyObject * tmp = self->_locator;
-      Py_INCREF(_locator);
-      self->_locator = _locator;
-      Py_XDECREF(tmp);
+    if ( PyArg_ParseTuple(args, "O", &_locator )) {
+      result = 0;
+      if (_locator) {
+        PyObject * tmp = self->_locator;
+        Py_INCREF(_locator);
+        self->_locator = _locator;
+        Py_XDECREF(tmp);
+      }
     }
 
-    return 0;
+    return result;
 }
 
 
