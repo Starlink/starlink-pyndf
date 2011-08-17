@@ -611,6 +611,27 @@ pydat_putc(HDSObject *self, PyObject *args)
 //
 //  END OF METHODS - NOW DEFINE ATTRIBUTES AND MODULES
 
+static PyObject *HDS_repr( PyObject * self ) {
+        char buff[1024];  /* To receive represenation */
+        char path[512];
+        char fname[512];
+        PyObject *result = NULL;
+        HDSLoc *loc = HDS_retrieve_locator((HDSObject*)self);
+
+        if (loc) {
+          int nlev = 0;
+          int status = SAI__OK;
+          hdsTrace( loc, &nlev, path, fname, &status, sizeof(path), sizeof(fname) );
+          snprintf( buff, sizeof(buff), "<%s.%s>",
+                    fname,path);
+        } else {
+          snprintf( buff, sizeof(buff), "%s", "<DAT__NOLOC>");
+        }
+        result = Py_BuildValue( "s", buff );
+
+        return result;
+}
+
 static PyMemberDef HDS_members[] = {
   {"_locator", T_OBJECT_EX, offsetof(HDSObject, _locator), 0,
    "HDS Locator"},
@@ -682,7 +703,7 @@ static PyTypeObject HDSType = {
     0,                         /* tp_getattr */
     0,                         /* tp_setattr */
     0,                         /* tp_reserved */
-    0,                         /* tp_repr */
+    HDS_repr,                  /* tp_repr */
     0,                         /* tp_as_number */
     0,                         /* tp_as_sequence */
     0,                         /* tp_as_mapping */
