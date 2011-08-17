@@ -769,15 +769,19 @@ initapi(void)
 {
     PyObject *m;
 
+#ifdef USE_PY3K
     if (PyType_Ready(&HDSType) < 0)
         return NULL;
 
-#ifdef USE_PY3K
     m = PyModule_Create(&moduledef);
 #else
-    m = Py_InitModule("api", HDS_methods);
+    m = Py_InitModule3("api", HDS_methods,
+                      "Raw HDS API");
 #endif
     import_array();
+
+    Py_INCREF(&HDSType);
+    PyModule_AddObject(m, "api", (PyObject *)&HDSType);
 
     StarlinkHDSError = PyErr_NewException("starlink.hds.error", NULL, NULL);
     Py_INCREF(StarlinkHDSError);

@@ -1062,9 +1062,13 @@ initapi(void)
 
     m = PyModule_Create(&moduledef);
 #else
-    m = Py_InitModule("api", NDF_methods);
+    m = Py_InitModule3("api", NDF_methods,
+                       "Raw NDF API");
 #endif
     import_array();
+
+    Py_INCREF(&NDFType);
+    PyModule_AddObject(m, "api", (PyObject *)&NDFType);
 
     StarlinkNDFError = PyErr_NewException("starlink.ndf.error", NULL, NULL);
     Py_INCREF(StarlinkNDFError);
