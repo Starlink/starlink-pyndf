@@ -1053,13 +1053,12 @@ PyMODINIT_FUNC
 initapi(void)
 #endif
 {
-    PyObject *m;
-
-#ifdef USE_PY3K
+    PyObject *m = NULL;
 
     if (PyType_Ready(&NDFType) < 0)
-        return NULL;
+        return RETVAL;
 
+#ifdef USE_PY3K
     m = PyModule_Create(&moduledef);
 #else
     m = Py_InitModule3("api", NDF_methods,

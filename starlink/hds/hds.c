@@ -767,12 +767,12 @@ PyMODINIT_FUNC
 initapi(void)
 #endif
 {
-    PyObject *m;
+    PyObject *m = NULL;
+
+    if (PyType_Ready(&HDSType) < 0)
+        return RETVAL;
 
 #ifdef USE_PY3K
-    if (PyType_Ready(&HDSType) < 0)
-        return NULL;
-
     m = PyModule_Create(&moduledef);
 #else
     m = Py_InitModule3("api", HDS_methods,
