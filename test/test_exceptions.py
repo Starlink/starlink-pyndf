@@ -1,5 +1,5 @@
 import unittest
-import starlink.ndf.api as ndf
+import starlink.ndf as ndf
 import os.path
 
 class TestExceptions(unittest.TestCase):

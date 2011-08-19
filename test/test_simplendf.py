@@ -1,6 +1,6 @@
 import unittest
-import starlink.ndf.api as ndf
-import starlink.hds.api as hds
+import starlink.ndf as ndf
+import starlink.hds as hds
 import numpy
 import os.path
 import os

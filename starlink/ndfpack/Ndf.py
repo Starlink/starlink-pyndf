@@ -1,6 +1,6 @@
-import starlink.ndf.api as ndf
-import starlink.hds.api as hds
-from starlink.ndf.Axis import Axis
+import starlink.ndf as ndf
+import starlink.hds as hds
+from starlink.ndfpack.Axis import Axis
 
 import re
 import numpy as n

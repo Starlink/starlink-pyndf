@@ -694,7 +694,7 @@ static PyMethodDef HDS_methods[] = {
 
 static PyTypeObject HDSType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "starlink.hds.api",             /* tp_name */
+    "starlink.hds",                /* tp_name */
     sizeof(HDSObject),             /* tp_basicsize */
     0,                         /* tp_itemsize */
     (destructor)HDS_dealloc, /* tp_dealloc */
@@ -769,7 +769,7 @@ pydat_transfer(PyObject *self, PyObject *args)
 
 static struct PyModuleDef moduledef = {
   PyModuleDef_HEAD_INIT,
-  "api",
+  "hds",
   "Raw HDS API",
   -1,
   HDS_methods,
@@ -779,13 +779,13 @@ static struct PyModuleDef moduledef = {
   NULL
 };
 
-PyObject *PyInit_api(void)
+PyObject *PyInit_hds(void)
 #else
 
 #define RETVAL
 
 PyMODINIT_FUNC
-initapi(void)
+inithds(void)
 #endif
 {
     PyObject *m = NULL;
@@ -796,13 +796,13 @@ initapi(void)
 #ifdef USE_PY3K
     m = PyModule_Create(&moduledef);
 #else
-    m = Py_InitModule3("api", HDS_methods,
+    m = Py_InitModule3("hds", HDS_methods,
                       "Raw HDS API");
 #endif
     import_array();
 
     Py_INCREF(&HDSType);
-    PyModule_AddObject(m, "api", (PyObject *)&HDSType);
+    PyModule_AddObject(m, "hds", (PyObject *)&HDSType);
 
     StarlinkHDSError = PyErr_NewException("starlink.hds.error", NULL, NULL);
     Py_INCREF(StarlinkHDSError);

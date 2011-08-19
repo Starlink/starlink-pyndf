@@ -975,7 +975,7 @@ static PyMethodDef NDF_methods[] = {
 
 static PyTypeObject NDFType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "starlink.ndf.api",             /* tp_name */
+    "starlink.ndf",             /* tp_name */
     sizeof(NDF),             /* tp_basicsize */
     0,                         /* tp_itemsize */
     (destructor)NDF_dealloc, /* tp_dealloc */
@@ -1034,7 +1034,7 @@ NDF_create_object( int ndfid, int place )
 
 static struct PyModuleDef moduledef = {
   PyModuleDef_HEAD_INIT,
-  "api",
+  "ndf",
   "Raw NDF API",
   -1,
   NDF_methods,
@@ -1044,13 +1044,13 @@ static struct PyModuleDef moduledef = {
   NULL
 };
 
-PyObject *PyInit_api(void)
+PyObject *PyInit_ndf(void)
 #else
 
 #define RETVAL
 
 PyMODINIT_FUNC
-initapi(void)
+initndf(void)
 #endif
 {
     PyObject *m = NULL;
@@ -1061,13 +1061,13 @@ initapi(void)
 #ifdef USE_PY3K
     m = PyModule_Create(&moduledef);
 #else
-    m = Py_InitModule3("api", NDF_methods,
+    m = Py_InitModule3("ndf", NDF_methods,
                        "Raw NDF API");
 #endif
     import_array();
 
     Py_INCREF(&NDFType);
-    PyModule_AddObject(m, "api", (PyObject *)&NDFType);
+    PyModule_AddObject(m, "ndf", (PyObject *)&NDFType);
 
     StarlinkNDFError = PyErr_NewException("starlink.ndf.error", NULL, NULL);
     Py_INCREF(StarlinkNDFError);

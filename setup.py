@@ -39,7 +39,7 @@ else:
 
 include_dirs.append(numpy.get_include())
 
-ndf = Extension('starlink.ndf.api',
+ndf = Extension('starlink.ndf',
                 define_macros        = [('MAJOR_VERSION', '0'),
                                         ('MINOR_VERSION', '2')],
                 undef_macros         = ['USE_NUMARRAY'],
@@ -50,7 +50,7 @@ ndf = Extension('starlink.ndf.api',
                 sources              = [os.path.join('starlink', 'ndf', 'ndf.c')]
                 )
 
-hds = Extension('starlink.hds.api',
+hds = Extension('starlink.hds',
                 define_macros        = [('MAJOR_VERSION', '0'),
                                         ('MINOR_VERSION', '2')],
                 undef_macros         = ['USE_NUMARRAY'],
@@ -63,7 +63,7 @@ hds = Extension('starlink.hds.api',
 
 setup(name='starlink-pyndf',
       version='0.2',
-      packages =['starlink','starlink.ndf','starlink.hds'],
+      packages =['starlink','starlink.ndfpack'],
       ext_modules=[ndf,hds],
       # metadata
       author='Tom Marsh',
