@@ -5,7 +5,7 @@ import os.path
 class TestExceptions(unittest.TestCase):
 
     def test_filnf(self):
-        self.assertRaises(IOError, ndf.open, 'shouldnotbepresent', 'READ', 'OLD')
+        self.assertRaises(IOError, ndf.open, 'shouldnotbepresent.sdf', 'READ', 'OLD')
 
     def test_badmode(self):
         self.assertRaises(ValueError, ndf.open, 'badmode', 'UNKNOWN', 'OLD')
