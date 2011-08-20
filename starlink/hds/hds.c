@@ -510,32 +510,58 @@ inline int checkHDStype(const char *type)
 		return 1;
 }
 
-
-// make a new primitive
+// make a new HDS file or make a new HDS structure.
+// Choice depends on whether "self" refers to a locator or not
+// Always returns the locator to the created structure
+// This is not how datNew normally behaves but is how hdsNew works.
 static PyObject*
 pydat_new(HDSObject *self, PyObject *args)
 {
-	PyObject *dimobj;
-	const char *type, *name;
-	int ndim;
-	if(!PyArg_ParseTuple(args, "ssiO:pydat_new", &name, &type, &ndim, &dimobj))
-		return NULL;
+        const char *type, *name, *file;
+	int ndim = 0;
+	PyArrayObject * dims = NULL;
+	PyObject *dims_object = NULL;
 	HDSLoc* loc = HDS_retrieve_locator(self);
-	if(!checkHDStype(type))
-		return NULL;
+	HDSLoc* outloc = NULL;
 	int status = SAI__OK;
-        errBegin(&status);
-	if (ndim > 0) {
-		PyArrayObject *npydim = (PyArrayObject*) PyArray_FROM_OTF(dimobj,NPY_INT,NPY_IN_ARRAY|NPY_FORCECAST);
-		hdsdim *dims = (hdsdim*)PyArray_DATA(npydim);
-		datNew(loc,name,type,ndim,dims,&status);
-		Py_DECREF(npydim);
+
+	if (!loc) {
+	  // We are creating a new HDS file
+	  // Optional dims implies scalar
+	  if (!PyArg_ParseTuple( args, "sss|O:pyhds_new",
+				 &file, &name, &type, &dims_object ))
+	    return NULL;
 	} else {
-		datNew(loc,name,type,0,0,&status);
+	  // Creating HDS component
+	  if(!PyArg_ParseTuple(args, "ss|O:pydat_new", &name, &type, &dims_object))
+	    return NULL;
 	}
+
+	if (dims_object) {
+	  /* Note that HDS dimensions are hdsdim type so we would need to copy
+	     or work out what PyArray type to use */
+	  dims = (PyArrayObject *)PyArray_ContiguousFromAny( dims_object,
+							     PyArray_INT, 0,1);
+	  if (dims) {
+	    ndim = PyArray_Size(dims);
+	  }
+	}
+
+	errBegin(&status );
+
+	if (!loc) {
+	  hdsNew( file, name, type, ndim, (dims ? (const hdsdim*)PyArray_DATA(dims) : NULL),
+		  &outloc, &status );
+	} else {
+	  // We are creating an HDS component
+	  datNew( loc, name, type,ndim, (dims ? (const hdsdim*)PyArray_DATA(dims):NULL),
+		  &status);
+	  datFind( loc, name, &outloc, &status );
+	}
+	Py_XDECREF( dims );
 	if (raiseHDSException(&status))
 		return NULL;
-	Py_RETURN_NONE;
+	return HDS_create_object(outloc);
 }
 
 
