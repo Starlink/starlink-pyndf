@@ -76,6 +76,7 @@ HDS_dealloc(HDSObject * self)
     errBegin(&status);
     if (loc) datAnnul(&loc, &status);
     if (status != SAI__OK) errAnnul(&status);
+    errEnd(&status);
 
     /* Frees the capsule object */
     Py_XDECREF(self->_locator);
