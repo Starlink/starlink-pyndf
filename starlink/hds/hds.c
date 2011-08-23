@@ -117,7 +117,6 @@ HDS_init(HDSObject *self, PyObject *args, PyObject *kwds)
         Py_XDECREF(tmp);
       }
     }
-    printf("In HDS_init\n");
     return result;
 }
 
