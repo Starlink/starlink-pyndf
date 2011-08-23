@@ -207,6 +207,60 @@ raiseHDSException( int *status )
   return 1;
 }
 
+// Routine to convert an HDS type string to a numpy
+// type code. Returns 0 and sets an exception
+// if the HDS type is not recognized.
+
+static int hdstype2numpy( const char * type ) {
+  int retval = 0;
+
+  if(strcmp(type,"_INTEGER") == 0) {
+    retval = NPY_INT;
+  } else if(strcmp(type,"_REAL") == 0) {
+    retval = NPY_FLOAT;
+  } else if(strcmp(type,"_DOUBLE") == 0) {
+    retval = NPY_DOUBLE;
+  } else if(strcmp(type,"_WORD") == 0) {
+    retval = NPY_SHORT;
+  } else if(strcmp(type,"_UWORD") == 0) {
+    retval = NPY_USHORT;
+  } else if(strcmp(type,"_BYTE") == 0) {
+    retval = NPY_BYTE;
+  } else if(strcmp(type,"_UBYTE") == 0) {
+    retval = NPY_UBYTE;
+  } else if(strcmp(type,"_LOGICAL") == 0) {
+    retval = NPY_BOOL;
+  } else if(strncmp(type,"_CHAR*",6) == 0) {
+    retval = NPY_STRING;
+  } else {
+    // Set exception here
+    PyErr_Format( PyExc_ValueError,
+		  "Supplied HDS type '%s' does not correspond to a numpy type",
+		  type);
+  }
+  return retval;
+}
+
+// Returns 1 if good, 0 if exception was thrown
+
+static int numpy2hdsdim ( PyArrayObject *npyarr, int * ndim, hdsdim * hdims ) {
+
+  int i = 0;
+
+  *ndim = PyArray_NDIM( npyarr );
+  if (*ndim > DAT__MXDIM) {
+    PyErr_Format( PyExc_ValueError,
+		  "Supplied numpy array has more than %d dimensions",
+		  DAT__MXDIM );
+    return 0;
+  }
+
+  for (i=0; i<*ndim;i++) {
+    hdims[i] = PyArray_DIM(npyarr, *ndim - i - 1);
+  }
+  return 1;
+}
+
 // Now onto main routines
 
 // Destructor. Needs thought.
@@ -576,45 +630,34 @@ pydat_put(HDSObject *self, PyObject *args)
 {
 	PyObject *value, *dimobj;
 	PyArrayObject *npyval;
-	const char* type;
+	char type[DAT__SZTYP+1];
+	PyArrayObject * dims = NULL;
+	PyObject *dims_object = NULL;
+	hdsdim hdims[DAT__MXDIM];
 	int ndim;
-	if(!PyArg_ParseTuple(args,"siOO:pydat_put",&type,&ndim,&dimobj,&value))
-		return NULL;
-	if(!checkHDStype(type))
+	if(!PyArg_ParseTuple(args,"O:pydat_put",&value))
 		return NULL;
 	HDSLoc* loc = HDS_retrieve_locator(self);
-	// create a pointer to an array of the appropriate data type
-	if(strcmp(type,"_INTEGER") == 0) {
-		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_INT, NPY_IN_ARRAY | NPY_FORCECAST);
-	} else if(strcmp(type,"_REAL") == 0) {
-		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_FLOAT, NPY_IN_ARRAY | NPY_FORCECAST);
-	} else if(strcmp(type,"_DOUBLE") == 0) {
-		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_DOUBLE, NPY_IN_ARRAY | NPY_FORCECAST);
-	} else if(strcmp(type,"_BYTE") == 0) {
-		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_BYTE, NPY_IN_ARRAY | NPY_FORCECAST);
-	} else if(strcmp(type,"_UBYTE") == 0) {
-		npyval = (PyArrayObject*) PyArray_FROM_OTF(value, NPY_UBYTE, NPY_IN_ARRAY | NPY_FORCECAST);
-	} else if(strncmp(type,"_CHAR*",6) == 0) {
-		npyval = (PyArrayObject*) PyArray_FROM_OT(value, NPY_STRING);
-	} else {
-		return NULL;
-	}
-	void *valptr = PyArray_DATA(npyval);
+
+	// Work out the type of the underlying HDS structure
 	int status = SAI__OK;
         errBegin(&status);
-	if (ndim > 0) {
-		// npydim is 1-D array stating the size of each dimension ie. npydim = numpy.array([1072 1072])
-		// these are stored in an hdsdim type (note these are declared as signed)
-		PyArrayObject *npydim = (PyArrayObject*) PyArray_FROM_OTF(dimobj,NPY_INT,NPY_IN_ARRAY|NPY_FORCECAST);
-		hdsdim *dims = (hdsdim*)PyArray_DATA(npydim);
-		datPut(loc,type,ndim,dims,valptr,&status);
-		Py_DECREF(npydim);
-	} else {
-		datPut(loc,type,0,0,valptr,&status);
-	}
+	datType( loc, type, &status );
+	if (raiseHDSException(&status)) return NULL;
+
+	// create a pointer to an array of the appropriate data type
+	int npytype = hdstype2numpy( type );
+	if (npytype == 0) return NULL;
+	npyval = (PyArrayObject*) PyArray_ContiguousFromAny( value, npytype, 0, DAT__MXDIM );
+
+	void *valptr = PyArray_DATA(npyval);
+	if (!numpy2hdsdim( npyval, &ndim, hdims )) return NULL;
+	errBegin(&status);
+	datPut( loc, type, ndim, hdims, valptr, &status );
+	Py_XDECREF(npyval);
+
 	if (raiseHDSException(&status))
 		return NULL;
-	Py_DECREF(npyval);
 	Py_RETURN_NONE;
 }
 
