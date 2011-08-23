@@ -318,6 +318,7 @@ pydat_get(HDSObject *self)
 
     // get type
     char typ_str[DAT__SZTYP+1];
+    errBegin(&status);
     datType(loc, typ_str, &status);
 
     // get shape
@@ -335,6 +336,7 @@ pydat_get(HDSObject *self)
     npy_intp rdim[NDIMX];
     int i;
     for(i=0; i<ndim; i++) rdim[i] = tdim[ndim-i-1];
+    errBegin(&status);
 
     if(strcmp(typ_str, "_INTEGER") == 0 || strcmp(typ_str, "_LOGICAL") == 0){
 	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_INT);
