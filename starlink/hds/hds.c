@@ -62,12 +62,21 @@ static HDSLoc *
 HDS_retrieve_locator( HDSObject * self );
 static PyObject*
 pydat_transfer(PyObject *self, PyObject *args);
+static int
+raiseHDSException( int *status );
 
-// Deallocator. Need to see how this interacts with the PyCapsule deallocator
+// Deallocator. Annuls the locator and frees the object.
 
 static void
 HDS_dealloc(HDSObject * self)
 {
+    HDSLoc* loc = HDS_retrieve_locator(self);
+    int status = SAI__OK;
+    errBegin(&status);
+    if (loc) datAnnul(&loc, &status);
+    if (status != SAI__OK) errAnnul(&status);
+
+    /* Frees the capsule object */
     Py_XDECREF(self->_locator);
     PyObject_Del(self);
 }
@@ -108,36 +117,9 @@ HDS_init(HDSObject *self, PyObject *args, PyObject *kwds)
         Py_XDECREF(tmp);
       }
     }
-
+    printf("In HDS_init\n");
     return result;
 }
-
-
-// Removes locators once they are no longer needed
-
-static void PyDelLoc_ptr(void *ptr)
-{
-    HDSLoc* loc = (HDSLoc*)ptr;
-    int status = SAI__OK;
-    datAnnul(&loc, &status);
-    printf("Inside PyDelLoc\n");
-    return;
-}
-
-// Need a PyCapsule version for Python3
-
-#ifdef USE_PY3K
-static void PyDelLoc( PyObject *cap )
-{
-  PyDelLoc_ptr( PyCapsule_GetPointer( cap, NULL ));
-}
-#else
-static void PyDelLoc( void * ptr )
-{
-  PyDelLoc_ptr(ptr);
-}
-#endif
-
 
 // Extracts the contexts of the EMS error stack and raises an
 // exception. Returns true if an exception was raised else
@@ -263,7 +245,7 @@ static int numpy2hdsdim ( PyArrayObject *npyarr, int * ndim, hdsdim * hdims ) {
 
 // Now onto main routines
 
-// Destructor. Needs thought.
+// Annuls the locator but does not free the object
 
 static PyObject* 
 pydat_annul(HDSObject *self)
@@ -273,6 +255,7 @@ pydat_annul(HDSObject *self)
     int status = SAI__OK;
     errBegin(&status);
     datAnnul(&loc, &status);
+    self->_locator = NULL;
     if(raiseHDSException(&status)) return NULL;
     Py_RETURN_NONE;
 };
@@ -842,8 +825,8 @@ static PyObject *
 HDS_create_object( HDSLoc * locator )
 {
   HDSObject * self = (HDSObject*)HDS_new( &HDSType, NULL, NULL );
-  self->_locator = NpyCapsule_FromVoidPtr( locator, PyDelLoc );
-  return Py_BuildValue("O", self);
+  self->_locator = NpyCapsule_FromVoidPtr( locator, NULL );
+  return Py_BuildValue("N", self);
 }
 
 static HDSLoc *
