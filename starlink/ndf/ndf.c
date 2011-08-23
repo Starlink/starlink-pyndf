@@ -455,9 +455,11 @@ pyndf_cget(NDF *self, PyObject *args)
 	Py_RETURN_NONE;
 
     int clen;
+    errBegin(&status);
     ndfClen(self->_ndfid, comp, &clen, &status);
     if (raiseNDFException(&status)) return NULL;
     char value[clen+1];
+    errBegin(&status);
     ndfCget(self->_ndfid, comp, value, clen+1, &status);
     if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", value);
