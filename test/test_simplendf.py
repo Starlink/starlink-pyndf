@@ -19,11 +19,11 @@ class TestSimpleNDF(unittest.TestCase):
     def test_simplenew(self):
         # okay we have all the data, time to open us up an ndf
         indf = ndf.open(self.testndf,'WRITE','NEW')
-        newindf = indf.new('_REAL',2,
-                           numpy.array([0,0]),numpy.array([4,4]))
+        indf.new('_REAL',2,
+                 numpy.array([0,0]),numpy.array([4,4]))
 
         # map primary data to make sure NDF does not complain
-        ptr,el = newindf.map('DATA','_REAL','WRITE')
+        ptr,el = indf.map('DATA','_REAL','WRITE')
 
         # make sure we got a file
         self.assertTrue( os.path.exists( self.testndf ), "Test existence of NDF file" )
@@ -31,11 +31,11 @@ class TestSimpleNDF(unittest.TestCase):
     def test_newwithwrite(self):
         # okay we have all the data, time to open us up an ndf
         indf = ndf.open(self.testndf,'WRITE','NEW')
-        newindf = indf.new('_REAL',2,
-                           numpy.array([0,0]),numpy.array([4,4]))
+        indf.new('_REAL',2,
+                 numpy.array([0,0]),numpy.array([4,4]))
 
         # create PAMELA extension
-        loc = newindf.xnew('PAMELA','STRUCT')
+        loc = indf.xnew('PAMELA','STRUCT')
 
         hdsloc = hds._transfer(loc)
         name = hdsloc.name()
@@ -44,11 +44,11 @@ class TestSimpleNDF(unittest.TestCase):
         ccd = numpy.zeros([5,5])
 
         # map primary data
-        ptr,el = newindf.map('DATA','_REAL','WRITE')
+        ptr,el = indf.map('DATA','_REAL','WRITE')
         ndf.ndf_numpytoptr(ccd,ptr,el,'_REAL')
 
         # shut down ndf system
-        newindf.annul()
+        indf.annul()
 
         # make sure we got a file
         self.assertTrue( os.path.exists( self.testndf ), "Test existence of NDF file" )

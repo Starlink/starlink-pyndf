@@ -559,13 +559,12 @@ pyndf_new(NDF *self, PyObject *args)
 	if(PyArray_SIZE(lower) != ndim || PyArray_SIZE(upper) != ndim)
 		return NULL;
         errBegin(&status);
-        int indf = NDF__NOID;
-	ndfNew(ftype,ndim,(int*)PyArray_DATA(lower),(int*)PyArray_DATA(upper),&self->_place,&indf,&status); // placeholder annulled by this routine
+	ndfNew(ftype,ndim,(int*)PyArray_DATA(lower),(int*)PyArray_DATA(upper),&self->_place,&self->_ndfid,&status); // placeholder annulled by this routine
 	Py_DECREF(lower);
 	Py_DECREF(upper);
 	if (raiseNDFException(&status))
 		return NULL;
-	return NDF_create_object( indf, NDF__NOPL);
+	Py_RETURN_NONE;
 }
 
 // this copies a block of memory from a numpy array to a memory address
