@@ -629,6 +629,25 @@ pydat_new(HDSObject *self, PyObject *args)
 	return HDS_create_object(outloc);
 }
 
+// open an HDS file
+static PyObject *
+pyhds_open( HDSObject *self, PyObject *args )
+{
+  const char * file = NULL;
+  const char * mode = NULL;
+
+  if(!PyArg_ParseTuple(args,"ss:pyhds_open",&file, &mode))
+    return NULL;
+
+  int status = SAI__OK;
+  HDSLoc * loc = NULL;
+  errBegin(&status);
+
+  hdsOpen( file, mode, &loc, &status );
+  if (raiseHDSException(&status))
+    return NULL;
+  return HDS_create_object(loc);
+}
 
 // write a primitive
 static PyObject*
@@ -765,6 +784,9 @@ static PyMethodDef HDS_methods[] = {
 
   {"new", (PyCFunction)pydat_new, METH_VARARGS,
    "hdsloc.new(name,type,ndim,dim) -- create a primitive given a locator."},
+
+  {"open", (PyCFunction)pyhds_open, METH_VARARGS,
+   "loc = hds.open(name,type) -- open an HDS file."},
 
   {"putc", (PyCFunction)pydat_putc, METH_VARARGS,
    "hdsloc.putc(string) -- write a character string to primitive at locator."},
