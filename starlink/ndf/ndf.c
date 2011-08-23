@@ -705,6 +705,41 @@ pyndf_map(NDF *self, PyObject* args)
 	return Py_BuildValue("Oi",ptrobj,el);
 }
 
+// map access to array component
+static PyObject*
+pyndf_amap(NDF *self, PyObject* args)
+{
+	int el;
+	void* ptr;
+	const char* comp;
+	const char* type;
+	const char* mmod;
+        int iaxis;
+	if(!PyArg_ParseTuple(args,"siss:pyndf_amap",&comp,&iaxis,&type,&mmod))
+		return NULL;
+	int status = SAI__OK;
+	if(strcmp(comp,"CENTRE") != 0 && strcmp(comp,"WIDTH") != 0 &&
+           strcmp(comp,"VARIANCE") != 0 && strcmp(comp,"ERROR") != 0) {
+                PyErr_SetString( PyExc_ValueError, "Unsupported NDF data component" );
+                return NULL;
+        }
+	if(strcmp(mmod,"READ") != 0 && strcmp(mmod,"UPDATE") != 0 &&
+           strcmp(mmod,"WRITE") != 0) {
+                PyErr_SetString( PyExc_ValueError, "Unsupported NDF update mode" );
+		return NULL;
+        }
+	if(!checkHDStype(type)) {
+                PyErr_SetString( PyExc_ValueError, "Unsupported HDS data type" );
+		return NULL;
+        }
+        errBegin(&status);
+	ndfAmap(self->_ndfid,comp,iaxis,type,mmod,&ptr,&el,&status);
+	if (raiseNDFException(&status))
+		return NULL;
+	PyObject* ptrobj = NpyCapsule_FromVoidPtr(ptr,NULL);
+	return Py_BuildValue("Oi",ptrobj,el);
+}
+
 // unmap an NDF or mapped array
 static PyObject*
 pyndf_unmap(NDF* self, PyObject* args)
@@ -963,6 +998,9 @@ static PyMethodDef NDF_methods[] = {
 
     {"map", (PyCFunction)pyndf_map, METH_VARARGS,
      "(pointer,elements) = indf.map(comp,type,mmod) -- map access to array component."},
+
+    {"amap", (PyCFunction)pyndf_amap, METH_VARARGS,
+     "(pointer,elements) = indf.amap(comp,iaxis,type,mmod) -- map access to axis array component."},
 
     {"unmap", (PyCFunction)pyndf_unmap, METH_VARARGS,
      "status = indf.unmap(comp) -- unmap an NDF or mapped NDF array."},
