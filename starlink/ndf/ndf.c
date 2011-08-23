@@ -175,7 +175,10 @@ raiseNDFException( int *status )
   PyObject * thisexc = NULL;
   char * errstring = NULL;
 
-  if (*status == SAI__OK) return 0;
+  if (*status == SAI__OK) {
+    errEnd(status);
+    return 0;
+  }
 
   // We can translate some internal errors into standard python exceptions
   switch (*status) {
