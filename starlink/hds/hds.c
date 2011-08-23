@@ -582,6 +582,7 @@ pydat_new(HDSObject *self, PyObject *args)
 	PyObject *dims_object = NULL;
 	HDSLoc* loc = HDS_retrieve_locator(self);
 	HDSLoc* outloc = NULL;
+	hdsdim hdims[DAT__MXDIM];
 	int status = SAI__OK;
 
 	if (!loc) {
@@ -602,18 +603,23 @@ pydat_new(HDSObject *self, PyObject *args)
 	  dims = (PyArrayObject *)PyArray_ContiguousFromAny( dims_object,
 							     PyArray_INT, 0,1);
 	  if (dims) {
+	    int i;
+	    int *npydims = PyArray_DATA(dims);
 	    ndim = PyArray_Size(dims);
+	    for (i = 0; i< ndim; i++) {
+	      hdims[i] = npydims[ndim - i - 1];
+	    }
 	  }
 	}
 
 	errBegin(&status );
 
 	if (!loc) {
-	  hdsNew( file, name, type, ndim, (dims ? (const hdsdim*)PyArray_DATA(dims) : NULL),
+	  hdsNew( file, name, type, ndim, (dims ? hdims : NULL),
 		  &outloc, &status );
 	} else {
 	  // We are creating an HDS component
-	  datNew( loc, name, type,ndim, (dims ? (const hdsdim*)PyArray_DATA(dims):NULL),
+	  datNew( loc, name, type,ndim, (dims ?  hdims : NULL),
 		  &status);
 	  datFind( loc, name, &outloc, &status );
 	}
