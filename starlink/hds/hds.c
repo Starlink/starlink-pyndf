@@ -512,7 +512,7 @@ pydat_state(HDSObject *self, PyObject *args)
     errBegin(&status);
     datState(loc, &state, &status);
     if (raiseHDSException(&status)) return NULL;
-    return Py_BuildValue("i", state);
+    return PyBool_FromLong( state );
 };
 
 static PyObject* 
@@ -526,7 +526,7 @@ pydat_struc(HDSObject *self)
     errBegin(&status);
     datStruc(loc, &state, &status);
     if (raiseHDSException(&status)) return NULL;
-    return Py_BuildValue("i", state);
+    return PyBool_FromLong( state );
 };
 
 static PyObject* 
