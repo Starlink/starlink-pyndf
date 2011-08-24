@@ -720,6 +720,19 @@ static PyMemberDef HDS_members[] = {
   {NULL} /* Sentinel */
 };
 
+// Accessor methods - all are readonly
+
+PyGetSetDef HDS_getseters[] = {
+  { "name", (getter)pydat_name, NULL, "HDS component name", NULL },
+  { "ncomp", (getter)pydat_ncomp, NULL, "Number of components in structure", NULL},
+  { "shape", (getter)pydat_shape, NULL, "Shape of component (None for a scalar)", NULL },
+  { "state", (getter)pydat_state, NULL, "The state of the HDS component", NULL},
+  { "struc", (getter)pydat_struc, NULL, "Is the component a structure?", NULL},
+  { "type", (getter)pydat_type, NULL, "Type of the HDS component", NULL},
+  { "valid", (getter)pydat_valid, NULL, "Is the locator valid?", NULL},
+  {NULL} /* Sentinel */
+};
+
 // The methods
 
 static PyMethodDef HDS_methods[] = {
@@ -741,27 +754,6 @@ static PyMethodDef HDS_methods[] = {
 
   {"get", (PyCFunction)pydat_get, METH_NOARGS,
    "value = hdsloc.get() -- get data associated with locator regardless of type."},
-
-  {"name", (PyCFunction)pydat_name, METH_NOARGS,
-   "name_str = hdsloc.name() -- returns name of components."},
-
-  {"ncomp", (PyCFunction)pydat_ncomp, METH_NOARGS,
-   "ncomp = hdsloc.ncomp() -- return number of components."},
-
-  {"shape", (PyCFunction)pydat_shape, METH_NOARGS,
-   "dim = loc.shape() -- returns shape of the component. dim=None for a scalar"},
-
-  {"state", (PyCFunction)pydat_state, METH_NOARGS,
-   "state = hdsloc.state() -- determine the state of an HDS component."},
-
-  {"struc", (PyCFunction)pydat_struc, METH_NOARGS,
-   "state = hdsloc.struc() -- is the component a structure."},
-
-  {"type", (PyCFunction)pydat_type, METH_NOARGS,
-   "typ_str = hdsloc.type() -- returns type of the component"},
-
-  {"valid", (PyCFunction)pydat_valid, METH_NOARGS,
-   "state = hdsloc.valid() -- is locator valid?"},
 
   {"put", (PyCFunction)pydat_put, METH_VARARGS,
    "status = hdsloc.put(type,ndim,dim,value) -- write a primitive inside an hds item."},
@@ -809,7 +801,7 @@ static PyTypeObject HDSType = {
     0,		               /* tp_iternext */
     HDS_methods,             /* tp_methods */
     HDS_members,             /* tp_members */
-    0,                         /* tp_getset */
+    HDS_getseters,             /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */

@@ -116,9 +116,9 @@ class Ndf(object):
 def _read_hds(loc, head, array=False):
     """Recursive reader of an HDS starting from locator = loc"""
 
-    name = loc.name()
-    if loc.struc():
-        dims = loc.shape()
+    name = loc.name
+    if loc.struc:
+        dims = loc.shape
         if dims != None:
             head[name] = _create_md_struc(dims)
             sub = n.zeros(dims.size, int)
@@ -128,12 +128,12 @@ def _read_hds(loc, head, array=False):
                 h = head
             else:
                 h = head[name] = {}
-            ncomp = loc.ncomp()
+            ncomp = loc.ncomp
             for ncmp in range(ncomp):
                 loc1 = loc.index(ncmp)
                 _read_hds(loc1, h, array)
                 loc1.annul()
-    elif loc.state():
+    elif loc.state:
         head[name] = loc.get()
 
 def _create_md_struc(dims):

@@ -38,7 +38,7 @@ class TestSimpleNDF(unittest.TestCase):
         loc = indf.xnew('PAMELA','STRUCT')
 
         hdsloc = hds._transfer(loc)
-        name = hdsloc.name()
+        name = hdsloc.name
         self.assertEqual( name, "PAMELA" )
 
         ccd = numpy.zeros([5,5])
