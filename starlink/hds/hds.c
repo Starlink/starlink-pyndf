@@ -62,6 +62,7 @@ static HDSLoc *
 HDS_retrieve_locator( HDSObject * self );
 static PyObject*
 pydat_transfer(PyObject *self, PyObject *args);
+
 static int
 raiseHDSException( int *status );
 
@@ -246,7 +247,7 @@ static int numpy2hdsdim ( PyArrayObject *npyarr, int * ndim, hdsdim * hdims ) {
 
 // Annuls the locator but does not free the object
 
-static PyObject* 
+static PyObject*
 pydat_annul(HDSObject *self)
 {
     // Recover C-pointer passed via Python
@@ -259,7 +260,7 @@ pydat_annul(HDSObject *self)
     Py_RETURN_NONE;
 };
 
-static PyObject* 
+static PyObject*
 pydat_cell(HDSObject *self, PyObject *args)
 {
     PyObject *pobj1, *osub;
@@ -272,7 +273,7 @@ pydat_cell(HDSObject *self, PyObject *args)
     // Attempt to convert the input to something useable
     PyArrayObject *sub = (PyArrayObject *) PyArray_ContiguousFromAny(osub, NPY_INT, 1, 1);
     if(!sub) return NULL;
-    
+
     // Convert Python-like --> Fortran-like
     int ndim = PyArray_SIZE(sub);
     int i, rdim[ndim];
@@ -290,44 +291,44 @@ pydat_cell(HDSObject *self, PyObject *args)
     Py_DECREF(sub);
     return HDS_create_object(loc2);
 
-fail:    
+fail:
     raiseHDSException(&status);
     Py_XDECREF(sub);
     return NULL;
 };
 
-static PyObject* 
+static PyObject*
 pydat_index(HDSObject *self, PyObject *args)
 {
     PyObject* pobj;
     int index;
     if(!PyArg_ParseTuple(args, "i:pydat_index", &index))
-	return NULL; 
+	return NULL;
 
     // Recover C-pointer passed via Python
     HDSLoc* loc1 = HDS_retrieve_locator(self);
     HDSLoc* loc2 = NULL;
 
-    int status = SAI__OK;    
+    int status = SAI__OK;
     errBegin(&status);
     datIndex(loc1, index+1, &loc2, &status);
     if(raiseHDSException(&status)) return NULL;
     return HDS_create_object(loc2);
 };
 
-static PyObject* 
+static PyObject*
 pydat_find(HDSObject *self, PyObject *args)
 {
     PyObject* pobj1;
     const char* name;
     if(!PyArg_ParseTuple(args, "s:pydat_find", &name))
-	return NULL; 
+	return NULL;
 
     // Recover C-pointer passed via Python
     HDSLoc* loc1 = HDS_retrieve_locator( self );
     HDSLoc* loc2 = NULL;
 
-    int status = SAI__OK;    
+    int status = SAI__OK;
     errBegin(&status);
     datFind(loc1, name, &loc2, &status);
     if (raiseHDSException(&status)) return NULL;
@@ -336,7 +337,7 @@ pydat_find(HDSObject *self, PyObject *args)
     return HDS_create_object(loc2);
 };
 
-static PyObject* 
+static PyObject*
 pydat_get(HDSObject *self)
 {
     // Recover C-pointer passed via Python
@@ -394,8 +395,8 @@ pydat_get(HDSObject *self)
 
 	PyArray_Descr *descr = PyArray_DescrNewFromType(NPY_STRING);
 	descr->elsize = nbytes;
-	arr = (PyArrayObject*) PyArray_NewFromDescr(&PyArray_Type, descr, ndim, rdim, 
-						    NULL, NULL, 0, NULL); 
+	arr = (PyArrayObject*) PyArray_NewFromDescr(&PyArray_Type, descr, ndim, rdim,
+						    NULL, NULL, 0, NULL);
 
     }else if(strcmp(typ_str, "_WORD") == 0){
 	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_SHORT);
@@ -414,14 +415,14 @@ pydat_get(HDSObject *self)
     if(status != SAI__OK) goto fail;
     return PyArray_Return(arr);
 
-fail:    
+fail:
     raiseHDSException(&status);
     Py_XDECREF(arr);
     return NULL;
 
 };
 
-static PyObject* 
+static PyObject*
 pydat_name(HDSObject *self)
 {
     // Recover C-pointer passed via Python
@@ -435,7 +436,7 @@ pydat_name(HDSObject *self)
     return Py_BuildValue("s", name_str);
 };
 
-static PyObject* 
+static PyObject*
 pydat_ncomp(HDSObject *self)
 {
     // Recover C-pointer passed via Python
@@ -449,7 +450,7 @@ pydat_ncomp(HDSObject *self)
     return Py_BuildValue("i", ncomp);
 };
 
-static PyObject* 
+static PyObject*
 pydat_shape(HDSObject *self)
 {
     // Recover C-pointer passed via Python
@@ -484,7 +485,7 @@ fail:
     return NULL;
 };
 
-static PyObject* 
+static PyObject*
 pydat_state(HDSObject *self, PyObject *args)
 {
     // Recover C-pointer passed via Python
@@ -497,7 +498,7 @@ pydat_state(HDSObject *self, PyObject *args)
     return PyBool_FromLong( state );
 };
 
-static PyObject* 
+static PyObject*
 pydat_struc(HDSObject *self)
 {
     // Recover C-pointer passed via Python
@@ -511,7 +512,7 @@ pydat_struc(HDSObject *self)
     return PyBool_FromLong( state );
 };
 
-static PyObject* 
+static PyObject*
 pydat_type(HDSObject *self)
 {
     // Recover C-pointer passed via Python
@@ -525,13 +526,13 @@ pydat_type(HDSObject *self)
     return Py_BuildValue("s", typ_str);
 };
 
-static PyObject* 
+static PyObject*
 pydat_valid(HDSObject *self)
 {
     // Recover C-pointer passed via Python
     HDSLoc* loc = HDS_retrieve_locator(self);
 
-    int state, status = SAI__OK;    
+    int state, status = SAI__OK;
     errBegin(&status);
     datValid(loc, &state, &status);
     if (raiseHDSException(&status)) return NULL;

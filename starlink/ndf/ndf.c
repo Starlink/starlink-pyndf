@@ -223,7 +223,7 @@ raiseNDFException( int *status )
 
 // Now onto main routines
 
-static PyObject* 
+static PyObject*
 pyndf_acget(NDF *self, PyObject *args)
 {
     const char *comp;
@@ -248,7 +248,7 @@ pyndf_acget(NDF *self, PyObject *args)
     return Py_BuildValue("s", value);
 };
 
-static PyObject* 
+static PyObject*
 pyndf_aform(NDF *self, PyObject *args)
 {
     const char *comp;
@@ -265,7 +265,7 @@ pyndf_aform(NDF *self, PyObject *args)
 };
 
 // THINK - THIS IS A DESTRUCTOR
-static PyObject* 
+static PyObject*
 pyndf_annul(NDF *self)
 {
     int status = SAI__OK;
@@ -275,7 +275,7 @@ pyndf_annul(NDF *self)
     Py_RETURN_NONE;
 };
 
-static PyObject* 
+static PyObject*
 pyndf_anorm(NDF *self, PyObject *args)
 {
     int iaxis;
@@ -289,7 +289,7 @@ pyndf_anorm(NDF *self, PyObject *args)
     return Py_BuildValue("i", state);
 };
 
-static PyObject* 
+static PyObject*
 pyndf_aread(NDF *self, PyObject *args)
 {
     int iaxis;
@@ -365,7 +365,7 @@ fail:
 
 };
 
-static PyObject* 
+static PyObject*
 pyndf_astat(NDF *self, PyObject *args)
 {
     const char *comp;
@@ -381,7 +381,7 @@ pyndf_astat(NDF *self, PyObject *args)
     return Py_BuildValue("i", state);
 };
 
-static PyObject* 
+static PyObject*
 pyndf_init(NDF *self, PyObject *args)
 {
     int argc = 0, status = SAI__OK;
@@ -392,14 +392,14 @@ pyndf_init(NDF *self, PyObject *args)
     Py_RETURN_NONE;
 };
 
-static PyObject* 
+static PyObject*
 pyndf_begin(NDF *self)
 {
     ndfBegin();
     Py_RETURN_NONE;
 };
 
-static PyObject* 
+static PyObject*
 pyndf_bound(NDF *self)
 {
     int i;
@@ -414,7 +414,7 @@ pyndf_bound(NDF *self)
 
     int status = SAI__OK;
     errBegin(&status);
-    ndfBound(self->_ndfid, NDIMX, lbnd, ubnd, &ndim, &status ); 
+    ndfBound(self->_ndfid, NDIMX, lbnd, ubnd, &ndim, &status );
     if(status != SAI__OK) goto fail;
 
     npy_intp odim[2];
@@ -439,7 +439,7 @@ fail:
     return NULL;
 };
 
-static PyObject* 
+static PyObject*
 pyndf_cget(NDF *self, PyObject *args)
 {
     const char *comp;
@@ -465,7 +465,7 @@ pyndf_cget(NDF *self, PyObject *args)
     return Py_BuildValue("s", value);
 };
 
-static PyObject* 
+static PyObject*
 pyndf_dim(NDF *self)
 {
     int i;
@@ -479,14 +479,14 @@ pyndf_dim(NDF *self)
 
     int status = SAI__OK;
     errBegin(&status);
-    ndfDim(self->_ndfid, NDIMX, idim, &ndim, &status ); 
+    ndfDim(self->_ndfid, NDIMX, idim, &ndim, &status );
     if(status != SAI__OK) goto fail;
 
     npy_intp odim[1];
     odim[0] = ndim;
     dim = (PyArrayObject*) PyArray_SimpleNew(1, odim, PyArray_INT);
     if(dim == NULL) goto fail;
-    for(i=0; i<ndim; i++) 
+    for(i=0; i<ndim; i++)
 	((int *)dim->data)[i] = idim[ndim-i-1];
     free(idim);
 
@@ -499,7 +499,7 @@ fail:
     return NULL;
 };
 
-static PyObject* 
+static PyObject*
 pyndf_end(NDF *self)
 {
     int status = SAI__OK;
@@ -510,7 +510,7 @@ pyndf_end(NDF *self)
 };
 
 // open an existing or new NDF file
-static PyObject* 
+static PyObject*
 pyndf_open(NDF *self, PyObject *args)
 {
     const char *name;
@@ -764,7 +764,7 @@ pyndf_unmap(NDF* self, PyObject* args)
 }
 
 // Reads an NDF into a numpy array
-static PyObject* 
+static PyObject*
 pyndf_read(NDF *self, PyObject *args)
 {
     int i;
@@ -796,7 +796,7 @@ pyndf_read(NDF *self, PyObject *args)
 
     int ndim;
     ndfDim(self->_ndfid, NDIMX, idim, &ndim, &status);
-    if (status != SAI__OK) goto fail; 
+    if (status != SAI__OK) goto fail;
 
     // Reverse order to account for C vs Fortran
     for(i=0; i<ndim; i++) rdim[i] = idim[ndim-i-1];
@@ -845,7 +845,7 @@ fail:
 };
 
 
-static PyObject* 
+static PyObject*
 pyndf_state(NDF *self, PyObject *args)
 {
     const char *comp;
@@ -858,7 +858,7 @@ pyndf_state(NDF *self, PyObject *args)
     return Py_BuildValue("i", state);
 };
 
-static PyObject* 
+static PyObject*
 pyndf_xloc(NDF *self, PyObject *args)
 {
     const char *xname, *mode;
@@ -875,7 +875,7 @@ pyndf_xloc(NDF *self, PyObject *args)
     return Py_BuildValue("O", pobj);
 };
 
-static PyObject* 
+static PyObject*
 pyndf_xname(NDF *self, PyObject *args)
 {
     int nex, nlen = 32;
@@ -890,7 +890,7 @@ pyndf_xname(NDF *self, PyObject *args)
     return Py_BuildValue("s", xname);
 };
 
-static PyObject* 
+static PyObject*
 pyndf_xnumb(NDF *self)
 {
     int status = SAI__OK, nextn;
@@ -901,7 +901,7 @@ pyndf_xnumb(NDF *self)
     return Py_BuildValue("i", nextn);
 };
 
-static PyObject* 
+static PyObject*
 pyndf_xstat(NDF *self, PyObject *args)
 {
     const char *xname;
@@ -935,61 +935,61 @@ static PyMemberDef NDF_members[] = {
 
 static PyMethodDef NDF_methods[] = {
 
-    {"acget", (PyCFunction)pyndf_acget, METH_VARARGS, 
+    {"acget", (PyCFunction)pyndf_acget, METH_VARARGS,
      "value = indf.acget(comp, iaxis) -- returns character component comp of axis iaxis (starts at 0), None if comp does not exist."},
 
-    {"aform", (PyCFunction)pyndf_aform, METH_VARARGS, 
+    {"aform", (PyCFunction)pyndf_aform, METH_VARARGS,
      "value = indf.aform(comp, iaxis) -- returns storage form of an axis (iaxis starts at 0)."},
 
-    {"annul", (PyCFunction)pyndf_annul, METH_NOARGS, 
+    {"annul", (PyCFunction)pyndf_annul, METH_NOARGS,
      "indf.annul() -- annuls the NDF identifier."},
 
-    {"anorm", (PyCFunction)pyndf_anorm, METH_VARARGS, 
+    {"anorm", (PyCFunction)pyndf_anorm, METH_VARARGS,
      "state = indf.anorm(iaxis) -- determine axis normalisation flag (iaxis=-1 ORs all flags)."},
 
-    {"aread", (PyCFunction)pyndf_aread, METH_VARARGS, 
+    {"aread", (PyCFunction)pyndf_aread, METH_VARARGS,
      "arr = indf.aread(comp,iaxis) -- reads component comp of axis iaxis. Returns None if does not exist"},
 
-    {"astat", (PyCFunction)pyndf_astat, METH_VARARGS, 
+    {"astat", (PyCFunction)pyndf_astat, METH_VARARGS,
      "state = indf.astat(comp, iaxis) -- determine the state of an NDF axis component (iaxis starts at 0)."},
 
-    {"init", (PyCFunction)pyndf_init, METH_NOARGS, 
+    {"init", (PyCFunction)pyndf_init, METH_NOARGS,
      "ndf.init() -- initialises the C ndf system."},
 
-    {"begin", (PyCFunction)pyndf_begin, METH_NOARGS, 
+    {"begin", (PyCFunction)pyndf_begin, METH_NOARGS,
      "ndf.begin() -- starts a new NDF context."},
 
-    {"bound", (PyCFunction)pyndf_bound, METH_NOARGS, 
+    {"bound", (PyCFunction)pyndf_bound, METH_NOARGS,
      "bound = indf.bound() -- returns pixel bounds, (2,ndim) array."},
 
-    {"cget", (PyCFunction)pyndf_cget, METH_VARARGS, 
+    {"cget", (PyCFunction)pyndf_cget, METH_VARARGS,
      "value = indf.cget(comp) -- returns character component comp as a string, None if comp does not exist."},
 
-    {"dim", (PyCFunction)pyndf_dim, METH_NOARGS, 
+    {"dim", (PyCFunction)pyndf_dim, METH_NOARGS,
      "dim = indf.dim() -- returns dimensions as 1D array."},
 
-    {"end", (PyCFunction)pyndf_end, METH_NOARGS, 
+    {"end", (PyCFunction)pyndf_end, METH_NOARGS,
      "ndf.end() -- ends the current NDF context."},
 
-    {"open", (PyCFunction)pyndf_open, METH_VARARGS, 
+    {"open", (PyCFunction)pyndf_open, METH_VARARGS,
      "indf = ndf.open(name) -- opens an NDF file."},
 
-    {"read", (PyCFunction)pyndf_read, METH_VARARGS, 
+    {"read", (PyCFunction)pyndf_read, METH_VARARGS,
      "arr = indf.read(comp) -- reads component comp of an NDF (e.g. dat or var). Returns None if it does not exist."},
 
-    {"state", (PyCFunction)pyndf_state, METH_VARARGS, 
+    {"state", (PyCFunction)pyndf_state, METH_VARARGS,
      "state = indf.state(comp) -- determine the state of an NDF component."},
 
-    {"xloc", (PyCFunction)pyndf_xloc, METH_VARARGS, 
+    {"xloc", (PyCFunction)pyndf_xloc, METH_VARARGS,
      "loc = indf.xloc(xname, mode) -- return HDS locator."},
 
-    {"xname", (PyCFunction)pyndf_xname, METH_VARARGS, 
+    {"xname", (PyCFunction)pyndf_xname, METH_VARARGS,
      "xname = indf.xname(n) -- return name of extension n (starting from 0)."},
 
-    {"xnumb", (PyCFunction)pyndf_xnumb, METH_NOARGS, 
+    {"xnumb", (PyCFunction)pyndf_xnumb, METH_NOARGS,
      "nextn = indf.xnumb() -- return number of extensions."},
 
-    {"xstat", (PyCFunction)pyndf_xstat, METH_VARARGS, 
+    {"xstat", (PyCFunction)pyndf_xstat, METH_VARARGS,
      "state = indf.xstat(xname) -- determine whether extension xname exists."},
 
     {"new", (PyCFunction)pyndf_new, METH_VARARGS,
