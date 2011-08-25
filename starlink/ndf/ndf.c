@@ -733,8 +733,9 @@ pyndf_amap(NDF *self, PyObject* args)
                 PyErr_SetString( PyExc_ValueError, "Unsupported HDS data type" );
 		return NULL;
         }
+        int naxis = tr_iaxis(self->_ndfid, iaxis, &status);
         errBegin(&status);
-	ndfAmap(self->_ndfid,comp,iaxis,type,mmod,&ptr,&el,&status);
+	ndfAmap(self->_ndfid,comp,naxis,type,mmod,&ptr,&el,&status);
 	if (raiseNDFException(&status))
 		return NULL;
 	PyObject* ptrobj = NpyCapsule_FromVoidPtr(ptr,NULL);
