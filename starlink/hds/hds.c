@@ -722,7 +722,7 @@ static PyMemberDef HDS_members[] = {
 
 // Accessor methods - all are readonly
 
-PyGetSetDef HDS_getseters[] = {
+static PyGetSetDef HDS_getseters[] = {
   { "name", (getter)pydat_name, NULL, "HDS component name", NULL },
   { "ncomp", (getter)pydat_ncomp, NULL, "Number of components in structure", NULL},
   { "shape", (getter)pydat_shape, NULL, "Shape of component (None for a scalar)", NULL },
