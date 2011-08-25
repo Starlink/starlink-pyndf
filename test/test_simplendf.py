@@ -23,7 +23,8 @@ class TestSimpleNDF(unittest.TestCase):
                  numpy.array([0,0]),numpy.array([4,4]))
 
         # map primary data to make sure NDF does not complain
-        ptr,el = indf.map('DATA','_REAL','WRITE')
+        ndfmap = indf.map('DATA','_REAL','WRITE')
+        self.assertEqual( ndfmap.nelem, 25 )
 
         # make sure we got a file
         self.assertTrue( os.path.exists( self.testndf ), "Test existence of NDF file" )
@@ -44,8 +45,9 @@ class TestSimpleNDF(unittest.TestCase):
         ccd = numpy.zeros([5,5])
 
         # map primary data
-        ptr,el = indf.map('DATA','_REAL','WRITE')
-        ndf.ndf_numpytoptr(ccd,ptr,el,'_REAL')
+        ndfmap = indf.map('DATA','_REAL','WRITE')
+        self.assertEqual( ndfmap.type, "_REAL")
+        ndfmap.numpytondf(ccd)
 
         # shut down ndf system
         indf.annul()

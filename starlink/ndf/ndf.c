@@ -58,10 +58,27 @@ typedef struct {
     int _place;
 } NDF;
 
+/* ndf.mapped object*/
+
+typedef struct {
+  PyObject_HEAD
+  NDF * ndf;
+  char comp[32];
+  char type[NDF__SZTYP+1];
+  char mode[NDF__SZMMD+1];
+  void * _pntr;
+  int nelem;
+  int iaxis;
+} NDFMapped;
+
 // Prototypes
 
 static PyObject *
 NDF_create_object( int ndfid, int place );
+
+static PyObject *
+NDFMapped_create_object( NDF*ndfobj, const char *comp, const char *type,
+			 const char *mode, void * pntr, int nelem, int iaxis );
 
 // Deallocator of this object
 // - we do annul the NDF identifier
@@ -88,6 +105,25 @@ NDF_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self != NULL) {
         self->_ndfid = NDF__NOID;
         self->_place = NDF__NOPL;
+    }
+
+    return (PyObject *)self;
+}
+// Allocator of an NDFMapped object
+
+static PyObject *
+NDFMapped_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    NDFMapped *self;
+
+    self = (NDFMapped *) _PyObject_New( type );
+    if (self != NULL) {
+        self->ndf = NULL;
+	(self->mode)[0] = '\0';
+	(self->type)[0] = '\0';
+	(self->comp)[0] = '\0';
+	self->_pntr = NULL;
+	self->nelem = 0;
     }
 
     return (PyObject *)self;
@@ -567,43 +603,6 @@ pyndf_new(NDF *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
-// this copies a block of memory from a numpy array to a memory address
-static PyObject*
-pyndf_numpytoptr(NDF *self, PyObject *args)
-{
-	PyObject *npy, *ptrobj;
-	PyArrayObject *npyarray;
-	int el;
-	size_t bytes;
-	const char *ftype;
-	if(!PyArg_ParseTuple(args, "OOis:pyndf_numpytoptr",&npy,&ptrobj,&el,&ftype))
-		return NULL;
-	void *ptr = NpyCapsule_AsVoidPtr(ptrobj);
-	if (el <= 0 || ptr == NULL)
-		return NULL;
-	if(strcmp(ftype,"_INTEGER") == 0) {
-		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_INT, NPY_IN_ARRAY | NPY_FORCECAST);
-		bytes = sizeof(int);
-	} else if(strcmp(ftype,"_REAL") == 0) {
-		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_FLOAT, NPY_IN_ARRAY | NPY_FORCECAST);
-		bytes = sizeof(float);
-	} else if(strcmp(ftype,"_DOUBLE") == 0) {
-		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_DOUBLE, NPY_IN_ARRAY | NPY_FORCECAST);
-		bytes = sizeof(double);
-	} else if(strcmp(ftype,"_BYTE") == 0) {
-		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_BYTE, NPY_IN_ARRAY | NPY_FORCECAST);
-		bytes = sizeof(char);
-	} else if(strcmp(ftype,"_UBYTE") == 0) {
-		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_UBYTE, NPY_IN_ARRAY | NPY_FORCECAST);
-		bytes = sizeof(char);
-	} else {
-		return NULL;
-	}
-	memcpy(ptr,PyArray_DATA(npyarray),el*bytes);
-	Py_DECREF(npyarray);
-	Py_RETURN_NONE;
-}
-
 // check an HDS type
 inline int checkHDStype(const char *type)
 {
@@ -702,8 +701,7 @@ pyndf_map(NDF *self, PyObject* args)
 	ndfMap(self->_ndfid,comp,type,mmod,&ptr,&el,&status);
 	if (raiseNDFException(&status))
 		return NULL;
-	PyObject* ptrobj = NpyCapsule_FromVoidPtr(ptr,NULL);
-	return Py_BuildValue("Oi",ptrobj,el);
+	return NDFMapped_create_object( self, comp, type, mmod, ptr, el, -1 );
 }
 
 // map access to array component
@@ -738,29 +736,7 @@ pyndf_amap(NDF *self, PyObject* args)
 	ndfAmap(self->_ndfid,comp,naxis,type,mmod,&ptr,&el,&status);
 	if (raiseNDFException(&status))
 		return NULL;
-	PyObject* ptrobj = NpyCapsule_FromVoidPtr(ptr,NULL);
-	return Py_BuildValue("Oi",ptrobj,el);
-}
-
-// unmap an NDF or mapped array
-static PyObject*
-pyndf_unmap(NDF* self, PyObject* args)
-{
-	const char* comp;
-	if(!PyArg_ParseTuple(args,"s:pyndf_unmap",&comp))
-		return NULL;
-	int status = SAI__OK;
-	if(strcmp(comp,"DATA") != 0 && strcmp(comp,"QUALITY") != 0 &&
-			strcmp(comp,"VARIANCE") != 0 && strcmp(comp,"AXIS") != 0 &&
-                        strcmp(comp,"*") != 0) {
-                PyErr_SetString( PyExc_ValueError, "Unsupported NDF data component to unmap" );
-		return NULL;
-        }
-        errBegin(&status);
-	ndfUnmap(self->_ndfid,comp,&status);
-	if (raiseNDFException(&status))
-		return NULL;
-	Py_RETURN_NONE;
+	return NDFMapped_create_object( self, comp, type, mmod, ptr, el, naxis );
 }
 
 // Reads an NDF into a numpy array
@@ -1004,12 +980,6 @@ static PyMethodDef NDF_methods[] = {
     {"amap", (PyCFunction)pyndf_amap, METH_VARARGS,
      "(pointer,elements) = indf.amap(comp,iaxis,type,mmod) -- map access to axis array component."},
 
-    {"unmap", (PyCFunction)pyndf_unmap, METH_VARARGS,
-     "status = indf.unmap(comp) -- unmap an NDF or mapped NDF array."},
-
-    {"ndf_numpytoptr", (PyCFunction)pyndf_numpytoptr, METH_VARARGS,
-     "ndf_numpytoptr(array,pointer,elements,type) -- write numpy array to mapped pointer elements."},
-
     {"ndf_getbadpixval", (PyCFunction)pyndf_getbadpixval, METH_VARARGS,
      "ndf_getbadpixval(type) -- return a bad pixel value for given ndf data type."},
 
@@ -1069,7 +1039,210 @@ NDF_create_object( int ndfid, int place )
   return (PyObject*)self;
 }
 
+/* ndf.mapped */
+/*=================*/
 
+#define CLASS "ndf.mapped"
+
+static PyObject *
+pyndfmapped_ndf( NDFMapped * self)
+{
+  if (self->ndf) {
+    return Py_BuildValue("O", self->ndf);
+  } else {
+    Py_RETURN_NONE;
+  }
+}
+static PyObject *
+pyndfmapped_comp( NDFMapped * self)
+{
+  return Py_BuildValue("s", self->comp);
+}
+static PyObject *
+pyndfmapped_type( NDFMapped * self)
+{
+  return Py_BuildValue("s", self->type);
+}
+static PyObject *
+pyndfmapped_mode( NDFMapped * self)
+{
+  return Py_BuildValue("s", self->mode);
+}
+static PyObject *
+pyndfmapped_nelem( NDFMapped * self)
+{
+  return Py_BuildValue("i", self->nelem);
+}
+static PyObject *
+pyndfmapped_iaxis( NDFMapped * self)
+{
+  return Py_BuildValue("i", self->iaxis);
+}
+
+
+/* We want readonly accessors so we provide methods for them */
+static PyGetSetDef NDFMapped_getseters[] = {
+  { "ndf", (getter)pyndfmapped_ndf, NULL, "starlink.ndf object that has been mapped"},
+  { "mode", (getter)pyndfmapped_mode, NULL, "Access mode when mapped"},
+  { "type", (getter)pyndfmapped_type, NULL, "HDS data type used for mapping"},
+  { "comp", (getter)pyndfmapped_comp, NULL, "NDF Component that was mapped"},
+  { "nelem", (getter)pyndfmapped_nelem, NULL, "Number of elements mapped"},
+  { "iaxis", (getter)pyndfmapped_iaxis, NULL, "Mapped axis number if >= 0"},
+  {NULL} /* Sentinel */
+};
+
+
+/* Methods */
+static PyObject*
+pyndfmapped_unmap(NDFMapped* self);
+static PyObject*
+pymappedndf_numpytondf(NDFMapped *self, PyObject *args);
+
+static PyMethodDef NDFMapped_methods[] = {
+  { "unmap", (PyCFunction)pyndfmapped_unmap, METH_NOARGS,
+    "Unmap the data array" },
+  {"numpytondf", (PyCFunction)pymappedndf_numpytondf, METH_VARARGS,
+   "mapped.numpytondf(array) -- write numpy array to mapped pointer elements."},
+  {NULL} /* Sentinel */
+};
+
+
+static void
+NDFMapped_dealloc( NDFMapped *self )
+{
+  pyndfmapped_unmap(self);
+  PyObject_Del( self );
+}
+
+/* Define the class Python type structure */
+static PyTypeObject NDFMappedType = {
+   PyVarObject_HEAD_INIT(NULL, 0)
+   CLASS,                     /* tp_name */
+   sizeof(NDFMapped),         /* tp_basicsize */
+   0,                         /* tp_itemsize */
+   NDFMapped_dealloc,         /* tp_dealloc */
+   0,                         /* tp_print */
+   0,                         /* tp_getattr */
+   0,                         /* tp_setattr */
+   0,                         /* tp_reserved */
+   0,                         /* tp_repr */
+   0,                         /* tp_as_number */
+   0,                         /* tp_as_sequence */
+   0,                         /* tp_as_mapping */
+   0,                         /* tp_hash  */
+   0,                         /* tp_call */
+   0,                         /* tp_str */
+   0,                         /* tp_getattro */
+   0,                         /* tp_setattro */
+   0,                         /* tp_as_buffer */
+   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+   "NDF Mapped array",        /* tp_doc */
+   0,                         /* tp_traverse */
+   0,                         /* tp_clear */
+   0,                         /* tp_richcompare */
+   0,                         /* tp_weaklistoffset */
+   0,                         /* tp_iter */
+   0,                         /* tp_iternext */
+   NDFMapped_methods,         /* tp_methods */
+   0,                         /* tp_members */
+   NDFMapped_getseters,       /* tp_getset */
+   0,                         /* tp_base */
+   0,                         /* tp_dict */
+   0,                         /* tp_descr_get */
+   0,                         /* tp_descr_set */
+   0,                         /* tp_dictoffset */
+   0,                         /* tp_init */
+   0,                         /* tp_alloc */
+   0,                         /* tp_new */
+};
+
+static PyObject *
+NDFMapped_create_object(NDF*ndfobj, const char *comp, const char *type,
+			const char *mode, void * pntr, int nelem, int iaxis ) {
+  PyObject * tmp = NULL;
+  NDFMapped * self = (NDFMapped*)NDFMapped_new( &NDFMappedType, NULL, NULL );
+
+  tmp = (PyObject*)self->ndf;
+  Py_INCREF(ndfobj);
+  self->ndf = ndfobj;
+  Py_XDECREF(tmp);
+
+  strncpy( self->comp, comp, sizeof(self->comp));
+  (self->comp)[sizeof(self->comp)-1] = '\0';
+  strncpy( self->type, type, sizeof(self->type));
+  (self->type)[sizeof(self->type)-1] = '\0';
+  strncpy( self->mode, mode, sizeof(self->mode));
+  (self->mode)[sizeof(self->mode)-1] = '\0';
+  self->_pntr = pntr;
+  self->nelem = nelem;
+  self->iaxis = iaxis;
+
+  return (PyObject*)self;
+}
+
+// this copies a block of memory from a numpy array to a memory address
+static PyObject*
+pymappedndf_numpytondf(NDFMapped *self, PyObject *args)
+{
+	PyObject *npy, *ptrobj;
+	PyArrayObject *npyarray;
+	int el;
+	size_t bytes;
+        char *ftype;
+	if(!PyArg_ParseTuple(args, "O:pyndfmapped_numpytondf",&npy))
+		return NULL;
+	void *ptr = self->_pntr;
+	el = self->nelem;
+	ftype = self->type;
+	if (el <= 0 || ptr == NULL)
+		return NULL;
+	if(strcmp(ftype,"_INTEGER") == 0) {
+		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_INT, NPY_IN_ARRAY | NPY_FORCECAST);
+		bytes = sizeof(int);
+	} else if(strcmp(ftype,"_REAL") == 0) {
+		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_FLOAT, NPY_IN_ARRAY | NPY_FORCECAST);
+		bytes = sizeof(float);
+	} else if(strcmp(ftype,"_DOUBLE") == 0) {
+		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_DOUBLE, NPY_IN_ARRAY | NPY_FORCECAST);
+		bytes = sizeof(double);
+	} else if(strcmp(ftype,"_BYTE") == 0) {
+		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_BYTE, NPY_IN_ARRAY | NPY_FORCECAST);
+		bytes = sizeof(char);
+	} else if(strcmp(ftype,"_UBYTE") == 0) {
+		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_UBYTE, NPY_IN_ARRAY | NPY_FORCECAST);
+		bytes = sizeof(char);
+	} else {
+		return NULL;
+	}
+	memcpy(ptr,PyArray_DATA(npyarray),el*bytes);
+
+	Py_DECREF(npyarray);
+	Py_RETURN_NONE;
+}
+
+// unmap an NDF or mapped array
+static PyObject*
+pyndfmapped_unmap(NDFMapped* self)
+{
+  int status = SAI__OK;
+  /* If there is no NDF attached do nothing */
+  if (!self->ndf) Py_RETURN_NONE;
+  if (self->iaxis < -1) Py_RETURN_NONE;
+
+  errBegin(&status);
+  if (self->iaxis >= 0 ) {
+    ndfAunmp( self->ndf->_ndfid, self->comp, self->iaxis, &status );
+  } else {
+    ndfUnmap(self->ndf->_ndfid,self->comp,&status);
+  }
+  if (raiseNDFException(&status))
+    return NULL;
+  Py_XDECREF(self->ndf);
+  self->ndf = NULL;
+  Py_RETURN_NONE;
+}
+
+/* ==================== */
 
 #ifdef USE_PY3K
 
@@ -1100,6 +1273,8 @@ initndf(void)
 
     if (PyType_Ready(&NDFType) < 0)
         return RETVAL;
+    if (PyType_Ready(&NDFMappedType) < 0)
+      return RETVAL;
 
 #ifdef USE_PY3K
     m = PyModule_Create(&moduledef);
@@ -1112,9 +1287,13 @@ initndf(void)
     Py_INCREF(&NDFType);
     PyModule_AddObject(m, "ndf", (PyObject *)&NDFType);
 
+    Py_INCREF(&NDFMappedType);
+    PyModule_AddObject( m, "mapped", (PyObject*)&NDFMappedType);
+
     StarlinkNDFError = PyErr_NewException("starlink.ndf.error", NULL, NULL);
     Py_INCREF(StarlinkNDFError);
     PyModule_AddObject(m, "error", StarlinkNDFError);
 
     return RETVAL;
 }
+
