@@ -1120,7 +1120,7 @@ static PyTypeObject NDFMappedType = {
    CLASS,                     /* tp_name */
    sizeof(NDFMapped),         /* tp_basicsize */
    0,                         /* tp_itemsize */
-   NDFMapped_dealloc,         /* tp_dealloc */
+   (destructor)NDFMapped_dealloc,/* tp_dealloc */
    0,                         /* tp_print */
    0,                         /* tp_getattr */
    0,                         /* tp_setattr */
