@@ -1208,23 +1208,33 @@ pymappedndf_numpytondf(NDFMapped *self, PyObject *args)
 {
 	PyObject *npy, *ptrobj;
 	PyArrayObject *npyarray;
-	int el;
+	npy_intp el;
 	size_t bytes;
-        char *ftype;
+
 	if(!PyArg_ParseTuple(args, "O:pyndfmapped_numpytondf",&npy))
 		return NULL;
 	void *ptr = self->_pntr;
 	el = self->nelem;
-	ftype = self->type;
-	if (el <= 0 || ptr == NULL)
-		return NULL;
+	if (el <= 0 || ptr == NULL) {
+          PyErr_SetString( PyExc_ValueError,
+                           "ndf.mapped object does not have mapped pointer or element count");
+          return NULL;
+        }
 
-        int npytype = ndftype2numpy( ftype, &bytes );
+        int npytype = ndftype2numpy( self->type, &bytes );
         if (npytype == 0) return NULL;
         npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, npytype, NPY_IN_ARRAY | NPY_FORCECAST);
         if (!npyarray) return NULL;
-	memcpy(ptr,PyArray_DATA(npyarray),el*bytes);
 
+        /* Verify the number of elements */
+        if ( PyArray_Size(npyarray) != el ) {
+          PyErr_Format( PyExc_ValueError,
+                        "Number of elements in numpy array (%zu) differs from number of elements mapped (%zu)",
+                        (size_t)PyArray_Size(npyarray), (size_t)el );
+          Py_DECREF(npyarray);
+          return NULL;
+        }
+        memcpy(ptr,PyArray_DATA(npyarray),el*bytes);
 	Py_DECREF(npyarray);
 	Py_RETURN_NONE;
 }
