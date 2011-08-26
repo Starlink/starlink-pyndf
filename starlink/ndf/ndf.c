@@ -1133,6 +1133,11 @@ static void
 NDFMapped_dealloc( NDFMapped *self )
 {
   pyndfmapped_unmap(self);
+
+  /* Clear exceptions which will happen if someone calls ndf.end()
+     before this object is freed */
+  PyErr_Clear();
+
   PyObject_Del( self );
 }
 
