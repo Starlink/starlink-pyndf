@@ -928,6 +928,13 @@ static PyMemberDef NDF_members[] = {
     {NULL}  /* Sentinel */
 };
 
+// The dynamic attributes
+// Accessor methods - all are readonly
+
+static PyGetSetDef NDF_getseters[] = {
+  { "dim", (getter)pyndf_dim, NULL, "Dimensions of NDF", NULL },
+  {NULL} /* Sentinel */
+};
 
 // The methods
 
@@ -962,9 +969,6 @@ static PyMethodDef NDF_methods[] = {
 
     {"cget", (PyCFunction)pyndf_cget, METH_VARARGS,
      "value = indf.cget(comp) -- returns character component comp as a string, None if comp does not exist."},
-
-    {"dim", (PyCFunction)pyndf_dim, METH_NOARGS,
-     "dim = indf.dim() -- returns dimensions as 1D array."},
 
     {"end", (PyCFunction)pyndf_end, METH_NOARGS,
      "ndf.end() -- ends the current NDF context."},
@@ -1039,7 +1043,7 @@ static PyTypeObject NDFType = {
     0,		               /* tp_iternext */
     NDF_methods,             /* tp_methods */
     NDF_members,             /* tp_members */
-    0,                         /* tp_getset */
+    NDF_getseters,             /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */
