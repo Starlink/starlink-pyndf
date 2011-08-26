@@ -1246,6 +1246,7 @@ pyndfmapped_unmap(NDFMapped* self)
   int status = SAI__OK;
   /* If there is no NDF attached do nothing */
   if (!self->ndf) Py_RETURN_NONE;
+  if (!self->_pntr) Py_RETURN_NONE;
   if (self->iaxis < -1) Py_RETURN_NONE;
 
   errBegin(&status);
@@ -1258,6 +1259,7 @@ pyndfmapped_unmap(NDFMapped* self)
     return NULL;
   Py_XDECREF(self->ndf);
   self->ndf = NULL;
+  self->_pntr = NULL;
   Py_RETURN_NONE;
 }
 
