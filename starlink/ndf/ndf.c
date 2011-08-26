@@ -189,6 +189,48 @@ static int tr_iaxis(int indf, int iaxis, int *status)
     return ndim-iaxis;
 }
 
+// Routine to convert an NDF type string to a numpy
+// type code. Returns 0 and sets an exception
+// if the NDF data type is not recognized.
+
+static int ndftype2numpy( const char * type, size_t *nbytes ) {
+  int retval = 0;
+  size_t nb = 0;
+
+  if(strcmp(type,"_INTEGER") == 0) {
+    retval = NPY_INT;
+    nb = sizeof(int);
+  } else if(strcmp(type,"_REAL") == 0) {
+    retval = NPY_FLOAT;
+    nb = sizeof(float);
+  } else if(strcmp(type,"_DOUBLE") == 0) {
+    retval = NPY_DOUBLE;
+    nb = sizeof(double);
+  } else if(strcmp(type,"_WORD") == 0) {
+    retval = NPY_SHORT;
+    nb = sizeof(short);
+  } else if(strcmp(type,"_UWORD") == 0) {
+    retval = NPY_USHORT;
+    nb = sizeof(short);
+  } else if(strcmp(type,"_BYTE") == 0) {
+    retval = NPY_BYTE;
+    nb = sizeof(char);
+  } else if(strcmp(type,"_UBYTE") == 0) {
+    retval = NPY_UBYTE;
+    nb = sizeof(char);
+  } else if(strcmp(type,"_LOGICAL") == 0) {
+    retval = NPY_BOOL;
+    nb = sizeof(char);
+  } else {
+    // Set exception here
+    PyErr_Format( PyExc_ValueError,
+                  "Supplied NDF type '%s' does not correspond to a numpy type",
+                  type);
+  }
+  if (nbytes) *nbytes = nb;
+  return retval;
+}
+
 // Extracts the contexts of the EMS error stack and raises an
 // exception. Returns true if an exception was raised else
 // false. Can be called as:
@@ -364,19 +406,9 @@ pyndf_aread(NDF *self, PyObject *args)
     ndim = 1;
     npy_intp dim[1] = {nelem};
     PyArrayObject* arr = NULL;
-    if(strcmp(type, "_REAL") == 0){
-	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, dim, PyArray_FLOAT);
-	nbyte = sizeof(float);
-    }else if(strcmp(type, "_DOUBLE") == 0){
-	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, dim, PyArray_DOUBLE);
-	nbyte = sizeof(double);
-    }else if(strcmp(type, "_INTEGER") == 0){
-	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, dim, PyArray_INT);
-	nbyte = sizeof(int);
-    }else{
-	PyErr_SetString(PyExc_IOError, "ndf_aread error: unrecognised data type");
-	goto fail;
-    }
+    int npytype = ndftype2numpy( type, &nbyte );
+    if (npytype ==0) return NULL;
+    arr = (PyArrayObject*) PyArray_SimpleNew(ndim, dim, npytype);
     if(arr == NULL) goto fail;
 
     // map, store, unmap
@@ -782,19 +814,9 @@ pyndf_read(NDF *self, PyObject *args)
     if(status != SAI__OK) goto fail;
 
     // Create array of correct dimensions and type to save data to
-    if(strcmp(type, "_REAL") == 0){
-	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, PyArray_FLOAT);
-	nbyte = sizeof(float);
-    }else if(strcmp(type, "_DOUBLE") == 0){
-	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, PyArray_DOUBLE);
-	nbyte = sizeof(double);
-    }else if(strcmp(type, "_INTEGER") == 0){
-	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, PyArray_INT);
-	nbyte = sizeof(int);
-    }else{
-	PyErr_SetString(PyExc_IOError, "ndf_read error: unrecognised data type");
-	goto fail;
-    }
+    int npytype = ndftype2numpy( type, &nbyte );
+    if (npytype == 0) return NULL;
+    arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, npytype);
     if(arr == NULL) goto fail;
 
     // get number of elements, allocate space, map, store
@@ -1196,24 +1218,11 @@ pymappedndf_numpytondf(NDFMapped *self, PyObject *args)
 	ftype = self->type;
 	if (el <= 0 || ptr == NULL)
 		return NULL;
-	if(strcmp(ftype,"_INTEGER") == 0) {
-		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_INT, NPY_IN_ARRAY | NPY_FORCECAST);
-		bytes = sizeof(int);
-	} else if(strcmp(ftype,"_REAL") == 0) {
-		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_FLOAT, NPY_IN_ARRAY | NPY_FORCECAST);
-		bytes = sizeof(float);
-	} else if(strcmp(ftype,"_DOUBLE") == 0) {
-		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_DOUBLE, NPY_IN_ARRAY | NPY_FORCECAST);
-		bytes = sizeof(double);
-	} else if(strcmp(ftype,"_BYTE") == 0) {
-		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_BYTE, NPY_IN_ARRAY | NPY_FORCECAST);
-		bytes = sizeof(char);
-	} else if(strcmp(ftype,"_UBYTE") == 0) {
-		npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, NPY_UBYTE, NPY_IN_ARRAY | NPY_FORCECAST);
-		bytes = sizeof(char);
-	} else {
-		return NULL;
-	}
+
+        int npytype = ndftype2numpy( ftype, &bytes );
+        if (npytype == 0) return NULL;
+        npyarray = (PyArrayObject*) PyArray_FROM_OTF(npy, npytype, NPY_IN_ARRAY | NPY_FORCECAST);
+        if (!npyarray) return NULL;
 	memcpy(ptr,PyArray_DATA(npyarray),el*bytes);
 
 	Py_DECREF(npyarray);
