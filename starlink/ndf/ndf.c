@@ -507,30 +507,37 @@ fail:
     return NULL;
 };
 
-static PyObject*
-pyndf_cget(NDF *self, PyObject *args)
-{
-    const char *comp;
-    if(!PyArg_ParseTuple(args, "s:pyndf_cget", &comp))
-	return NULL;
+/* Routine shared by all code retrieving an NDF character
+   component. */
+static PyObject *
+pyndf_cget_helper( int ndfid, const char *comp ) {
 
     // Return None if component does not exist
     int state, status = SAI__OK;
     errBegin(&status);
-    ndfState(self->_ndfid, comp, &state, &status);
+    ndfState(ndfid, comp, &state, &status);
     if (raiseNDFException(&status)) return NULL;
     if(!state)
 	Py_RETURN_NONE;
 
     int clen;
     errBegin(&status);
-    ndfClen(self->_ndfid, comp, &clen, &status);
+    ndfClen(ndfid, comp, &clen, &status);
     if (raiseNDFException(&status)) return NULL;
     char value[clen+1];
     errBegin(&status);
-    ndfCget(self->_ndfid, comp, value, clen+1, &status);
+    ndfCget(ndfid, comp, value, clen+1, &status);
     if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", value);
+}
+
+static PyObject*
+pyndf_cget(NDF *self, PyObject *args)
+{
+    const char *comp;
+    if(!PyArg_ParseTuple(args, "s:pyndf_cget", &comp))
+	return NULL;
+    return pyndf_cget_helper( self->_ndfid, comp );
 };
 
 static PyObject*
@@ -913,6 +920,82 @@ pyndf_xstat(NDF *self, PyObject *args)
     return Py_BuildValue("i", state);
 };
 
+/* Helper methods */
+
+static const char *GetString( PyObject *value ) {
+/*
+*  Name:
+*     GetString
+
+*  Purpose:
+*     Get a pointer to a null terminated string from a PyObject.
+
+* Stolen from pyast
+
+*/
+   const char *result = NULL;
+   if( value  && value != Py_None ) {
+      PyObject *bytes = PyUnicode_AsASCIIString(value);
+      if( bytes ) {
+         result =  PyBytes_AS_STRING(bytes);
+         Py_DECREF(bytes);
+      }
+   }
+   return result;
+}
+
+
+/* Setter methods */
+
+/* Helper for cput */
+
+static int
+pyndf_cput_helper ( int ndfid, const char * comp, const char * value )
+{
+  int status = SAI__OK;
+  errBegin(&status);
+  if (value) {
+    ndfCput(value, ndfid, comp, &status);
+  } else {
+    ndfReset( ndfid, comp, &status );
+  }
+  if (raiseNDFException(&status)) return -1;
+  return 0;
+}
+
+
+static int
+pyndf_settitle( NDF *self, PyObject *value, void *closure ) {
+  const char * valuestr = GetString( value );
+  return pyndf_cput_helper( self->_ndfid, "TITLE", valuestr );
+}
+static int
+pyndf_setlabel( NDF *self, PyObject *value, void *closure ) {
+  const char * valuestr = GetString( value );
+  return pyndf_cput_helper( self->_ndfid, "LABEL", valuestr );
+}
+static int
+pyndf_setunits( NDF *self, PyObject *value, void *closure ) {
+  const char * valuestr = GetString( value );
+  return pyndf_cput_helper( self->_ndfid, "UNITS", valuestr );
+}
+
+
+/* Getter methods */
+static PyObject *
+pyndf_gettitle( NDF *self ) {
+  return pyndf_cget_helper( self->_ndfid, "TITLE" );
+}
+static PyObject *
+pyndf_getlabel( NDF *self ) {
+  return pyndf_cget_helper( self->_ndfid, "LABEL" );
+}
+static PyObject *
+pyndf_getunits( NDF *self ) {
+  return pyndf_cget_helper( self->_ndfid, "UNITS" );
+}
+
+
 //
 //
 //  END OF METHODS - NOW DEFINE ATTRIBUTES AND MODULES
@@ -933,6 +1016,12 @@ static PyMemberDef NDF_members[] = {
 
 static PyGetSetDef NDF_getseters[] = {
   { "dim", (getter)pyndf_dim, NULL, "Dimensions of NDF", NULL },
+  { "title", (getter)pyndf_gettitle, (setter)pyndf_settitle,
+    "Title associated with NDF"},
+  { "label", (getter)pyndf_getlabel, (setter)pyndf_setlabel,
+    "Data label"},
+  { "units", (getter)pyndf_getunits, (setter)pyndf_setunits,
+    "Units of data array"},
   {NULL} /* Sentinel */
 };
 

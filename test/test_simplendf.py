@@ -49,6 +49,15 @@ class TestSimpleNDF(unittest.TestCase):
         self.assertEqual( ndfmap.type, "_REAL")
         ndfmap.numpytondf(ccd)
 
+        # Attribute testing
+        indf.title = "A Title"
+        self.assertEqual(indf.title, "A Title" )
+        self.assertIsNone( indf.units )
+        indf.units = "K"
+        self.assertEqual(indf.units, "K")
+        indf.units = None
+        self.assertIsNone( indf.units)
+
         # shut down ndf system
         indf.annul()
 

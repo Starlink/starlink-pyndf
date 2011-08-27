@@ -89,9 +89,9 @@ class Ndf(object):
             self.data  = indf.read('Dat')
             self.bound = indf.bound()
             self.var   = indf.read('Var')
-            self.label = indf.cget('Label')
-            self.title = indf.cget('Title')
-            self.units  = indf.cget('Units')
+            self.label = indf.label
+            self.title = indf.title
+            self.units  = indf.units
 
             # Read the axes
             self.axes = []
