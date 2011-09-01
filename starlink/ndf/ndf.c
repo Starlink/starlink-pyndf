@@ -364,7 +364,7 @@ pyndf_anorm(NDF *self, PyObject *args)
     int naxis = tr_iaxis(self->_ndfid, iaxis, &status);
     ndfAnorm(self->_ndfid, naxis, &state, &status);
     if (raiseNDFException(&status)) return NULL;
-    return Py_BuildValue("i", state);
+    return PyBool_FromLong( state );
 };
 
 static PyObject*
@@ -446,7 +446,7 @@ pyndf_astat(NDF *self, PyObject *args)
 
     ndfAstat(self->_ndfid, comp, naxis, &state, &status);
     if (raiseNDFException(&status)) return NULL;
-    return Py_BuildValue("i", state);
+    return PyBool_FromLong( state );
 };
 
 static PyObject*
@@ -860,7 +860,7 @@ pyndf_state(NDF *self, PyObject *args)
     errBegin(&status);
     ndfState(self->_ndfid, comp, &state, &status);
     if (raiseNDFException(&status)) return NULL;
-    return Py_BuildValue("i", state);
+    return PyBool_FromLong( state );
 };
 
 static PyObject*
@@ -917,7 +917,7 @@ pyndf_xstat(NDF *self, PyObject *args)
     ndfXstat(self->_ndfid, xname, &state, &status);
     if (raiseNDFException(&status)) return NULL;
 
-    return Py_BuildValue("i", state);
+    return PyBool_FromLong( state );
 };
 
 /* Helper methods */

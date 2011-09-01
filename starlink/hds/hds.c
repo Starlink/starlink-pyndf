@@ -538,7 +538,7 @@ pydat_valid(HDSObject *self)
     datValid(loc, &state, &status);
     if (raiseHDSException(&status)) return NULL;
 
-    return Py_BuildValue("i", state);
+    return PyBool_FromLong( state );
 };
 
 // check an HDS type
