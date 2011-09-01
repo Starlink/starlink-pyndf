@@ -922,22 +922,26 @@ pyndf_xstat(NDF *self, PyObject *args)
 
 /* Helper methods */
 
-static const char *GetString( PyObject *value ) {
+static char *GetString( PyObject *value ) {
 /*
 *  Name:
 *     GetString
 
 *  Purpose:
 *     Get a pointer to a null terminated string from a PyObject.
+*     It should be freed by the caller.
 
 * Stolen from pyast
 
 */
-   const char *result = NULL;
+   char *result = NULL;
    if( value  && value != Py_None ) {
       PyObject *bytes = PyUnicode_AsASCIIString(value);
       if( bytes ) {
-         result =  PyBytes_AS_STRING(bytes);
+         size_t nbytes = PyBytes_Size( bytes );
+         const char * bytestr =  PyBytes_AS_STRING(bytes);
+         result = malloc( (nbytes+1) * sizeof(*result));
+         strcpy( result, bytestr );
          Py_DECREF(bytes);
       }
    }
@@ -966,18 +970,24 @@ pyndf_cput_helper ( int ndfid, const char * comp, const char * value )
 
 static int
 pyndf_settitle( NDF *self, PyObject *value, void *closure ) {
-  const char * valuestr = GetString( value );
-  return pyndf_cput_helper( self->_ndfid, "TITLE", valuestr );
+  char *valuestr = GetString( value );
+  int retval = pyndf_cput_helper( self->_ndfid, "TITLE", valuestr );
+  free(valuestr);
+  return retval;
 }
 static int
 pyndf_setlabel( NDF *self, PyObject *value, void *closure ) {
   const char * valuestr = GetString( value );
-  return pyndf_cput_helper( self->_ndfid, "LABEL", valuestr );
+  int retval = pyndf_cput_helper( self->_ndfid, "LABEL", valuestr );
+  free(valuestr);
+  return retval;
 }
 static int
 pyndf_setunits( NDF *self, PyObject *value, void *closure ) {
   const char * valuestr = GetString( value );
-  return pyndf_cput_helper( self->_ndfid, "UNITS", valuestr );
+  int retval = pyndf_cput_helper( self->_ndfid, "UNITS", valuestr );
+  free(valuestr);
+  return retval;
 }
 
 
