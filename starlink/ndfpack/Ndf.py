@@ -100,7 +100,7 @@ class Ndf(object):
 
             # Read the extensions
             self.head = {}
-            nextn = indf.xnumb()
+            nextn = indf.xnumb
             for nex in range(nextn):
                 xname = indf.xname(nex)
                 loc1 = indf.xloc(xname, 'READ')

@@ -1032,6 +1032,7 @@ static PyGetSetDef NDF_getseters[] = {
     "Data label"},
   { "units", (getter)pyndf_getunits, (setter)pyndf_setunits,
     "Units of data array"},
+  { "xnumb", (getter)pyndf_xnumb, NULL, "Number of extensions" },
   {NULL} /* Sentinel */
 };
 
@@ -1086,9 +1087,6 @@ static PyMethodDef NDF_methods[] = {
 
     {"xname", (PyCFunction)pyndf_xname, METH_VARARGS,
      "xname = indf.xname(n) -- return name of extension n (starting from 0)."},
-
-    {"xnumb", (PyCFunction)pyndf_xnumb, METH_NOARGS,
-     "nextn = indf.xnumb() -- return number of extensions."},
 
     {"xstat", (PyCFunction)pyndf_xstat, METH_VARARGS,
      "state = indf.xstat(xname) -- determine whether extension xname exists."},
