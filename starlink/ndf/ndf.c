@@ -1022,17 +1022,17 @@ static PyMemberDef NDF_members[] = {
 };
 
 // The dynamic attributes
-// Accessor methods - all are readonly
+// Some are readonly.
 
 static PyGetSetDef NDF_getseters[] = {
   { "dim", (getter)pyndf_dim, NULL, "Dimensions of NDF", NULL },
   { "title", (getter)pyndf_gettitle, (setter)pyndf_settitle,
-    "Title associated with NDF"},
+    "Title associated with NDF", NULL },
   { "label", (getter)pyndf_getlabel, (setter)pyndf_setlabel,
-    "Data label"},
+    "Data label", NULL },
   { "units", (getter)pyndf_getunits, (setter)pyndf_setunits,
-    "Units of data array"},
-  { "xnumb", (getter)pyndf_xnumb, NULL, "Number of extensions" },
+    "Units of data array", NULL },
+  { "xnumb", (getter)pyndf_xnumb, NULL, "Number of extensions", NULL },
   {NULL} /* Sentinel */
 };
 
