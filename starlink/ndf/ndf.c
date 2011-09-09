@@ -977,14 +977,14 @@ pyndf_settitle( NDF *self, PyObject *value, void *closure ) {
 }
 static int
 pyndf_setlabel( NDF *self, PyObject *value, void *closure ) {
-  const char * valuestr = GetString( value );
+  char * valuestr = GetString( value );
   int retval = pyndf_cput_helper( self->_ndfid, "LABEL", valuestr );
   free(valuestr);
   return retval;
 }
 static int
 pyndf_setunits( NDF *self, PyObject *value, void *closure ) {
-  const char * valuestr = GetString( value );
+  char * valuestr = GetString( value );
   int retval = pyndf_cput_helper( self->_ndfid, "UNITS", valuestr );
   free(valuestr);
   return retval;
