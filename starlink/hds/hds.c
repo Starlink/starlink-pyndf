@@ -564,6 +564,21 @@ pydat_putc(HDSObject *self, PyObject *args)
 //
 
 static PyObject*
+pydat_clen(HDSObject *self)
+{
+    // Recover C-pointer passed via Python
+    HDSLoc* loc = HDS_retrieve_locator(self);
+
+    int status = SAI__OK;
+    size_t clen;
+    errBegin(&status);
+    datClen(loc, &clen, &status);
+    if (raiseHDSException(&status)) return NULL;
+
+    return Py_BuildValue("i", clen);
+};
+
+static PyObject*
 pydat_name(HDSObject *self)
 {
     // Recover C-pointer passed via Python
@@ -717,6 +732,7 @@ static PyMemberDef HDS_members[] = {
 // Accessor methods - all are readonly
 
 static PyGetSetDef HDS_getseters[] = {
+  { "clen", (getter)pydat_clen, NULL, "Character string length of primitive object", NULL },
   { "name", (getter)pydat_name, NULL, "HDS component name", NULL },
   { "ncomp", (getter)pydat_ncomp, NULL, "Number of components in structure", NULL},
   { "shape", (getter)pydat_shape, NULL, "Shape of component (None for a scalar)", NULL },
