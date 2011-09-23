@@ -51,6 +51,7 @@ class Ndf(object):
         title   -- title string
         units   -- data unit string
         head    -- header/extensions, a dictionary
+        wcs     -- WCS information, a PyAST FrameSet
         """
         object.__init__(self)
 
@@ -92,6 +93,7 @@ class Ndf(object):
             self.label = indf.label
             self.title = indf.title
             self.units  = indf.units
+            self.wcs = indf.gtwcs()
 
             # Read the axes
             self.axes = []

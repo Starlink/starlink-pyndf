@@ -18,7 +18,7 @@
 
 from distutils.core import setup, Extension
 
-import sys, os, subprocess, numpy
+import sys, os, subprocess, numpy, starlink.Ast
 
 """ Setup script for the ndf python extension"""
 
@@ -38,6 +38,7 @@ else:
     exit(1)
 
 include_dirs.append(numpy.get_include())
+include_dirs.append(starlink.Ast.get_include())
 
 ndf = Extension('starlink.ndf',
                 define_macros        = [('MAJOR_VERSION', '0'),

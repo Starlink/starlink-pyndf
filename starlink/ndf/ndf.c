@@ -29,6 +29,7 @@
 #include <Python.h>
 #include "structmember.h"
 #include "numpy/arrayobject.h"
+#include "star/pyast.h"
 
 // Wrap the PyCObject -> PyCapsule transition to allow
 // this to build with python2.
@@ -505,6 +506,29 @@ fail:
     if(ubnd != NULL) free(ubnd);
     Py_XDECREF(bound);
     return NULL;
+};
+
+static PyObject*
+pyndf_gtwcs(NDF *self)
+{
+    AstFrameSet *wcs = NULL;
+    char *string;
+    PyObject *pywcs;
+    PyObject *result = NULL;
+
+    int status = SAI__OK;
+    errBegin(&status);
+    ndfGtwcs(self->_ndfid, &wcs, &status );
+    if( wcs ) {
+        string = astToString( wcs );
+        wcs = astAnnul( wcs );
+        pywcs = PyAst_FromString( string );
+        string = astFree( string );
+        if( pywcs ) result = Py_BuildValue("O",pywcs);
+        Py_XDECREF(pywcs);
+    }
+    if( status != SAI__OK ) raiseNDFException(&status);
+    return result;
 };
 
 /* Routine shared by all code retrieving an NDF character
@@ -1073,6 +1097,9 @@ static PyMethodDef NDF_methods[] = {
     {"end", (PyCFunction)pyndf_end, METH_NOARGS,
      "ndf.end() -- ends the current NDF context."},
 
+    {"gtwcs", (PyCFunction)pyndf_gtwcs, METH_NOARGS,
+     "wcs = indf.gtwcs() -- returns an pyast FrameSet describing the WCS."},
+
     {"open", (PyCFunction)pyndf_open, METH_VARARGS,
      "indf = ndf.open(name) -- opens an NDF file."},
 
@@ -1410,6 +1437,7 @@ initndf(void)
                        "Raw NDF API");
 #endif
     import_array();
+    import_pyast();
 
     Py_INCREF(&NDFType);
     PyModule_AddObject(m, "ndf", (PyObject *)&NDFType);
