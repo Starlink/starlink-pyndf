@@ -29,7 +29,10 @@
 #include <Python.h>
 #include "structmember.h"
 #include "numpy/arrayobject.h"
-#include "star/pyast.h"
+
+#if HAVE_AST
+# include "star/pyast.h"
+#endif
 
 // Wrap the PyCObject -> PyCapsule transition to allow
 // this to build with python2.
@@ -517,6 +520,8 @@ pyndf_gtwcs(NDF *self)
     PyObject *result = NULL;
 
     int status = SAI__OK;
+
+#if HAVE_AST
     errBegin(&status);
     ndfGtwcs(self->_ndfid, &wcs, &status );
     if( wcs ) {
@@ -528,6 +533,10 @@ pyndf_gtwcs(NDF *self)
         Py_XDECREF(pywcs);
     }
     if( status != SAI__OK ) raiseNDFException(&status);
+#else
+    PyErr_SetString( PyExc_NotImplementedError,
+                     "starlink.Ast must be available for WCS to be retrieved from an NDF");
+#endif
     return result;
 };
 
@@ -1437,7 +1446,10 @@ initndf(void)
                        "Raw NDF API");
 #endif
     import_array();
+
+#if HAVE_AST
     import_pyast();
+#endif
 
     Py_INCREF(&NDFType);
     PyModule_AddObject(m, "ndf", (PyObject *)&NDFType);

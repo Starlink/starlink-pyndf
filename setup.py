@@ -18,7 +18,18 @@
 
 from distutils.core import setup, Extension
 
-import sys, os, subprocess, numpy, starlink.Ast
+import sys, os, subprocess, numpy
+
+have_ast = 0
+try:
+    import starlink.Ast
+    have_ast = 1
+except:
+    have_ast = 0
+    print("")
+    print("  Will not be building with AST facilities.")
+    print("  Install starlink.Ast in order to read and write AST FrameSets.")
+    print("")
 
 """ Setup script for the ndf python extension"""
 
@@ -38,11 +49,14 @@ else:
     exit(1)
 
 include_dirs.append(numpy.get_include())
-include_dirs.append(starlink.Ast.get_include())
+
+if have_ast:
+    include_dirs.append(starlink.Ast.get_include())
 
 ndf = Extension('starlink.ndf',
                 define_macros        = [('MAJOR_VERSION', '0'),
-                                        ('MINOR_VERSION', '2')],
+                                        ('MINOR_VERSION', '2'),
+                                        ('HAVE_AST', have_ast)],
                 undef_macros         = ['USE_NUMARRAY'],
                 include_dirs         = include_dirs,
                 library_dirs         = library_dirs,
