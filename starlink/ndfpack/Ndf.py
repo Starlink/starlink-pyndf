@@ -93,7 +93,10 @@ class Ndf(object):
             self.label = indf.label
             self.title = indf.title
             self.units  = indf.units
-            self.wcs = indf.gtwcs()
+            try:
+                self.wcs = indf.gtwcs()
+            except NotImplementedError:
+                self.wcs = None
 
             # Read the axes
             self.axes = []
