@@ -559,6 +559,7 @@ pyndf_cget_helper( int ndfid, const char *comp ) {
     if (raiseNDFException(&status)) return NULL;
     char value[clen+1];
     errBegin(&status);
+    value[0] = 0;
     ndfCget(ndfid, comp, value, clen+1, &status);
     if (raiseNDFException(&status)) return NULL;
     return Py_BuildValue("s", value);
