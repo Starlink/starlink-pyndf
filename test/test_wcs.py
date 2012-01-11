@@ -13,6 +13,12 @@ class TestWcs(unittest.TestCase):
         self.assertIsInstance( self.ndf.wcs, starlink.Ast.FrameSet )
         self.assertEqual( self.ndf.wcs.Domain, "PIXEL" )
 
+        NdfI = self.ndf
+        GridFrame =  starlink.Ast.Frame(2,"Domain=PIXEL")
+        BoxI = starlink.Ast.Box(GridFrame, 1, NdfI.bound[0][::-1], NdfI.bound[1][::-1])
+
+
+
 
 """
 License
