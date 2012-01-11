@@ -181,9 +181,8 @@ static int tr_iaxis(int indf, int iaxis, int *status)
     if(iaxis == -1) return 0;
 
     // Get dimensions
-    const int NDIMX = 10;
-    int ndim, idim[NDIMX];
-    ndfDim(indf, NDIMX, idim, &ndim, status);
+    int ndim, idim[NDF__MXDIM];
+    ndfDim(indf, NDF__MXDIM, idim, &ndim, status);
     if(*status != SAI__OK) return -1;
     if(iaxis < -1 || iaxis > ndim-1){
 	PyErr_SetString(PyExc_IOError, "tr_axis: axis number too out of range");
@@ -391,9 +390,8 @@ pyndf_aread(NDF *self, PyObject *args)
     if(!state) Py_RETURN_NONE;
 
     // Get dimensions
-    const int NDIMX = 10;
-    int idim[NDIMX], ndim;
-    ndfDim(self->_ndfid, NDIMX, idim, &ndim, &status);
+    int idim[NDF__MXDIM], ndim;
+    ndfDim(self->_ndfid, NDF__MXDIM, idim, &ndim, &status);
     if (raiseNDFException(&status)) return NULL;
 
     // get number for particular axis in question.
@@ -419,7 +417,7 @@ pyndf_aread(NDF *self, PyObject *args)
     int nread;
     void *pntr[1];
     ndfAmap(self->_ndfid, comp, naxis, type, MMOD, pntr, &nread, &status);
-    if (status != SAI__OK) goto fail;
+    if (raiseNDFException(&status)) goto fail;
     if(nelem != nread){
 	printf("nread = %d, nelem = %d, iaxis = %d, %d\n",nread,nelem,iaxis,naxis);
 	PyErr_SetString(PyExc_IOError, "ndf_aread error: number of elements different from number expected");
@@ -427,11 +425,10 @@ pyndf_aread(NDF *self, PyObject *args)
     }
     memcpy(arr->data, pntr[0], nelem*nbyte);
     ndfAunmp(self->_ndfid, comp, naxis, &status);
-
+    if (raiseNDFException(&status)) goto fail;
     return Py_BuildValue("N", PyArray_Return(arr));
 
 fail:
-    raiseNDFException(&status);
     Py_XDECREF(arr);
     return NULL;
 
@@ -478,18 +475,15 @@ pyndf_bound(NDF *self)
 
     PyArrayObject* bound = NULL;
     int ndim;
-    const int NDIMX=20;
-    int *lbnd = malloc(NDIMX*sizeof(int));
-    int *ubnd = malloc(NDIMX*sizeof(int));
-    if(lbnd == NULL || ubnd == NULL)
-	goto fail;
+    int lbnd[NDF__MXDIM];
+    int ubnd[NDF__MXDIM];
+    npy_intp odim[2];
 
     int status = SAI__OK;
     errBegin(&status);
-    ndfBound(self->_ndfid, NDIMX, lbnd, ubnd, &ndim, &status );
-    if(status != SAI__OK) goto fail;
+    ndfBound(self->_ndfid, NDF__MXDIM, lbnd, ubnd, &ndim, &status );
+    if (raiseNDFException(&status)) return NULL;
 
-    npy_intp odim[2];
     odim[0] = 2;
     odim[1] = ndim;
     bound   = (PyArrayObject*) PyArray_SimpleNew(2, odim, PyArray_INT);
@@ -499,14 +493,9 @@ pyndf_bound(NDF *self)
 	bptr[i]      = lbnd[ndim-i-1];
 	bptr[i+ndim] = ubnd[ndim-i-1];
     }
-    free(lbnd);
-    free(ubnd);
     return Py_BuildValue("N", PyArray_Return(bound));
 
 fail:
-    raiseNDFException(&status);
-    if(lbnd != NULL) free(lbnd);
-    if(ubnd != NULL) free(ubnd);
     Py_XDECREF(bound);
     return NULL;
 };
@@ -532,7 +521,7 @@ pyndf_gtwcs(NDF *self)
         if( pywcs ) result = Py_BuildValue("O",pywcs);
         Py_XDECREF(pywcs);
     }
-    if( status != SAI__OK ) raiseNDFException(&status);
+    if (raiseNDFException(&status)) return NULL;
 #else
     PyErr_SetString( PyExc_NotImplementedError,
                      "starlink.Ast must be available for WCS to be retrieved from an NDF");
@@ -581,15 +570,12 @@ pyndf_dim(NDF *self)
 
     PyArrayObject* dim = NULL;
     int ndim;
-    const int NDIMX=20;
-    int *idim = (int *)malloc(NDIMX*sizeof(int));
-    if(idim == NULL)
-	goto fail;
+    int idim[NDF__MXDIM];
 
     int status = SAI__OK;
     errBegin(&status);
-    ndfDim(self->_ndfid, NDIMX, idim, &ndim, &status );
-    if(status != SAI__OK) goto fail;
+    ndfDim(self->_ndfid, NDF__MXDIM, idim, &ndim, &status );
+    if (raiseNDFException(&status)) return NULL;
 
     npy_intp odim[1];
     odim[0] = ndim;
@@ -597,13 +583,10 @@ pyndf_dim(NDF *self)
     if(dim == NULL) goto fail;
     for(i=0; i<ndim; i++)
 	((int *)dim->data)[i] = idim[ndim-i-1];
-    free(idim);
 
     return Py_BuildValue("N", PyArray_Return(dim));
 
 fail:
-    raiseNDFException(&status);
-    if(idim != NULL) free(idim);
     Py_XDECREF(dim);
     return NULL;
 };
@@ -839,20 +822,19 @@ pyndf_read(NDF *self, PyObject *args)
     PyArrayObject* arr = NULL;
 
     // Get dimensions, reverse order to account for C vs Fortran
-    const int NDIMX = 10;
-    int idim[NDIMX];
-    npy_intp rdim[NDIMX];
+    int idim[NDF__MXDIM];
+    npy_intp rdim[NDF__MXDIM];
 
     int ndim;
-    ndfDim(self->_ndfid, NDIMX, idim, &ndim, &status);
-    if (status != SAI__OK) goto fail;
+    ndfDim(self->_ndfid, NDF__MXDIM, idim, &ndim, &status);
+    if (raiseNDFException(&status)) return NULL;
 
     // Reverse order to account for C vs Fortran
     for(i=0; i<ndim; i++) rdim[i] = idim[ndim-i-1];
 
     // Determine the data type
     ndfType(self->_ndfid, comp, type, MXLEN+1, &status);
-    if(status != SAI__OK) goto fail;
+    if (raiseNDFException(&status)) return NULL;
 
     // Create array of correct dimensions and type to save data to
     int npytype = ndftype2numpy( type, &nbyte );
@@ -863,22 +845,21 @@ pyndf_read(NDF *self, PyObject *args)
     // get number of elements, allocate space, map, store
 
     ndfSize(self->_ndfid, &npix, &status);
-    if(status != SAI__OK) goto fail;
+    if (raiseNDFException(&status)) goto fail;
     void *pntr[1];
     ndfMap(self->_ndfid, comp, type, "READ", pntr, &nelem, &status);
-    if(status != SAI__OK) goto fail;
+    if (raiseNDFException(&status)) goto fail;
     if(nelem != npix){
 	PyErr_SetString(PyExc_IOError, "ndf_read error: number of elements different from number expected");
 	goto fail;
     }
     memcpy(arr->data, pntr[0], npix*nbyte);
     ndfUnmap(self->_ndfid, comp, &status);
-    if(status != SAI__OK) goto fail;
+    if (raiseNDFException(&status)) goto fail;
 
     return Py_BuildValue("N", PyArray_Return(arr));
 
 fail:
-    raiseNDFException(&status);
     Py_XDECREF(arr);
     return NULL;
 };
