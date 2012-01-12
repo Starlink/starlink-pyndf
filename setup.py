@@ -17,6 +17,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from distutils.core import setup, Extension
+import numpy.distutils.fcompiler as fcompiler
 
 import sys, os, subprocess, numpy
 
@@ -49,6 +50,13 @@ else:
     exit(1)
 
 include_dirs.append(numpy.get_include())
+
+# NDF needs fortran runtime library for linking and HDS does still
+# come with a small fortran dependency
+fc = fcompiler.new_fcompiler()
+fc.customize()
+libraries.extend( fc.libraries )
+library_dirs.extend( fc.library_dirs )
 
 if have_ast:
     include_dirs.append(starlink.Ast.get_include())
