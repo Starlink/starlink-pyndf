@@ -391,6 +391,7 @@ pyndf_aread(NDF *self, PyObject *args)
 
     // Get dimensions
     int idim[NDF__MXDIM], ndim;
+    errBegin(&status);
     ndfDim(self->_ndfid, NDF__MXDIM, idim, &ndim, &status);
     if (raiseNDFException(&status)) return NULL;
 
@@ -400,6 +401,7 @@ pyndf_aread(NDF *self, PyObject *args)
     // Determine the data type
     const int MXLEN=33;
     char type[MXLEN];
+    errBegin(&status);
     ndfAtype(self->_ndfid, comp, naxis, type, MXLEN, &status);
     if (raiseNDFException(&status)) return NULL;
 
@@ -416,6 +418,7 @@ pyndf_aread(NDF *self, PyObject *args)
     // map, store, unmap
     int nread;
     void *pntr[1];
+    errBegin(&status);
     ndfAmap(self->_ndfid, comp, naxis, type, MMOD, pntr, &nread, &status);
     if (raiseNDFException(&status)) goto fail;
     if(nelem != nread){
@@ -424,6 +427,7 @@ pyndf_aread(NDF *self, PyObject *args)
 	goto fail;
     }
     memcpy(arr->data, pntr[0], nelem*nbyte);
+    errBegin(&status);
     ndfAunmp(self->_ndfid, comp, naxis, &status);
     if (raiseNDFException(&status)) goto fail;
     return Py_BuildValue("N", PyArray_Return(arr));
@@ -660,7 +664,7 @@ pyndf_new(NDF *self, PyObject *args)
 }
 
 // check an HDS type
-inline int checkHDStype(const char *type)
+static int checkHDStype(const char *type)
 {
 	if(strcmp(type,"_INTEGER") != 0 && strcmp(type,"_REAL") != 0 && strcmp(type,"_DOUBLE") != 0 &&
 			strcmp(type,"_LOGICAL") != 0 && strcmp(type,"_WORD") != 0 && strcmp(type,"UWORD") != 0 &&
@@ -826,6 +830,7 @@ pyndf_read(NDF *self, PyObject *args)
     npy_intp rdim[NDF__MXDIM];
 
     int ndim;
+    errBegin(&status);
     ndfDim(self->_ndfid, NDF__MXDIM, idim, &ndim, &status);
     if (raiseNDFException(&status)) return NULL;
 
@@ -833,6 +838,7 @@ pyndf_read(NDF *self, PyObject *args)
     for(i=0; i<ndim; i++) rdim[i] = idim[ndim-i-1];
 
     // Determine the data type
+    errBegin(&status);
     ndfType(self->_ndfid, comp, type, MXLEN+1, &status);
     if (raiseNDFException(&status)) return NULL;
 
@@ -844,9 +850,11 @@ pyndf_read(NDF *self, PyObject *args)
 
     // get number of elements, allocate space, map, store
 
+    errBegin(&status);
     ndfSize(self->_ndfid, &npix, &status);
     if (raiseNDFException(&status)) goto fail;
     void *pntr[1];
+    errBegin(&status);
     ndfMap(self->_ndfid, comp, type, "READ", pntr, &nelem, &status);
     if (raiseNDFException(&status)) goto fail;
     if(nelem != npix){
@@ -854,6 +862,7 @@ pyndf_read(NDF *self, PyObject *args)
 	goto fail;
     }
     memcpy(arr->data, pntr[0], npix*nbyte);
+    errBegin(&status);
     ndfUnmap(self->_ndfid, comp, &status);
     if (raiseNDFException(&status)) goto fail;
 
