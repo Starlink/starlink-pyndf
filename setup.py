@@ -42,7 +42,10 @@ include_dirs = []
 if 'STARLINK_DIR' in os.environ:
     os.environ['PATH'] = os.path.join(os.environ['STARLINK_DIR'], 'bin') + ':' + os.environ['PATH']
     libraries = subprocess.Popen(['ndf_link',''], shell=True, stdout=subprocess.PIPE, env=os.environ).communicate()[0].split()
-    libraries = [x[2:].decode('ascii') for x in libraries]
+    libraries = [x[2:] for x in libraries]
+    # On python3 we want a unicode string
+    if sys.version_info >= (3,):
+        libraries = [ x.decode('ascii') for x in libraries]
     library_dirs.append(os.path.join(os.environ['STARLINK_DIR'], 'lib'))
     include_dirs.append(os.path.join(os.environ['STARLINK_DIR'], 'include'))
 else:
