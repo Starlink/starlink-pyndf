@@ -516,6 +516,7 @@ pyndf_gtwcs(NDF *self)
 
 #if HAVE_AST
     errBegin(&status);
+    astBegin;
     ndfGtwcs(self->_ndfid, &wcs, &status );
     if( wcs ) {
         string = astToString( wcs );
@@ -525,6 +526,7 @@ pyndf_gtwcs(NDF *self)
         if( pywcs ) result = Py_BuildValue("O",pywcs);
         Py_XDECREF(pywcs);
     }
+    astEnd;
     if (raiseNDFException(&status)) return NULL;
 #else
     PyErr_SetString( PyExc_NotImplementedError,
