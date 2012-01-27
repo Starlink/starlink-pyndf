@@ -16,10 +16,19 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.core import setup, Extension
+from numpy.distutils.core import setup, Extension
 import numpy.distutils.fcompiler as fcompiler
 
 import sys, os, subprocess, numpy
+
+# Can not seem to work out how to get the --fcompiler option
+# to work with numpy.distutils so look for it myself
+from optparse import OptionParser
+parser = OptionParser()
+parser.add_option("--fcompiler", dest="fcompiler",
+                  help="Override default Fortran compiler")
+(options,args) = parser.parse_args()
+
 
 have_ast = 0
 try:
@@ -56,7 +65,7 @@ include_dirs.append(numpy.get_include())
 
 # NDF needs fortran runtime library for linking and HDS does still
 # come with a small fortran dependency
-fc = fcompiler.new_fcompiler()
+fc = fcompiler.new_fcompiler(compiler=options.fcompiler)
 fc.customize()
 libraries.extend( fc.libraries )
 library_dirs.extend( fc.library_dirs )
