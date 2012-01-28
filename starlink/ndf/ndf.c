@@ -962,13 +962,19 @@ static char *GetString( PyObject *value ) {
 */
    char *result = NULL;
    if( value  && value != Py_None ) {
+#ifdef USE_PY3K
       PyObject *bytes = PyUnicode_AsASCIIString(value);
+#else
+      PyObject *bytes = value;
+#endif
       if( bytes ) {
          size_t nbytes = PyBytes_Size( bytes );
          const char * bytestr =  PyBytes_AS_STRING(bytes);
          result = malloc( (nbytes+1) * sizeof(*result));
          strcpy( result, bytestr );
+#ifdef USE_PY3K
          Py_DECREF(bytes);
+#endif
       }
    }
    return result;
