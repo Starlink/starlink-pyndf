@@ -287,6 +287,7 @@ pydat_cell(HDSObject *self, PyObject *args)
     // Finally run the routine
     datCell(loc1, ndim, rdim, &loc2, &status);
     if(status != SAI__OK) goto fail;
+    errEnd(&status);
 
     // PyCObject to pass pointer along to other wrappers
     Py_DECREF(sub);
@@ -395,6 +396,7 @@ pydat_get(HDSObject *self)
     if(arr == NULL) goto fail;
     datGet(loc, typ_str, ndim, tdim, arr->data, &status);
     if(status != SAI__OK) goto fail;
+    errEnd(&status);
     return PyArray_Return(arr);
 
 fail:
