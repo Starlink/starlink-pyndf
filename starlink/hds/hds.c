@@ -71,15 +71,19 @@ raiseHDSException( int *status );
 static void
 HDS_dealloc(HDSObject * self)
 {
-    HDSLoc* loc = HDS_retrieve_locator(self);
-    int status = SAI__OK;
-    errBegin(&status);
-    if (loc) datAnnul(&loc, &status);
-    if (status != SAI__OK) errAnnul(&status);
-    errEnd(&status);
+    // Check that we didn't already annul the locator.
+    if (self->_locator) {
+        HDSLoc* loc = HDS_retrieve_locator(self);
+        int status = SAI__OK;
+        errBegin(&status);
+        if (loc) datAnnul(&loc, &status);
+        if (status != SAI__OK) errAnnul(&status);
+        errEnd(&status);
 
-    /* Frees the capsule object */
-    Py_XDECREF(self->_locator);
+        /* Frees the capsule object */
+        Py_XDECREF(self->_locator);
+    }
+
     PyObject_Del(self);
 }
 
@@ -256,7 +260,11 @@ pydat_annul(HDSObject *self)
     int status = SAI__OK;
     errBegin(&status);
     datAnnul(&loc, &status);
+
+    /* Free the capsule object before loosing the pointer to it. */
+    Py_XDECREF(self->_locator);
     self->_locator = NULL;
+
     if(raiseHDSException(&status)) return NULL;
     Py_RETURN_NONE;
 };
