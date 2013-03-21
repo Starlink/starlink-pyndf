@@ -1,6 +1,6 @@
 import unittest
 import starlink.Ast
-from starlink.ndfpack.Ndf import Ndf
+from starlink.ndfpack import Ndf
 import os.path
 
 class TestWcs(unittest.TestCase):

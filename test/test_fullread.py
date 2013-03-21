@@ -1,5 +1,5 @@
 import unittest
-from starlink.ndfpack.Ndf import Ndf
+from starlink.ndfpack import Ndf
 import os.path
 
 class TestFullRead(unittest.TestCase):

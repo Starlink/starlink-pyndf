@@ -58,3 +58,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 
+from starlink.ndfpack.axis import Axis
+from starlink.ndfpack.ndf import Ndf
