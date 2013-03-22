@@ -16,7 +16,9 @@ Ndf is the main class and reads in entire Ndf files in a recursive manner.  In
 the above example, ndf.data would contain the main data, ndf.head would
 contain extension information (that can be extensive). This could cause memory
 problems with very large files, but should at least allow fairly complete
-access to all NDF components. The module also enables access to low-level
+access to all NDF components.
+
+The starlink.ndf module enables access to low-level
 functions to access ndf components. Only use these if you are familiar with
 the standard ndf library. You may need a little bit of knowledge of NDF to be
 fully confident with aspects of this module.

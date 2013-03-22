@@ -1,5 +1,5 @@
 //
-// Python/C interface file for ndf files
+// Python/C interface file for HDS files
 
 /*
     Copyright 2009-2011 Tom Marsh
