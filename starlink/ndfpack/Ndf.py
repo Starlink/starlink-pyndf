@@ -38,7 +38,7 @@ class Ndf(object):
         since it is identically ordered and more consistent with taking sub-sections using
         Python as in
 
-        ndf = starlink.ndf.Ndf('image')
+        ndf = starlink.ndfpack.Ndf('image')
         subim = image.data[0:5,0:4,0:3]
 
         The following attributes are created:
