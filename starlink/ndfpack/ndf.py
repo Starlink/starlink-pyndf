@@ -10,14 +10,7 @@ class Ndf(object):
     """
     Represents Starlink NDF files
 
-    Attributes (not all of which may be defined):
-
-    data  -- numpy array containing the maps
-    var   -- variances
-    axes  -- a list of Axis object, one for each dimension of data
-    label -- label associated with the data
-    title -- title associated with the data
-    head  -- dictionary of header information
+    Attributes may not all be defined.
 
     Complete information on NDFs can be obtained from sun33 of the Starlink documentation
     and may illuminate the meaning of some of these.
@@ -36,22 +29,10 @@ class Ndf(object):
         at 0. While those used to dealing with NDFs may find the first with () more
         familiar, the second may be simpler if you deal with the outout from a python script
         since it is identically ordered and more consistent with taking sub-sections using
-        Python as in
+        Python as in::
 
-        ndf = starlink.ndfpack.Ndf('image')
-        subim = image.data[0:5,0:4,0:3]
-
-        The following attributes are created:
-
-        data    -- the data array, a numpy N-d array
-        bound   -- pixel limits of data array. 2xndim array of lower and upper bounds
-        var     -- variances, a numpy N-d array
-        axes    -- Axis components
-        label   -- label string
-        title   -- title string
-        units   -- data unit string
-        head    -- header/extensions, a dictionary
-        wcs     -- WCS information, a PyAST FrameSet
+            ndf = starlink.ndfpack.Ndf('image')
+            subim = image.data[0:5,0:4,0:3]
         """
         object.__init__(self)
 
@@ -87,23 +68,33 @@ class Ndf(object):
         ndf.begin()
         try:
             indf = ndf.open(fname)
+            #: the data array, a numpy N-d array
             self.data  = indf.read('Dat')
+            #: pixel limits of data array.
+            #: 2xndim array of lower and upper bounds
             self.bound = indf.bound()
+            #: variances, a numpy N-d array
             self.var   = indf.read('Var')
+            #: label string associated with the data
             self.label = indf.label
+            #: title string associated with the data
             self.title = indf.title
+            #: data unit string
             self.units  = indf.units
             try:
+                #: WCS information, a PyAST FrameSet
                 self.wcs = indf.gtwcs()
             except NotImplementedError:
                 self.wcs = None
 
             # Read the axes
+            #: a list of Axis objects, one for each dimension of data
             self.axes = []
             for nax in range(self.data.ndim):
                 self.axes.append(Axis(indf, nax))
 
             # Read the extensions
+            #: header/extensions, a dictionary
             self.head = {}
             nextn = indf.xnumb
             for nex in range(nextn):

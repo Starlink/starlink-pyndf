@@ -76,7 +76,6 @@ pygments_style = 'sphinx'
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
-
 # -- Options for HTML output ---------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -273,3 +272,14 @@ epub_copyright = '2013, Author'
 
 # Allow duplicate toc entries.
 #epub_tocdup = True
+
+# -- Include __init__ methods --------------------------------------------------
+
+# See: http://stackoverflow.com/questions/5599254/
+def skip(app, what, name, obj, skip, options):
+    if name == "__init__":
+        return False
+    return skip
+
+def setup(app):
+    app.connect("autodoc-skip-member", skip)

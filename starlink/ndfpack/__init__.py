@@ -5,11 +5,11 @@ Python interface to the STARLINK ndf library
 
 The STARLINK ndf library is used to access STARLINK's HDS files with
 extension .sdf. This package enables read access to such files.
-For instance, you can read in an ndf file using:
+For instance, you can read in an ndf file using::
 
-import starlink.ndfpack
+    import starlink.ndfpack
 
-ndf = starlink.ndfpack.Ndf('image')
+    ndf = starlink.ndfpack.Ndf('image')
 
 See documentation on the Ndf class for how to access the various components.
 Ndf is the main class and reads in entire Ndf files in a recursive manner.  In
@@ -18,24 +18,19 @@ contain extension information (that can be extensive). This could cause memory
 problems with very large files, but should at least allow fairly complete
 access to all NDF components.
 
-The starlink.ndf module enables access to low-level
-functions to access ndf components. Only use these if you are familiar with
-the standard ndf library. You may need a little bit of knowledge of NDF to be
-fully confident with aspects of this module.
-
 Classes
 =======
 
-Axis    -- represents an NDF Axis component
-Ndf     -- represents Starlink NDF files
+* :class:`starlink.ndfpack.axis.Axis`  represents an NDF Axis component
+* :class:`starlink.ndfpack.ndf.Ndf`    represents Starlink NDF files
 
 Functions
 =========
 
-There are many functional equivalents to NDF routines such as
-dat_annul, dat_cell, dat_find, ndf_acget, ndf_aread and ndf_begin.
-Look at end of documentation to see the list and refer to the NDF
-documentation for their use. Only use these if the standard slurp all
+The :mod:`starlink.ndf` and :mod:`starlink.hds`
+modules enable access to low-level
+functions to access NDF components and HDS files.
+Only use these if the standard slurp all
 information behaviour of Ndf is not what you want. You should not
 normally need these low level routines.
 
