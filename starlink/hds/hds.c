@@ -366,8 +366,10 @@ pydat_get(HDSObject *self)
     for(i=0; i<ndim; i++) rdim[i] = tdim[ndim-i-1];
     errBegin(&status);
 
-    if(strcmp(typ_str, "_INTEGER") == 0 || strcmp(typ_str, "_LOGICAL") == 0){
-	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_INT);
+    if(strcmp(typ_str, "_INTEGER") == 0){
+        arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_INT);
+    }else if(strcmp(typ_str, "_LOGICAL") == 0){
+        arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_BOOL);
     }else if(strcmp(typ_str, "_REAL") == 0){
 	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_FLOAT);
     }else if(strcmp(typ_str, "_DOUBLE") == 0){
