@@ -801,6 +801,34 @@ pyndf_amap(NDF *self, PyObject* args)
 	return NDFMapped_create_object( self, comp, type, mmod, ptr, el, naxis );
 }
 
+// Get the type of an NDF component.
+static PyObject*
+pyndf_type(NDF *self, PyObject *args)
+{
+  const char *comp;
+
+  if(!PyArg_ParseTuple(args, "s:pyndf_read", &comp))
+    return NULL;
+
+  const int MXLEN=32;
+  char type[MXLEN+1];
+
+  // Return None if component does not exist
+  int state, status = SAI__OK;
+  errBegin(&status);
+  ndfState(self->_ndfid, comp, &state, &status);
+  if (raiseNDFException(&status)) return NULL;
+  if(!state)
+    Py_RETURN_NONE;
+
+  // Determine the data type
+  errBegin(&status);
+  ndfType(self->_ndfid, comp, type, MXLEN+1, &status);
+  if (raiseNDFException(&status)) return NULL;
+
+  return Py_BuildValue("s", type);
+}
+
 // Reads an NDF into a numpy array
 static PyObject*
 pyndf_read(NDF *self, PyObject *args)
@@ -1110,6 +1138,9 @@ static PyMethodDef NDF_methods[] = {
 
     {"open", (PyCFunction)pyndf_open, METH_VARARGS,
      "indf = ndf.open(name) -- opens an NDF file."},
+
+    {"type", (PyCFunction)pyndf_type, METH_VARARGS,
+     "startype = indf.read(comp) -- get the Starlink type of component comp of an NDF. Returns None if it does not exist, or a string if it does."},
 
     {"read", (PyCFunction)pyndf_read, METH_VARARGS,
      "arr = indf.read(comp) -- reads component comp of an NDF (e.g. dat or var). Returns None if it does not exist."},
