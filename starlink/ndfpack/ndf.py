@@ -70,16 +70,31 @@ class Ndf(object):
             indf = ndf.open(fname)
             #: the data array, a numpy N-d array
             data  = indf.read('Dat')
-            badpixelvalue = ndf.ndf_getbadpixval(indf.type('Dat'))
-            self.data = ma.masked_where(data==badpixelvalue, data)
-            # Create the mask from that data.
-            #: pixel limits of data array.
+            type_ = indf.type_('Dat')
+            if type_:
+                badpixelvalue = ndf.ndf_getbadpixval(type_)
+            else:
+                badpixelvalue = None
+            if badpixelvalue:
+                self.data = ma.masked_where(data==badpixelvalue, data)
+            else:
+                self.data = data
+
+                #: pixel limits of data array.
             #: 2xndim array of lower and upper bounds
             self.bound = indf.bound()
+
             #: variances, a numpy N-d array
             var   = indf.read('Var')
-            badpixelvalue = ndf.ndf_getbadpixval(indf.type('Var'))
-            self.var = ma.masked_where(var==badpixelvalue, var)
+            type_ = indf.type_('Var')
+            if type_:
+                badpixelvalue = ndf.ndf_getbadpixval(type_)
+            else:
+                badpixelvalue = None
+            if badpixelvalue:
+                    self.var = ma.masked_where(var==badpixelvalue, var)
+            else:
+                self.var = var
 
             #: label string associated with the data
             self.label = indf.label
