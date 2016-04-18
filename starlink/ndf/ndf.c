@@ -1139,7 +1139,7 @@ static PyMethodDef NDF_methods[] = {
     {"open", (PyCFunction)pyndf_open, METH_VARARGS,
      "indf = ndf.open(name) -- opens an NDF file."},
 
-    {"type", (PyCFunction)pyndf_type, METH_VARARGS,
+    {"type_", (PyCFunction)pyndf_type, METH_VARARGS,
      "startype = indf.read(comp) -- get the Starlink type of component comp of an NDF. Returns None if it does not exist, or a string if it does."},
 
     {"read", (PyCFunction)pyndf_read, METH_VARARGS,
