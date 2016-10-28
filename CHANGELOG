@@ -1,0 +1,4 @@
+version 0.3 (April 2016)
+-----------------------
+	- ndfpack will now return numpy masked arrays, with the STARLINK Bad values masked out
+	- ndf.c new  'type_' gives the Starlink type of the component.

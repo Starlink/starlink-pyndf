@@ -4,7 +4,7 @@ from starlink.ndfpack.axis import Axis
 
 import re
 import numpy as n
-
+from numpy import ma
 
 class Ndf(object):
     """
@@ -69,12 +69,33 @@ class Ndf(object):
         try:
             indf = ndf.open(fname)
             #: the data array, a numpy N-d array
-            self.data  = indf.read('Dat')
-            #: pixel limits of data array.
+            data  = indf.read('Dat')
+            type_ = indf.type_('Dat')
+            if type_:
+                badpixelvalue = ndf.ndf_getbadpixval(type_)
+            else:
+                badpixelvalue = None
+            if badpixelvalue:
+                self.data = ma.masked_where(data==badpixelvalue, data)
+            else:
+                self.data = data
+
+                #: pixel limits of data array.
             #: 2xndim array of lower and upper bounds
             self.bound = indf.bound()
+
             #: variances, a numpy N-d array
-            self.var   = indf.read('Var')
+            var   = indf.read('Var')
+            type_ = indf.type_('Var')
+            if type_:
+                badpixelvalue = ndf.ndf_getbadpixval(type_)
+            else:
+                badpixelvalue = None
+            if badpixelvalue:
+                    self.var = ma.masked_where(var==badpixelvalue, var)
+            else:
+                self.var = var
+
             #: label string associated with the data
             self.label = indf.label
             #: title string associated with the data
@@ -130,7 +151,16 @@ def _read_hds(loc, head, array=False):
                 _read_hds(loc1, h, array)
                 loc1.annul()
     elif loc.state:
-        head[name] = loc.get()
+        # If it is not a structure
+        results = loc.get()
+        if isinstance(results, n.ndarray):
+            startype = loc.type
+            try:
+                badval = ndf.ndf_getbadpixval(startype)
+                results = ma.masked_where(results==badval, results)
+            except SystemError:
+                pass
+        head[name] = results
 
 def _create_md_struc(dims):
     """Creates a multi-dimensional list of dictionaries to represent multi-dimensional structures"""

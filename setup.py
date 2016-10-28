@@ -75,7 +75,7 @@ if have_ast:
 
 ndf = Extension('starlink.ndf',
                 define_macros        = [('MAJOR_VERSION', '0'),
-                                        ('MINOR_VERSION', '2'),
+                                        ('MINOR_VERSION', '3'),
                                         ('HAVE_AST', have_ast)],
                 undef_macros         = ['USE_NUMARRAY'],
                 include_dirs         = include_dirs,
@@ -87,7 +87,7 @@ ndf = Extension('starlink.ndf',
 
 hds = Extension('starlink.hds',
                 define_macros        = [('MAJOR_VERSION', '0'),
-                                        ('MINOR_VERSION', '2')],
+                                        ('MINOR_VERSION', '3')],
                 undef_macros         = ['USE_NUMARRAY'],
                 include_dirs         = include_dirs,
                 library_dirs         = library_dirs,
@@ -97,7 +97,7 @@ hds = Extension('starlink.hds',
                 )
 
 setup(name='starlink-pyndf',
-      version='0.2',
+      version='0.3',
       packages =['starlink','starlink.ndfpack'],
       ext_modules=[ndf,hds],
       # metadata
