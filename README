@@ -1,15 +1,19 @@
+starlink.hds is a Python extension to allow one to open HDS files
+inside Python. It builds the HDS libraries itself and does not require
+the Starlink software suite to be installed on your system. It also
+uses numpy, and requires a c compiler to built.
 
-starlink.ndf is a Python extension to allow one to open NDF files inside
-Python. Its a bit minimal at present, but is a start. To install it
-you need to have the Python numerical array package "numpy", the starlink
-software installed, the environment variable STARLINK_DIR defined 
-and then it is a matter of the usual python installation procedure, e.g.
+This was adapted from the starlink.hds packaged shipped inside
+starlink-pyndf: https://github.com/timj/starlink-pyndf The primary
+difference is that this package does not require a separate Starlink
+installation as it directly builds the hds library files, and it does
+not include any NDF specific access.
+
+
+It is installed via.
 
 python setup.py install
 
-or 
+or
 
 python setup.py install --prefix=<your specific installation directory>
-
-Tom Marsh
-
