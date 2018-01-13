@@ -1,0 +1,5 @@
+* Generated from CNF_PAR.F by Makefile.am
+      INTEGER*8 CNF_PVAL
+      INTEGER CNF_PREG
+      EXTERNAL CNF_PREG
+      INTEGER*4 CNF_CVAL

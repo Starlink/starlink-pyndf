@@ -1,0 +1,12 @@
+FACILITY EMS
+200,OPTER,Error encountered during message output.
+201,NOMSG,No error messages pending output.
+300,UNSET,Status not set in call to EMS_REP (improper use of EMS_REP).
+301,BADOK,Status set to SAI__OK in call to EMS_REP (improper use of EMS_REP).
+302,NSTER,Error in nested calls to EMS_BEGIN and EMS_END (improper use of EMS).
+303,BDKEY,Invalid keyword will be ignored (improper use of EMS_TUNE).
+304,BTUNE,Conflicting actions (improper use of EMS_TUNE).
+305,NOENV,Error encountered reading environment variable EMS_TUNE.
+400,EROVF,Error stack overflow (EMS fault).
+401,CXOVF,Context stack overflow (EMS fault).
+402,TEST,Test facility error check.
