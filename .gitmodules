@@ -1,0 +1,3 @@
+[submodule "hds-v4"]
+	path = hds-v4
+	url = https://github.com/Starlink/hds-v4
