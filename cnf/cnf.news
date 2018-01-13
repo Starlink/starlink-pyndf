@@ -1,0 +1,75 @@
+1 CNF_update
+
+ CNF Version 5.1
+
+ o Add INTEGER*8 definitions. e.g. F77_INTEGER8_TYPE
+
+ CNF Version 5.0
+
+ o New macro F77_LOCK allows invocation of Fortran code from C to be
+   synchronised using a mutex. Consistent use of F77_LOCK within the C
+   wrappers for Fortran libraries means that no two threads will ever
+   attempt to execute any of the wrapped Fortran code simultanously.
+
+ CNF Version 4.3
+
+ o New function CNF_CVAL, this converts a Fortran integer into the
+   correct type for passing as a character trail argument.
+
+ CNF Version 4.2-2 is released.
+
+ o New macro F77_CREATE_EXPORT_CHARACTER to combine F77_CREATE_CHARACTER
+   and F77_EXPORT_CHARACTER into one operation that also checks for NULL
+   C strings. Using this macro treats NULL C strings as a blank Fortran
+   character string of size 1.
+
+ o cnfCref now handles a request for a negative number of bytes in the
+   same fashion as zero bytes. That is a string of size 1 is created.
+
+ o cnfExprt now handles NULL input C strings by filling the output Fortran
+   string with blanks.
+
+ o cnfImprt now ignores NULL C output strings.
+
+ CNF Version 4.2 is released.
+
+ o Now uses the starmem library for memory allocation.
+
+ o Add cnfRealloc routine (like realloc but guarantees the pointer
+   is registered)
+
+ o Officially released under the GNU Public Licence.
+
+ CNF Version 4.1 is released.
+
+ A new Fortran routine is available, CNF_PREG, that can be used
+ to register with CNF a pointer obtained using %LOC, such that
+ it can be retrieved later using CNF_PVAL.
+
+ A new fortran routine CNF_UNREGP is available to unregister a
+ pointer previously registered using CNF_PREG.
+
+ C pointer masking is now only performed on systems where the
+ pointer size is not equal to a Fortran integer.
+
+ New routines are available to activate the Fortran Run Time
+ Library. See cnfInitRTL(). This is required when C programs
+ call Fortran libraries. See also the cnfrtl_link script.
+
+ CNF Version 4.0-2 is released.
+
+ The names of the C interface functions have been changed from the form
+ cnf_xxxx to cnfXxxx (argument lists have not changed). Definitions in
+ f77.h (cnf.h) will handle this automatically during compilation but
+ programmers are encouraged to change the code. To cater for existing
+ compiled code or executables linked with the CNF shared library, drop-
+ through routines with the old names are provided temporarily in the new
+ libraries.
+
+ A shared library is now produced for Linux as well as Solaris.
+
+ SUN/209 has been updated to use the new-style function names and to
+ correct some typos.
+
+ The definitions for F77_ASSOC_UBYTE_ARRAY and F77_EXPORT_UWORD_ARRAY
+ have been corrected in the C header files.

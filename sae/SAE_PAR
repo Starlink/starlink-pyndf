@@ -1,0 +1,53 @@
+*+
+*  Name:
+*     SAE_PAR
+
+*  Purpose:
+*     Define the Starlink ADAM Environment global constants.
+
+*  Language:
+*     Starlink Fortran 77
+
+*  Type of module:
+*     Global constants include file.
+
+*  Description:
+*     This file contains the definitions of the public global constants
+*     used by the Starlink ADAM Environment for non-ADAM users. It should
+*     be kept in line with the ADAM versions of the files SAI_PAR and
+*     SAI_ERR.
+
+*  Copyright:
+*     Copyright (C) 1991 Science & Engineering Research Council.
+*     All Rights Reserved.
+
+*  Licence:
+*     This program is free software; you can redistribute it and/or
+*     modify it under the terms of the GNU General Public License as
+*     published by the Free Software Foundation; either version 2 of
+*     the License, or (at your option) any later version.
+*
+*     This program is distributed in the hope that it will be
+*     useful,but WITHOUT ANY WARRANTY; without even the implied
+*     warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+*     PURPOSE. See the GNU General Public License for more details.
+*
+*     You should have received a copy of the GNU General Public License
+*     along with this program; if not, write to the Free Software
+*     Foundation, Inc., 51 Franklin Street,Fifth Floor, Boston, MA
+*     02110-1301, USA
+
+*  Authors:
+*     PCTR: P.C.T. Rees (STARLINK)
+*     {enter_new_authors_here}
+
+*  History:
+*     30-JAN-1991 (PCTR):
+*        New version for non-ADAM users.
+*     20-APR-2017 (GSB):
+*        Include messgen-generated definitions.
+*     {enter_further_changes_here}
+
+*-
+
+      INCLUDE 'SAI_ERR'

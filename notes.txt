@@ -1,0 +1,21 @@
+According to its component.xml, HDS depends on sae, chr, cnf, ems and
+starmem to build, and links to chr, cnf, ems and starmem.
+
+We aren't going to build the fortran bindings, so we don't need: chr
+(F77 character handling improvments).
+
+HDS-v4 itself can be pulled in as a submodule, but sae, cnf, ems and
+starmem will be copied from a current Starlink checkout (note that
+these are not updated very often.)
+
+
+SAE: (minor development include files etc.) does not depend on anything to buil.
+
+CNF: used for writing code that can be C or F77 -- it feels like we shouldn't need this, but we do?
+
+EMS: error message service, no new requirements (cnf, sae and starmem)
+
+STARMEM: C memory management wrapper routines, no dependencies.
+
+
+
