@@ -44,7 +44,8 @@
 
 /* Header files. */
 /* ============= */
-#include <config.h>
+#if HAVE_CONFIG_H
+#  include <config.h>
 #if USE_PTHREADS
 #include <pthread.h>
 #endif
