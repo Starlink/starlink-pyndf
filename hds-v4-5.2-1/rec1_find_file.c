@@ -6,7 +6,6 @@
 void rec1_find_file( void ){};	 /* This routine not used on VMS systems */
 #else
 
-#include <config.h>              /* Autoconf definitions */
 
 /* C include files:							    */
 /* ===============							    */
