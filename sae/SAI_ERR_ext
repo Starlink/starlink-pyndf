@@ -1,3 +1,0 @@
-*     OK Status
-      INTEGER SAI__OK
-      PARAMETER ( SAI__OK = 0 )
