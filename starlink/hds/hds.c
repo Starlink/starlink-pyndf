@@ -29,17 +29,16 @@
 
 // Wrap the PyCObject -> PyCapsule transition to allow
 // this to build with python2.
-#include "../ndf/npy_3kcompat.h"
+#include "npy_3kcompat.h"
 
 #include <stdio.h>
 #include <string.h>
 
 // NDF includes
-#include "ndf.h"
-#include "mers.h"
-#include "star/hds.h"
+
+#include "hds.h"
 #include "sae_par.h"
-#include "prm_par.h"
+//#include "prm_par.h"
 
 static PyObject * StarlinkHDSError = NULL;
 
@@ -135,7 +134,7 @@ HDS_init(HDSObject *self, PyObject *args, PyObject *kwds)
 // in the code that is about to call Starlink routines.
 
 #include "dat_err.h"
-#include "ndf_err.h"
+//#include "ndf_err.h"
 
 static int
 raiseHDSException( int *status )
