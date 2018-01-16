@@ -13,9 +13,5 @@ enum { SAI__WARN            	= 148013859 };	/* messid=100 */
 enum { SAI__ERROR           	= 148013867 };	/* messid=101 */
 
 
-/* Non-MESSGEN error codes. */
-
-/* OK Status. */
-enum { SAI__OK = 0 };
 
 #endif	/* SAI_ERROR_DEFINED */
