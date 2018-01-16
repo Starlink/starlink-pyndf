@@ -1,0 +1,150 @@
+*+
+*  Name:
+*     MSG_PAR
+
+*  Purpose:
+*     Define the MSG_ global constants.
+
+*  Language:
+*     Starlink Fortran 77
+
+*  Type of module:
+*     Global constants include file.
+
+*  Description:
+*     This file contains definitions of the public global constants used
+*     by the MSG_ system.
+
+*  Copyright:
+*     Copyright (C) 2008 Science and Technology Facilities Council.
+*     Copyright (C) 1990, 1991 Science & Engineering Research Council.
+*     Copyright (C) 1997 Central Laboratory of the Research Councils.
+*     All Rights Reserved.
+
+*  Licence:
+*     This program is free software; you can redistribute it and/or
+*     modify it under the terms of the GNU General Public License as
+*     published by the Free Software Foundation; either version 2 of
+*     the License, or (at your option) any later version.
+*
+*     This program is distributed in the hope that it will be
+*     useful,but WITHOUT ANY WARRANTY; without even the implied
+*     warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+*     PURPOSE. See the GNU General Public License for more details.
+*
+*     You should have received a copy of the GNU General Public License
+*     along with this program; if not, write to the Free Software
+*     Foundation, Inc., 51 Franklin Street,Fifth Floor, Boston, MA
+*     02110-1301, USA
+
+*  Authors:
+*     BDK: Dennis Kelly (ROE)
+*     PCTR: P.C.T. Rees (STARLINK)
+*     AJC: A.J.Chipperfield (STARLINK)
+*     TIMJ: Tim Jenness (JAC, Hawaii)
+*     {enter_new_authors_here}
+
+*  History:
+*     20-JAN-1990 (PCTR):
+*        Original version adapted from MSG_SYS.
+*     21-JAN-1991 (PCTR):
+*        Added message output level symbolic constants.
+*     28-OCT-1997 (AJC):
+*        MSG_SZMSG 200->300
+*     02-MAY-2008 (TIMJ):
+*        Add MSG__DEBUG
+*     22-JUL-2009 (TIMJ):
+*        Add extended range to sync with C interface.
+*        MSG__NONE and MSG__ALL are not part of the Fortran interface as they
+*        can not be used in MSG_OUTIF and comparisons should use MSG_FLEVOK
+*     23-JUL-2009 (TIMJ):
+*        Need to declare MSG_FLEVOK
+*        Add MSG__SZLEV
+*     {enter_further_changes_here}
+
+*-
+
+*  External References:
+      LOGICAL MSG_FLEVOK                ! Will messages appear at this level.
+      EXTERNAL MSG_FLEVOK
+
+*  Global Constants:
+      INTEGER MSG__NORM                 ! Normal conditional message output level
+      PARAMETER ( MSG__NORM = 2 )
+
+      INTEGER MSG__QUIET                ! Quiet conditional message output level
+      PARAMETER ( MSG__QUIET = 1 )
+
+      INTEGER MSG__SZLEV                ! Size of buffer for MSG_IFLEV
+      PARAMETER ( MSG__SZLEV = 8 )
+
+      INTEGER MSG__SZMSG                ! Maximum length of message text
+      PARAMETER ( MSG__SZMSG = 300 )
+
+      INTEGER MSG__VERB                 ! Verbose conditional message output level
+      PARAMETER ( MSG__VERB = 3 )
+
+      INTEGER MSG__DEBUG                ! Debug conditional message output level
+      PARAMETER ( MSG__DEBUG = 4 )
+
+      INTEGER MSG__DEBUG1               ! Numbered debug levels for flexibility
+      PARAMETER ( MSG__DEBUG1 = 5 )
+
+      INTEGER MSG__DEBUG2
+      PARAMETER ( MSG__DEBUG2 = 6 )
+
+      INTEGER MSG__DEBUG3
+      PARAMETER ( MSG__DEBUG3 = 7 )
+
+      INTEGER MSG__DEBUG4
+      PARAMETER ( MSG__DEBUG4 = 8 )
+
+      INTEGER MSG__DEBUG5
+      PARAMETER ( MSG__DEBUG5 = 9 )
+
+      INTEGER MSG__DEBUG6
+      PARAMETER ( MSG__DEBUG6 = 10 )
+
+      INTEGER MSG__DEBUG7
+      PARAMETER ( MSG__DEBUG7 = 11 )
+
+      INTEGER MSG__DEBUG8
+      PARAMETER ( MSG__DEBUG8 = 12 )
+
+      INTEGER MSG__DEBUG9
+      PARAMETER ( MSG__DEBUG9 = 13 )
+
+      INTEGER MSG__DEBUG10
+      PARAMETER ( MSG__DEBUG10 = 14 )
+
+      INTEGER MSG__DEBUG11
+      PARAMETER ( MSG__DEBUG11 = 15 )
+
+      INTEGER MSG__DEBUG12
+      PARAMETER ( MSG__DEBUG12 = 16 )
+
+      INTEGER MSG__DEBUG13
+      PARAMETER ( MSG__DEBUG13 = 17 )
+
+      INTEGER MSG__DEBUG14
+      PARAMETER ( MSG__DEBUG14 = 18 )
+
+      INTEGER MSG__DEBUG15
+      PARAMETER ( MSG__DEBUG15 = 19 )
+
+      INTEGER MSG__DEBUG16
+      PARAMETER ( MSG__DEBUG16 = 20 )
+
+      INTEGER MSG__DEBUG17
+      PARAMETER ( MSG__DEBUG17 = 21 )
+
+      INTEGER MSG__DEBUG18
+      PARAMETER ( MSG__DEBUG18 = 22 )
+
+      INTEGER MSG__DEBUG19
+      PARAMETER ( MSG__DEBUG19 = 23 )
+
+      INTEGER MSG__DEBUG20
+      PARAMETER ( MSG__DEBUG20 = 24 )
+
+*.

@@ -1,0 +1,8 @@
+FACILITY MSG
+200,OPTER,Error encountered during message output.
+201,SYNER,Error encountered during message synchronisation.
+202,INVIF,Invalid conditional message filter value.
+203,BDPAR,Invalid tuning parameter name (improper use of MSG_TUNE).
+204,BTUNE,Bad tuning value (improper use of MSG_TUNE).
+205,BDENV,Bad MSG environment variable value.
+206,FATAL,Fatal internal error.

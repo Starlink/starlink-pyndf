@@ -1,0 +1,112 @@
+Version 2.2
+-----------
+
+ o Add msgSetk (64-bit integer)
+
+Version 2.1
+-----------
+
+ o Remove the parameter name from msgIfget. Enforce standard usage
+   by enforcing standard parameter name.
+
+ o msgIfget will now read MSG_FILTER and QUIET parameters and act
+   accordingly.
+
+ o Modify msgIfget to fallback to using the MSG_FILTER environment
+   variable if the parameter can not be obtained or has been set to null.
+   All applications using MSG_FILTER parameters have been modified to
+   default to NULL rather than NORM (and msgIfget will now default to
+   NORM internally).
+
+ o Add msgIfgetenv for reading and setting the message reporting level
+   from the MSG_FILTER environment variable in a similar way to msgIfget works
+   from an ADAM parameter. msgTune has been modified to understand the
+   same values as msgIfgetenv.
+
+ o Modify msgIflev interface to also return a string representation
+   of the messaging level. API has changed for both Fortran and C
+   interfaces.
+
+ o Add MSG_FLEVOK to Fortran interface
+
+ o Add MSG_DEBUGx to Fortran MSG_PAR file
+
+Version 2.0
+-----------
+
+ o Complete rewrite in C.
+
+ o errFioer removed from interface (there is no corresponding C interface
+   in EMS)
+
+ o C interface no longer includes the fortran msgFmt<x> routines. Instead a
+   single C routine is provided for sprintf style formatting (msgFmt).
+
+ o New function msgBlankif. This is a version of msgBlank that can be output
+   conditionally similar to msgOut vs msgOutif.
+
+ o C interface for messaging level now uses a special type (msglev_t) rather
+   than simple int.
+
+ o errRepf, msgOutiff and msgOutf: new routines supporting sprintf-style
+   formatting in addition to token replacement. %KEYWORD expansion disabled.
+   $PARAM expansion unaffected. (C interface only)
+
+ o Can now be used in a threaded application so long as msgTune and errTune
+   are only called before multiple threads are created.
+
+ o New function msgFlusherr can be used to flush error messages using MSG
+   instead of ERR.
+
+ o MSG filter levels extended to include MSG__DEBUG1 to MSG__DEBUG20. This
+   should allow more fine grained control of debugging messages.
+
+ o The filter level can now also be set to MSG__NONE (no messages at all) and
+   MSG__ALL (every message) but these can not be used in msgOutif calls. This
+   allows all messages to be silenced or all messages to be displayed.
+
+ o msgIfget can now understand parameters that have an integer value as well as
+   parameters containing the level string. This is to allow the KAPPA ILEVEL
+   scheme to coexist.
+
+ o New function msgFlevok() can be used to compare the supplied filter level
+   with the internal value. A simple wrapper around msgIflev.
+
+Version 1.8-2
+-------------
+
+ o Add MSG__DEBUG reporting level.
+
+Version 1.8-1
+-------------
+
+ o Builds with the GNU auto tools.
+ o Released under the GPL.
+
+Version 1.8
+-----------
+MSG1_GREF is completely revised to simplify its interface with the parameter
+system, using a new routine SUBPAR_GREF. This allows the underlying parameter
+system to be replaced more easily. Suboutine MSG1_GLOC is now not requited and
+has been removed. This Version of MERS requires PCS Version 4.1 or later.
+
+Version 1.7-1.
+--------------
+Corrects a problem using the reserved token ^STATUS if another token precedes
+it in the message, and includes a minor update to SUN/104.
+
+MERS Version 1.7 is released.
+-----------------------------
+This version has been substantially revised internally to use version 2.0 of
+EMS, which is implemented in C.
+
+MERS now uses only the public interface to EMS (formerly a number of internal
+EMS routines were called).
+
+Because the lowest level is now in C, output of error message at the base
+error reporting level is now done by C printf commands. On some systems this
+can lead to incorrect sequencing of messages if other output is done by
+Fortran WRITE.
+
+A bug which caused the linker to report subroutine MSG_IFSET missing if
+MSG_IFGET was called, has been corrected.

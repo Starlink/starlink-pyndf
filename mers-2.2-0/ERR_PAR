@@ -1,0 +1,60 @@
+*+
+*  Name:
+*     ERR_PAR
+
+*  Purpose:
+*     Define the ERR_ public constants.
+
+*  Language:
+*     Starlink Fortran 77
+
+*  Type of Module:
+*     Global constants include file.
+
+*  Description:
+*     This file contains definitions of the public global constants used
+*     by the ERR_ system.
+
+*  Copyright:
+*     Copyright (C) 1990 Science & Engineering Research Council.
+*     Copyright (C) 1997 Central Laboratory of the Research Councils.
+*     All Rights Reserved.
+
+*  Licence:
+*     This program is free software; you can redistribute it and/or
+*     modify it under the terms of the GNU General Public License as
+*     published by the Free Software Foundation; either version 2 of
+*     the License, or (at your option) any later version.
+*
+*     This program is distributed in the hope that it will be
+*     useful,but WITHOUT ANY WARRANTY; without even the implied
+*     warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+*     PURPOSE. See the GNU General Public License for more details.
+*
+*     You should have received a copy of the GNU General Public License
+*     along with this program; if not, write to the Free Software
+*     Foundation, Inc., 51 Franklin Street,Fifth Floor, Boston, MA
+*     02110-1301, USA
+
+*  Authors:
+*     PCTR: P.C.T. Rees (STARLINK)
+*     AJC: A.J.Chipperfield (STARLINK)
+*     {enter_new_authors_here}
+
+*  History:
+*     24-JAN-1990 (PCTR):
+*        Original version adapted from ERR_SYS.
+*     28-OCT-1997 (AJC):
+*        ERR_SZPAR 200->15
+*     {enter_further_changes_here}
+
+*-
+
+*  Global Constants:
+      INTEGER ERR__SZMSG          ! Maximum length of error message text
+      PARAMETER( ERR__SZMSG = 200 )
+
+      INTEGER ERR__SZPAR          ! Maximum length of error message name
+      PARAMETER( ERR__SZPAR = 15 )
+
+*.
