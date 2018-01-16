@@ -5,6 +5,7 @@
     Copyright 2009-2011 Tom Marsh
     Copyright 2011 Richard Hickman
     Copyright 2011 Tim Jenness
+    Copyright 2018 East Asian Observatory
     All Rights Reserved.
 
     This program is free software: you can redistribute it and/or modify
@@ -525,6 +526,8 @@ pydat_put(HDSObject *self, PyObject *args)
 	PyObject *dims_object = NULL;
 	hdsdim hdims[DAT__MXDIM];
 	int ndim;
+        int requirements;
+
 	if(!PyArg_ParseTuple(args,"O:pydat_put",&value))
 		return NULL;
 	HDSLoc* loc = HDS_retrieve_locator(self);
@@ -538,7 +541,16 @@ pydat_put(HDSObject *self, PyObject *args)
 	// create a pointer to an array of the appropriate data type
 	int npytype = hdstype2numpy( type );
 	if (npytype == 0) return NULL;
-	npyval = (PyArrayObject*) PyArray_ContiguousFromAny( value, npytype, 0, DAT__MXDIM );
+
+        // HDS behaviour is to always force the input data into the
+        // requested format. Therefore set the PyArray flag
+        // NPY_ARRAY_FORCECAST so that it will convert even if it is not
+        // safe. Requires using PyArray_FromAny instead of
+        // PyArray_ContiguousFromAny.
+        requirements = (NPY_ARRAY_DEFAULT | NPY_ARRAY_FORCECAST);
+        npyval = (PyArrayObject*) PyArray_FROMANY( value, npytype, 0, DAT__MXDIM, requirements );
+        if ( !npyval ) return NULL;
+
 
 	void *valptr = PyArray_DATA(npyval);
 	if (!numpy2hdsdim( npyval, &ndim, hdims )) return NULL;
