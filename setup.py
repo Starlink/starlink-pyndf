@@ -563,15 +563,14 @@ hds = Extension('starlink.hds',
 
 setup(name='starlink-hds',
       version='0.1',
-      description='Python interface to the Starlink HDS library'
-      packages =['starlink'],
+      description='Python interface to the Starlink HDS library',
+      packages=['starlink'],
       ext_modules=[hds],
       test_suite='test',
 
       # metadata
       author='SF Graves',
       author_email='s.graves@eaobservatory.org',
-      description='Python interface to Starlink hds library',
       url='https://github.com/sfgraves/starlink-pyhds',
       license="GNU GPL v3",
       classifiers=[
@@ -580,9 +579,8 @@ setup(name='starlink-hds',
           'Programming Language :: Python',
           'Programming Language :: C',
           'Topic :: Scientific/Engineering :: Astrononomy',
-          ]
-
+          ],
       install_requires = [
           'numpy',
-          ]
+          ],
       )
