@@ -34,10 +34,10 @@ keys.sort()
 
 class TestHds(TestCase):
 
-    def test_create_ndf(self):
+    def test_create_hds(self):
         loc = hds.new('test.sdf', 'HDS_TEST', 'HDSEXAMPLE')
 
-        # Write each attribute as a new component in the NDF.
+        # Write each attribute as a new component in the HDS.
         for attribute in keys:
 
             type_, dims, value = attributes_to_write[attribute]
@@ -56,7 +56,7 @@ class TestHds(TestCase):
         loc.annul()
 
 
-        # Now open the written NDF and read each component.
+        # Now open the written HDS and read each component.
         loc = hds.open('test.sdf', 'READ')
         for i in range(loc.ncomp):
             comploc = loc.index(i)
