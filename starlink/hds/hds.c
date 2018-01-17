@@ -35,8 +35,8 @@
 #include <stdio.h>
 #include <string.h>
 
-// NDF includes
 
+// Starlink includes.
 #include "hds.h"
 #include "sae_par.h"
 //#include "prm_par.h"
