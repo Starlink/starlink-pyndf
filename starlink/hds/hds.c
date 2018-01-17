@@ -39,7 +39,21 @@
 // Starlink includes.
 #include "hds.h"
 #include "sae_par.h"
-//#include "prm_par.h"
+
+
+// Define the bad values: taken from prm_par.h
+/* Bad values, used for flagging undefined data. */
+#define VAL__BADUB 255
+#define VAL__BADB (-127 - 1)
+#define VAL__BADUW 65535
+#define VAL__BADW (-32767 - 1)
+#define VAL__BADI (-2147483647 - 1)
+#define VAL__BADK (-9223372036854775807LL - 1)
+#define VAL__BADR -3.40282347e+38F
+#define VAL__BADD -1.7976931348623157e+308
+
+
+
 
 static PyObject * StarlinkHDSError = NULL;
 
@@ -766,7 +780,32 @@ static PyGetSetDef HDS_getseters[] = {
   {NULL} /* Sentinel */
 };
 
-// The methods
+static PyObject*
+pyhds_getbadvalue(HDSObject *self, PyObject *args)
+{
+	const char *type;
+	if(!PyArg_ParseTuple(args, "s:pyhds_getbadvalue", &type))
+		return NULL;
+	if (strcmp(type,"_DOUBLE") == 0)
+		return Py_BuildValue("f",VAL__BADD);
+	else if (strcmp(type,"_REAL") == 0)
+		return Py_BuildValue("f",VAL__BADR);
+	else if (strcmp(type,"_INTEGER") == 0)
+		return Py_BuildValue("i",VAL__BADI);
+        else if (strcmp(type, "_BYTE") == 0)
+                return Py_BuildValue("i",VAL__BADB);
+        else if (strcmp(type, "_UBYTE") == 0)
+                return Py_BuildValue("i", VAL__BADUB);
+        else if (strcmp(type, "_WORD") == 0)
+                return Py_BuildValue("i", VAL__BADW);
+        else if (strcmp(type, "_UWORD") == 0)
+                return Py_BuildValue("i", VAL__BADUW);
+        //        else if (strcmp(type, "_INT64") == 0)
+        // return Py_BuildValue("i", VAL__BADK);
+	else
+          PyErr_Format(PyExc_ValueError, "type must be one of _DOUBLE, _REAL, _INTEGER, _BYTE, _UBYTE, _WORD, or U_WORD");
+		return NULL;
+}
 
 static PyMethodDef HDS_methods[] = {
 
