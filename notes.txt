@@ -19,3 +19,16 @@ STARMEM: C memory management wrapper routines, no dependencies.
 
 
 
+
+Creating dist builds of a starlink submodule:
+
+1. ensure you have a recent $STARLINK_DIR/buildsupport/bin at the
+front of your path
+
+2. Run ./bootstrap and ./configure --without-stardocs in the direcotyr of the submodule.
+
+3. Run make dist in the directory of the submoudle.
+
+You should now have a tar ball named like e.g. hds-v4-5.2-1.tar.gz
+
+This will contain a configure script that can be distributed.
