@@ -1,4 +1,4 @@
-starlink-pyndf documentation
+starlink-pyhds documentation
 ============================
 
 Contents:
@@ -6,8 +6,6 @@ Contents:
 .. toctree::
    :maxdepth: 4
 
-   starlink.ndfpack
-   starlink.ndf
    starlink.hds
 
 
