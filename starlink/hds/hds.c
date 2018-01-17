@@ -540,7 +540,7 @@ pydat_put(HDSObject *self, PyObject *args)
 
 	// create a pointer to an array of the appropriate data type
 	int npytype = hdstype2numpy( type );
-	if (npytype == 0) return NULL;
+
 
         // HDS behaviour is to always force the input data into the
         // requested format. Therefore set the PyArray flag
