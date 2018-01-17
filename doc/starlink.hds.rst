@@ -20,3 +20,7 @@ documentation for their use.
     :undoc-members:
     :show-inheritance:
 
+.. autoclass:: starlink.hds.hds
+    :members:
+    :undoc-members:
+    :show-inheritance:
