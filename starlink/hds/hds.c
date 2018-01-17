@@ -795,7 +795,7 @@ static PyMethodDef HDS_methods[] = {
    "loc = hds.open(name,type) -- open an HDS file."},
 
   {"put", (PyCFunction)pydat_put, METH_VARARGS,
-   "status = hdsloc.put(type,ndim,dim,value) -- write a primitive inside an hds item."},
+   "status = hdsloc.put(value) -- write a primitive inside an hds item."},
 
   {"putc", (PyCFunction)pydat_putc, METH_VARARGS,
    "hdsloc.putc(string) -- write a character string to primitive at locator."},
