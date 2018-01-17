@@ -1,4 +1,3 @@
-
 from __future__ import print_function
 
 from distutils import ccompiler, sysconfig
@@ -10,11 +9,12 @@ import os
 import numpy as np
 import ctypes
 
-#from tools import make_exceptions, make_attributes
+
 
 """
 Setup script for the hds python extension
 """
+
 # The hds library requires: starmem, ems, hds and sae to build.
 #  These must all be built before hds is.
 
@@ -533,8 +533,6 @@ include_dirs.append(os.path.join('.', 'includefiles'))
 include_dirs.append(os.path.join('.', 'starlink', 'hds'))
 include_dirs += [os.path.join('.', i) for i in [starmem_path, ems_path, sae_path, cnf_path, hds_path]]
 
-print(include_dirs)
-
 #Now set up all the source files, starting with the main modules and
 #then all the .c files needed to build the libraries
 sources = [os.path.join('starlink', 'hds', 'hds.c')]
@@ -565,12 +563,26 @@ hds = Extension('starlink.hds',
 
 setup(name='starlink-hds',
       version='0.1',
+      description='Python interface to the Starlink HDS library'
       packages =['starlink'],
       ext_modules=[hds],
       test_suite='test',
+
       # metadata
       author='SF Graves',
+      author_email='s.graves@eaobservatory.org',
       description='Python interface to Starlink hds library',
       url='http://www.starlink.ac.uk',
       license="GNU GPL v3",
+      classifiers=[
+          'Development Status :: 4 - Beta',
+          'License :: OSI Approved :: GNU General Public License v3 or later (GPLV3+',
+          'Programming Language :: Python',
+          'Programming Language :: C',
+          'Topic :: Scientific/Engineering :: Astrononomy',
+          ]
+
+      install_requires = [
+          'numpy',
+          ]
       )
