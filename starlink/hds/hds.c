@@ -807,7 +807,25 @@ pyhds_getbadvalue(HDSObject *self, PyObject *args)
 		return NULL;
 }
 
-static PyMethodDef HDS_methods[] = {
+// module methods
+static PyMethodDef HDS_module_methods[] = {
+
+  {"_transfer", (PyCFunction)pydat_transfer, METH_VARARGS,
+   "starlink.hds.api.transfer(xloc) -- transfer HDS locator from NDF."},
+
+  {"new", (PyCFunction)pydat_new, METH_VARARGS,
+   "loc = new(filename, hdsname, type, dims) -- create a new HDS structure and return a locator. Dims is optional and implies a scalar object."},
+
+  {"open", (PyCFunction)pyhds_open, METH_VARARGS,
+   "loc = open(name, mode) -- open an existing HDS file with mode 'READ', 'WRITE' or 'UPDATE'"},
+
+  {"getbadvalue", (PyCFunction)pyhds_getbadvalue, METH_VARARGS,
+   "getbadvalue(type) -- return the bad pixel value for given HDS numerical data type."},
+  {NULL, NULL, 0, NULL} /* Sentinel */
+};
+
+// The methods of an hdsloc object
+static PyMethodDef HDSloc_methods[] = {
 
   {"_transfer", (PyCFunction)pydat_transfer, METH_VARARGS,
    "starlink.hds.api.transfer(xloc) -- transfer HDS locator from NDF."},
@@ -828,10 +846,7 @@ static PyMethodDef HDS_methods[] = {
    "loc2 = hdsloc1.index(index) -- returns locator of index'th component (starts at 0)."},
 
   {"new", (PyCFunction)pydat_new, METH_VARARGS,
-   "hdsloc.new(name,type,ndim,dim) -- create a primitive given a locator."},
-
-  {"open", (PyCFunction)pyhds_open, METH_VARARGS,
-   "loc = hds.open(name,type) -- open an HDS file."},
+   "newloc = hdsloc.new(name,type,dims) -- create a new HDS structure beneath the existing locator. Dims is optional and implies a scalar object."},
 
   {"put", (PyCFunction)pydat_put, METH_VARARGS,
    "status = hdsloc.put(value) -- write a primitive inside an hds item."},
@@ -841,6 +856,8 @@ static PyMethodDef HDS_methods[] = {
 
   {NULL, NULL, 0, NULL} /* Sentinel */
 };
+
+
 
 static PyTypeObject HDSType = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -864,14 +881,14 @@ static PyTypeObject HDSType = {
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
         Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    "Raw API for HDS access",           /* tp_doc */
+    "HDS Locator type: Raw API for HDS access",           /* tp_doc */
     0,		               /* tp_traverse */
     0,		               /* tp_clear */
     0,		               /* tp_richcompare */
     0,		               /* tp_weaklistoffset */
     0,		               /* tp_iter */
     0,		               /* tp_iternext */
-    HDS_methods,             /* tp_methods */
+    HDSloc_methods,             /* tp_methods */
     HDS_members,             /* tp_members */
     HDS_getseters,             /* tp_getset */
     0,                         /* tp_base */
@@ -922,7 +939,7 @@ static struct PyModuleDef moduledef = {
   "hds",
   "Raw HDS API",
   -1,
-  HDS_methods,
+  HDS_module_methods,
   NULL,
   NULL,
   NULL,
@@ -946,8 +963,8 @@ inithds(void)
 #ifdef USE_PY3K
     m = PyModule_Create(&moduledef);
 #else
-    m = Py_InitModule3("hds", HDS_methods,
-                      "Raw HDS API");
+    m = Py_InitModule3("hds", HDS_module_methods,
+                      "Raw HDS API:");
 #endif
     import_array();
 
