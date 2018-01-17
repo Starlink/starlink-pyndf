@@ -572,7 +572,7 @@ setup(name='starlink-hds',
       author='SF Graves',
       author_email='s.graves@eaobservatory.org',
       description='Python interface to Starlink hds library',
-      url='http://www.starlink.ac.uk',
+      url='https://github.com/sfgraves/starlink-pyhds',
       license="GNU GPL v3",
       classifiers=[
           'Development Status :: 4 - Beta',
