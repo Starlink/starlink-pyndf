@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: starlink-pyndf
-Version: 0.2
+Version: 0.3
 Summary: Python interface to Starlink ndf libraries
 Home-page: http://www.astro.warwick.ac.uk/
 Author: Tom Marsh
