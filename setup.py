@@ -575,10 +575,10 @@ setup(name='starlink-pyhds',
       license="GNU GPL v3",
       classifiers=[
           'Development Status :: 4 - Beta',
-          'License :: OSI Approved :: GNU General Public License v3 or later (GPLV3+',
+          'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
           'Programming Language :: Python',
           'Programming Language :: C',
-          'Topic :: Scientific/Engineering :: Astrononomy',
+          'Topic :: Scientific/Engineering :: Astronomy',
           ],
       install_requires = [
           'numpy',
