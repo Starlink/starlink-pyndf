@@ -561,7 +561,7 @@ hds = Extension('starlink.hds',
 
 
 
-setup(name='starlink-hds',
+setup(name='starlink-pyhds',
       version='0.1',
       description='Python interface to the Starlink HDS library',
       packages=['starlink'],
