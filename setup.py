@@ -559,11 +559,13 @@ hds = Extension('starlink.hds',
                 )
 
 
-
+with open('README.rst') as file:
+    long_description = file.read()
 
 setup(name='starlink-pyhds',
       version='0.1',
       description='Python interface to the Starlink HDS library',
+      long_description=long_description,
       packages=['starlink'],
       ext_modules=[hds],
       test_suite='test',
