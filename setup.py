@@ -557,7 +557,7 @@ define_macros.append(('TRAIL_TYPE', 'int'))
 
 #undef _POSIX_C_SOURCE
 #Doesn't look like it can change?
-define_macros.append(('_POSIX_C_SOURCE', '200112L'))
+#define_macros.append(('_POSIX_C_SOURCE', '200112L'))
 
 #undef _REENTRANT
 # should be defined probably if use_pthreads is defined?
