@@ -32,3 +32,19 @@ front of your path
 You should now have a tar ball named like e.g. hds-v4-5.2-1.tar.gz
 
 This will contain a configure script that can be distributed.
+
+
+# Dist builds of hds-v5
+currently missing:
+
+hds.h
+hds_v5_map.h
+hds1.h
+uthash.h
+utarray.h
+
+
+# Dist builds of hds-v4
+Currently missing
+
+hds_v4_map.h
