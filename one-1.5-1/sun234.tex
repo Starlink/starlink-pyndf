@@ -1,0 +1,698 @@
+\documentclass[twoside,11pt]{starlink}
+
+% ? Specify used packages
+%% \usepackage        %  Use this one for final production.
+%% \usepackage %  Use this one for drafting.
+% ? End of specify used packages
+
+
+
+% -----------------------------------------------------------------------------
+% ? Document identification
+% Fixed part
+\stardoccategory    {Starlink User Note}
+\stardocinitials    {SUN}
+\stardocsource      {sun\stardocnumber}
+\stardoccopyright
+{Copyright \copyright\ 2000 Council for the Central Laboratory of the Research Councils}
+
+% Variable part - replace [xxx] as appropriate.
+\stardocnumber      {234.5}
+\stardocauthors     {R.T.Platon \& T. Jenness}
+\stardocdate        {3rd December 2013}
+\stardoctitle       {ONE -- Odds and Ends Library}
+\stardocversion     {Version 1.4}
+\stardocmanual      {User's Guide}
+\stardocabstract  {
+This library is a set of Fortran and C routines
+of a general nature and usefulness,
+which are not suitable for inclusion in other more focussed libraries.
+}
+% ? End of document identification
+% -----------------------------------------------------------------------------
+
+% +
+%  Name:
+%     sun234.tex
+%
+%  Purpose:
+%     This is a description of the Odds & Ends library
+%
+%  Authors:
+%     RTP: Roy Platon (STARLINK, RAL)
+%
+%  History:
+%      2-AUG-2000 (RTP):
+%        Original version, based on Template (see SUN199).
+%
+% -
+
+\stardocname  {\stardocinitials /\stardocnumber}
+
+\providecommand{\noteroutine}[2]{\textbf{#1}\hspace*{\fill}\nopagebreak \\
+                             \hspace*{3em}\emph{#2}\hspace*{\fill}\par}
+
+
+
+
+% ? End of document specific commands
+% -----------------------------------------------------------------------------
+%  Title Page.
+%  ===========
+\begin{document}
+\scfrontmatter
+
+%  ==========================
+% ? Main text
+\section{Introduction}
+The Odds and Ends  (ONE) library is a collection of
+miscellaneous C and Fortran routines called from various packages
+in the Starlink Software Collection.
+In general these routines have been used in more than one package,
+so are suitable to be included in a public library,
+but are not suitable for inclusion in one of the other
+public libraries of more focussed routines.
+\section{List of routines}
+These routines were collected by examining possible entries and
+by a request for contributions.
+Extra routines may be added when necessary.
+
+The contents of the library are (in alphabetical order):\\
+\\
+\noteroutine{ONE\_EXEC( COMMAND, STATUS )}
+    {Executes a shell command.
+    Extracted from CCDPACK (submitted by P. Draper).}
+\noteroutine{ONE\_FIND\_FILE( FILESPEC, LISDIR, FILENAME, CONTEXT, STATUS )}
+    {Returns successive file names that match a file specification.
+    Taken from FIGARO, SST, CONVERT, KAPPA and CCDPACK.}
+\noteroutine{ONE\_FIND\_FILE\_END( CONTEXT, STATUS )}
+    {Terminate a sequence of FIND\_FILE calls.
+    Taken from FIGARO, SST, CONVERT, KAPPA and CCDPACK.}
+\noteroutine{ONE\_SCRSZ( WIDTH, HEIGHT, STATUS )}
+    {A Fortran callable function to obtain the size of the output screen.
+    Taken from CONVERT, KAPPA and IRCAMPACK.}
+\noteroutine{ONE\_SHELL\_ECHO( FILESPEC, FILENAME, STATUS )}
+    {Expands shell metacharacters in a string without file globbing.}
+\noteroutine{one\_snprintf( str, size, format, status, ... )}
+    {Starlink compliant wrapper around the standard snprintf function.}
+\noteroutine{one\_strlcat( dest, src, sizedest, status )}
+    {Wrapper around the standard BSD strlcat C function (safer variant
+      of strncat).}
+\noteroutine{one\_strlcpy( dest, src, sizedest, status )}
+   {Wrapper around the standard BSD strlcpy C function (safer variant of strncpy).}
+\noteroutine{one\_strtod( instr, status )}
+   {Extract a double precision value from a C string.}
+\noteroutine{ONE\_WORDEXP\_FILE( WORDS, CONTEXT, EXPAN, STATUS)}
+  {WORDEXP wrapper that verifies a file exists.}
+\noteroutine{ONE\_WORDEXP\_NOGLOB( WORDS, EXPAN, STATUS)}
+  {WORDEXP wrapper that expands shell variables without globbing.}
+\section{Routines descriptions}
+There follows a full description of the library routines in alphabetical order:
+
+\sstroutine{
+   ONE\_EXEC
+}{
+   Executes a shell command
+}{
+   \sstdescription{
+      This routine gives FORTRAN programs access to the UNIX
+      system(3) command. See the system(3) man page for how to
+      construct a suitable command.
+   }
+   \sstinvocation{
+      CALL ONE\_EXEC(COMMAND, STATUS)
+   }
+   \sstarguments{
+      \sstsubsection{
+         COMMAND = CHARACTER $*$ ( $*$ ) (Given)
+      }{
+         The command to be executed.
+      }
+      \sstsubsection{
+         STATUS = INTEGER (Given and Returned)
+      }{
+         The global status. Set to SAI\_\_ERROR if command fails.
+      }
+   }
+}
+\sstroutine{
+   ONE\_FIND\_FILE
+}{
+   Returns successive file names that match a file specification
+}{
+   \sstdescription{
+      This routine is intended to provide some of the faciltes provided
+      on a VAX by the standard VMS routine LIB\$FIND\_FILE.  It is passed
+      a file specification that can contain wild card characters such as
+      {\tt '}$*${\tt '}, eg {\tt '}$*$.$*${\tt '}. On the first call the Context variable should be set
+      to zero, and the routine will return the name of the first file that
+      matches the file specification. On subsequent calls the calling
+      routine should continue to call using the value of Context returned
+      by the previous call, and each call will return the name of the next
+      file that matches the specification. When the last file that matches
+      the specification has been returned, subsequent calls will return
+      a blank string as the file name and an error code (an even value)
+      as the function value. Finally, a call to ONE\_FIND\_FILE\_END with the
+      last returned value of Context will close down any files opened or
+      memory allocated by ONE\_FIND\_FILE.
+   }
+   \sstinvocation{
+      FOUND = ONE\_FIND\_FILE (FILESPEC,LISDIR,FILENAME,CONTEXT,STATUS)
+   }
+   \sstarguments{
+      \sstsubsection{
+         FILESPEC = CHARACTER (Given)
+      }{
+         The file specification to be matched.  May contain wildcards.
+         Case sensitive.
+      }
+      \sstsubsection{
+         LISDIR = LOGICAL (Given)
+      }{
+         TRUE if directory contents are to be listed for directories
+         that match the file specification. Should be set to FALSE
+         if matching directory names should be returned without opening the
+         directories themselves. Note that even if true, this routine
+         will not recurse into all subsubdirectories that match. To be
+         more explicit: TRUE is equivalent to {\tt '}ls{\tt '}, FALSE is equivalent to
+         {\tt '}ls -d{\tt '}. Neither is equivalent to {\tt '}find . -name {\tt "}filespec{\tt "}{\tt '}
+      }
+      \sstsubsection{
+         FILENAME = CHARACTER (Returned)
+      }{
+         The name of a file that matches FILESPEC.
+      }
+      \sstsubsection{
+         CONTEXT = INTEGER (Given and Returned)
+      }{
+         A variable used to remember the context of
+         a series of calls for the same file specification.
+         Should be set to zero by the caller for the first call
+         for a new specification and the value then returned
+         by this routine should be used in subsequent calls.
+      }
+      \sstsubsection{
+         STATUS = INTEGER (Given and Returned)
+      }{
+         A status code as follows
+         \sstitemlist{
+
+            \sstitem
+            SAI\_\_OK for success
+
+            \sstitem
+            ONE\_\_NOFILES - No more files found
+
+            \sstitem
+            ONE\_\_LENGTHERR - Bad parameter length
+
+            \sstitem
+            ONE\_\_PIPEERR  - Pipe error
+
+            \sstitem
+            ONE\_\_MALLOCERR - Malloc error
+         }
+      }
+   }
+   \sstreturnedvalue{
+      \sstsubsection{
+         ONE\_FIND\_FILE = LOGICAL
+      }{
+         TRUE if File Found
+         FALSE if error or no more files
+      }
+   }
+   \sstnotes{
+      This routine returns bad status (ONE\_\_NOFILES) even when the
+      status is not technically bad. In general, the caller should
+      annul this particular status condition before proceeding.
+   }
+   \sstbugs{
+      This routine does not provide all the facilities offered by the
+      original VAX version; it only accepts the first three arguments as
+      listed above, and almost of necessity it uses and expects UNIX syntax
+      for the file specs.  This means that {\tt '}/usr/users/ks/ $*$.$*${\tt '} is OK, but
+      {\tt '}[ks]$*$.$*${\tt '} is not. Note that {\tt '}$*${\tt '} and {\tt '}$*$.$*${\tt '} will give quite different
+      results under UNIX, whereas under VMS they would be the same. There
+      is no way of specifying recursion; {\tt '}/usr/user/ks/...{\tt '} for example
+      is meaningless. Nevertheless, it is hoped that it is close enough in
+      functionality to the VMS original to act as a useable substitute in
+      most cases. It cannot handle specifications that the standard shell
+      (sh) cannot handle in an {\tt '}ls{\tt '} command - there are some variations of
+      the {\tt '}ls{\tt '} command involving complex wildcarding that will cause sh
+      on a SUN to hang, and they will also hang this routine.
+
+      It is not at all clear that the method used here is  in any way
+      the best solution to the problem, and there are a number of possible
+      alternatives that could be tried, including using {\tt '}find{\tt '} rather than
+      {\tt '}ls{\tt '}, or using routines such as readdir() to search the file system
+      and do any pattern matching in this routine itself. The program as it
+      stands should be regarded (tolerantly!) as an initial attempt and
+      the author would be glad to be sent a better version.
+   }
+}
+\sstroutine{
+   ONE\_FIND\_FILE\_END
+}{
+   Terminate a sequence of ONE\_FIND\_FILE calls
+}{
+   \sstdescription{
+      This routine should be called after a sequence of calls to ONE\_FIND\_FILE
+      in order to release any resources used by ONE\_FIND\_FILE.  It should be
+      passed in its Context argument the value of the Context argument
+      as returned by the ONE\_FIND\_FILE in the last call in the sequence that
+      is to be closed down.
+   }
+   \sstinvocation{
+      CALL ONE\_FIND\_FILE\_END (CONTEXT, STATUS )
+   }
+   \sstarguments{
+      \sstsubsection{
+         CONTEXT = INTEGER (Given)
+      }{
+         The context argument returned by the last call to ONE\_FIND\_FILE
+         in the sequence to be closed down.
+      }
+      \sstsubsection{
+         STATUS = INTEGER (Given and Returned)
+      }{
+         Inherited status. Routine will attempt to free resources even
+         if status is bad on entry.
+      }
+   }
+}
+\sstroutine{
+   ONE\_SCRSZ
+}{
+   A Fortran callable function to obtain the size of the output screen
+}{
+   \sstdescription{
+      This routine interrogates the system to find the width and height of the screen
+      on which it is running.  Should an error occur or the width is
+      not positive, set to the default of 80 characters by 0 lines.
+   }
+   \sstinvocation{
+      CALL ONE\_SCRSZ( WIDTH, HEIGHT, STATUS )
+   }
+   \sstarguments{
+      \sstsubsection{
+         WIDTH = INTEGER (Returned)
+      }{
+         The width of the screen in characters. (default 80)
+      }
+      \sstsubsection{
+         HEIGHT = INTEGER (Returned)
+      }{
+         The height of the screen in lines. (default 0)
+      }
+      \sstsubsection{
+         STATUS = INTEGER (Given and Returned)
+      }{
+         The global status.
+         Set to SAI\_\_ERROR if an error occurs..
+      }
+   }
+   \sstnotes{
+      This is the UNIX version.
+   }
+}
+\sstroutine{
+   ONE\_SHELL\_ECHO
+}{
+   Interpret shell metacharacters in a string, without file globbing.
+}{
+   \sstdescription{
+      This routine is intended to expand shell metacharacters within
+      a supplied file name, in the case where the file may not already
+      exist. Any wild card characters within the string are ignored (i.e.
+      there is no file globbing).
+   }
+   \sstinvocation{
+      CALL ONE\_SHELL\_ECHO( FILESPEC, FILENAME, STATUS )
+   }
+   \sstarguments{
+      \sstsubsection{
+         FILESPEC = CHARACTER (Given)
+      }{
+         The file specification to be echoed.
+      }
+      \sstsubsection{
+         FILENAME = CHARACTER (Returned)
+      }{
+         The result of expanding any shell metacharacters (except wild
+         cards) within FILESPEC.
+      }
+      \sstsubsection{
+         STATUS = INTEGER (Given and Returned)
+      }{
+         A status code as follows
+         \sstitemlist{
+
+            \sstitem
+            SAI\_\_OK for success
+
+            \sstitem
+            ONE\_\_LENGTHERR - Bad parameter length
+
+            \sstitem
+            ONE\_\_PIPEERR  - Pipe error
+
+            \sstitem
+            ONE\_\_MALLOCERR - Malloc error
+         }
+      }
+   }
+}
+\sstroutine{
+   one\_snprintf
+}{
+   Starlink compliant wrapper around the standard snprintf function
+}{
+   \sstdescription{
+      The one\_snprintf function replaces all calls to sprintf() and snprintf()
+      to allow the use of inherited status and to trap for truncation.
+   }
+   \sstinvocation{
+      retval = one\_snprintf( char $*$ str, size\_t size,
+                              const char $*$ format, int $*$ status, ... );
+   }
+   \sstarguments{
+      \sstsubsection{
+         str = char $*$ (Returned)
+      }{
+         Buffer to be filled from the format statement. Must be at least "size"
+         characters in length.
+      }
+      \sstsubsection{
+         size = size\_t (Given)
+      }{
+         Allocated size of buffer "str".
+      }
+      \sstsubsection{
+         format = const char $*$ (Given)
+      }{
+         Standard format string as expected by snprintf.
+      }
+      \sstsubsection{
+         status = int $*$ (Given and Returned)
+      }{
+         Inherited status. Will be set to ONE\_\_TRUNC if the formatted version
+         of the string does not fit into the buffer "str".
+      }
+      \sstsubsection{
+         ... (Given)
+      }{
+         Variadic arguments required by snprintf.
+      }
+   }
+   \sstreturnedvalue{
+      \sstsubsection{
+         int retval
+      }{
+         Length of the string after appending. If the value exceeds the size of the
+         supplied buffer status will be set to ONE\_\_TRUNC but the value returned
+         will indicate the size of the buffer that would be required to completely
+         expand the formatted string.
+      }
+   }
+   \sstnotes{
+      \sstitemlist{
+
+         \sstitem
+         This is for use from C only.
+
+         \sstitem
+         Use this routine in place of snprintf and sprintf.
+      }
+   }
+}
+\sstroutine{
+   one\_strlcat
+}{
+   Starlink compliant wrapper around the BSD strlcat function
+}{
+   \sstdescription{
+      The strlcat function is similar to the strncat function except
+      that it guarantees to nul terminate the destination string
+      and returns the number of characters that will have been copied.
+      This wrapper function provides standard Starlink inherited status
+      semantics.
+   }
+   \sstinvocation{
+      len = one\_strlcat( char $*$ dest, const char $*$ src,
+                         size\_t sizedest, int $*$ status );
+   }
+   \sstarguments{
+      \sstsubsection{
+         dest = char $*$ (Returned)
+      }{
+         Destination buffer for {\tt "}src{\tt "}. Must be nul-terminated.
+         If status is bad on entry ''dest'' will not be touched.
+      }
+      \sstsubsection{
+         src = const char $*$ (Given)
+      }{
+         String to be copied.
+      }
+      \sstsubsection{
+         sizedest = size\_t (Given)
+      }{
+         The actual buffer size of {\tt "}dest{\tt "} including space for a nul.
+      }
+      \sstsubsection{
+         status = int $*$ (Given and Returned)
+      }{
+         Inherited status. Will be set to ONE\_\_TRUNC if the string
+         was truncated on copy.
+      }
+   }
+   \sstreturnedvalue{
+      \sstsubsection{
+         size\_t retval
+      }{
+         Length of the string after appending. Will either be
+         the length of the source string or one less than the
+         size of the destination buffer.
+      }
+   }
+   \sstnotes{
+      \sstitemlist{
+
+         \sstitem
+         This is for use from C only.
+
+         \sstitem
+         If available the system strlcat routine will be used.
+      }
+   }
+}
+\sstroutine{
+   one\_strlcpy
+}{
+   Starlink compliant wrapper around the BSD strlcpy function
+}{
+   \sstdescription{
+      The strlcpy function is similar to the strncpy function except
+      that it guarantees to nul terminate the destination string
+      and returns the number of characters that will have been copied.
+      This wrapper function provides standard Starlink inherited status
+      semantics.
+   }
+   \sstinvocation{
+      len = one\_strlcpy( char $*$ dest, const char $*$ src,
+                         size\_t sizedest, int $*$ status );
+   }
+   \sstarguments{
+      \sstsubsection{
+         dest = char $*$ (Returned)
+      }{
+         Destination buffer for {\tt "}src{\tt "}. Will be nul-terminated.
+         If status is bad on entry, dest will be nul-terminated
+         if it is non-NULL.
+      }
+      \sstsubsection{
+         src = const char $*$ (Given)
+      }{
+         String to be copied.
+      }
+      \sstsubsection{
+         sizedest = size\_t (Given)
+      }{
+         The actual buffer size of {\tt "}dest{\tt "} including space for a nul.
+      }
+      \sstsubsection{
+         status = int $*$ (Given and Returned)
+      }{
+         Inherited status. Will be set to ONE\_\_TRUNC if the string
+         was truncated on copy.
+      }
+   }
+   \sstreturnedvalue{
+      \sstsubsection{
+         size\_t retval
+      }{
+         Length of the string after copying. Will either be
+         the length of the source string or one less than the
+         size of the destination buffer.
+      }
+   }
+   \sstnotes{
+      \sstitemlist{
+
+         \sstitem
+         This is for use from C only.
+
+         \sstitem
+         If available the system strlcpy routine will be used.
+      }
+   }
+}
+\sstroutine{
+   one\_strtod
+}{
+   Starlink compliant wrapper around the standard strtod function
+}{
+   \sstdescription{
+      The strtod() function converts a string to a double precision
+      number. This function is the same except that there is not endptr
+      argument and it will set status to bad on failure and use inherited
+      status.
+   }
+   \sstinvocation{
+      dval = one\_strtod( const char $*$ instr, int $*$ status );
+   }
+   \sstarguments{
+      \sstsubsection{
+         instr = const char $*$ (Given)
+      }{
+         Input string to parse. Must be nul-terminated standard
+         C string suitable for the strtod() library call.
+      }
+      \sstsubsection{
+         status = int $*$ (Given and Returned)
+      }{
+         Inherited status. Will be set to ONE\_\_CNVERR if the string
+         did not contain a number.
+      }
+   }
+   \sstreturnedvalue{
+      \sstsubsection{
+         double dval
+      }{
+         Converted double precision value. VAL\_\_BADD on error.
+      }
+   }
+   \sstnotes{
+      \sstitemlist{
+
+         \sstitem
+         This is for use from C only.
+
+         \sstitem
+         Fortran D format is supported so 5.2D5 is converted to 5.2E5
+           before involving strtod.
+      }
+   }
+   \sstdiytopic{
+      See Also
+   }{
+      \sstitemlist{
+
+         \sstitem
+         CHR\_CTOD subroutine.
+      }
+   }
+}
+\sstroutine{
+   ONE\_WORDEXP\_FILE
+}{
+   WORDEXP wrapper that verifies a file exists
+}{
+   \sstdescription{
+      A wrapper around PSX\_WORDEXP that only returns files that
+      match the supplied WORDS string following expansion. EXPAN
+      will be an empty string if there are no matches and CONECT
+      will be set to 0.
+   }
+   \sstinvocation{
+      CALL ONE\_WORDEXP\_FILE( WORDS, CONTEXT, EXPAN, STATUS )
+   }
+   \sstarguments{
+      \sstsubsection{
+         WORDS = CHARACTER$*$($*$) (Given)
+      }{
+         The string to be shell expanded.
+      }
+      \sstsubsection{
+         CONTEXT = INTEGER (Given \& Returned)
+      }{
+         Should be initialised to 0 for initial shell expansion. Will
+         be set to zero when no more results are available.
+      }
+      \sstsubsection{
+         EXPAN = CHARACTER$*$($*$) (Given)
+      }{
+         Expanded string. A new string will be returned each call until
+         all are returned an CONTEXT is set to 0.
+      }
+      \sstsubsection{
+         STATUS = INTEGER (Given \& Returned)
+      }{
+         The global status.
+      }
+   }
+   \sstnotes{
+      \sstitemlist{
+
+         \sstitem
+         Continue to call this routine until CONTEXT is set to 0, otherwise
+         there will be a possible memory leak.
+
+         \sstitem
+         If there are multiple returns from PSX\_WORDEXP that are not files
+         this routine will loop internally until a valid file is located.
+      }
+   }
+}
+\sstroutine{
+   ONE\_WORDEXP\_NOGLOB
+}{
+   WORDEXP wrapper that expands shell variables without globbing
+}{
+   \sstdescription{
+      A wrapper around PSX\_WORDEXP that does shell expansion without
+      doing globbing. Glob wildcard characters are escaped, as are
+      illegal, to wordexp(), shell metacharacters such as {\tt "}({\tt "} and {\tt "}){\tt "}.
+
+      Only a single expansion string is returned by this routine and it
+      is an error for wordexp() to return multiple matches.
+   }
+   \sstinvocation{
+      CALL ONE\_WORDEXP\_NOGLOB( WORDS, EXPAN, STATUS )
+   }
+   \sstarguments{
+      \sstsubsection{
+         WORDS = CHARACTER$*$($*$) (Given)
+      }{
+         The string to be shell expanded.
+      }
+      \sstsubsection{
+         EXPAN = CHARACTER$*$($*$) (Given)
+      }{
+         Expanded string.
+      }
+      \sstsubsection{
+         STATUS = INTEGER (Given \& Returned)
+      }{
+         The global status.
+      }
+   }
+   \sstdiytopic{
+      See Also
+   }{
+      ONE\_SHELL\_ECHO is similar except that it guarantees to fork
+      whereas wordexp() might not fork.
+   }
+}
+
+\end{document}
