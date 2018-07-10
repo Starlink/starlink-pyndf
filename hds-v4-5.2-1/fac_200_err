@@ -1,0 +1,49 @@
+FACILITY DAT
+100,LOCIN,Locator invalid
+101,LOCER,Locator target erased
+102,TYPIN,Type invalid
+103,NAMIN,Name invalid
+104,MODIN,Mode invalid
+105,CONIN,Conversion invalid
+106,DELIN,Deletion invalid
+107,DIMIN,Dimensions invalid
+108,FILIN,File invalid
+109,OBJIN,Object invalid
+110,GRPIN,Group invalid
+111,SUBIN,Subscripts invalid
+112,COMEX,Component already exists
+113,OBJNF,Object not found
+114,TRUNC,Text truncated
+115,ACCON,Access conflict
+116,CONER,Conversion error
+117,UNSET,Primitive data undefined
+118,VERMM,Version mismatch
+119,PRMAP,Primitive data mapped
+120,RELIN,Relationship invalid
+121,FILCK,File locking error
+122,FILNF,File not found
+123,FILPR,File protected
+124,INCHK,Integrity check
+125,FATAL,Fatal internal error
+126,WEIRD,Unknown error
+127,EXCPA,Too many data parameters
+128,UNKPA,Unknown data parameter
+129,ISOPN,Parameter is currently active
+130,ERACT,Error activating DAT
+131,EREXH,Error establishing DAT exit handler
+132,NOMAP,Not mapped
+133,ISMAP,Data currently mapped
+134,STKOF,Recursion stack overflow
+135,BOUND,Outside bounds of object
+136,ACTIV,HDS is already active
+137,FILCL,File close error
+138,FILCR,File create error
+139,FILMP,File mapping error
+140,FILND,File not deleted
+141,FILNX,File not extended
+142,FILRD,File read error
+143,FILWR,File write error
+144,NOMEM,Memory allocation error
+145,WLDIN,Wild-card search context invalid
+146,NOCMP,No component name
+147,DTRNC,Dimensions truncate in Fortran INTEGER*4

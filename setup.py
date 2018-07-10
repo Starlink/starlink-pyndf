@@ -19,8 +19,8 @@ Setup script for the hds python extension
 #  hds-v4 and hds-v5.  These must all be built before hds is. hds-v5
 #  requires hdf5_path -- can this use installed version??
 
-hdsv4_path = 'hds-v4/'
-hdsv5_path = 'hds-v5/'
+hdsv4_path = 'hds-v4-5.2-1/'
+hdsv5_path = 'hds-v5-1.0-1/'
 hds_path = 'hds-6.0-1/'
 
 ems_path = 'ems-2.4-0/'
@@ -37,6 +37,18 @@ one_path = 'one-1.5-1'
 # The first thing is to build the hdf5 library.
 basedir = os.getcwd()
 os.chdir(os.path.join(hdf5_path,'hdf5'))
+subprocess.call('./configure')
+subprocess.call('make')
+os.chdir(basedir)
+
+basedir = os.getcwd()
+os.chdir(hdsv4_path)
+subprocess.call('./configure')
+subprocess.call('make')
+os.chdir(basedir)
+
+basedir = os.getcwd()
+os.chdir(hdsv5_path)
 subprocess.call('./configure')
 subprocess.call('make')
 os.chdir(basedir)
@@ -189,18 +201,18 @@ mers_C_INTERFACE_ADAM = [
 mers_sources = [os.path.join(mers_path, i) for i in
                 mers_C_INTERFACE_ROUTINES + mers_C_ROUTINES_STAND + mers_C_ROUTINES]# + mers_C_ROUTINES_ADAM]# + mers_C_INTERFACE_ADAM]
 
-hdsv4_sources = glob.glob(os.path.join(hdsv4_path, '*.c'))
-hdsv4_sources.remove(os.path.join(hdsv4_path, 'hds_test_prm.c'))
-hdsv4_sources.remove(os.path.join(hdsv4_path, 'hds_machine.c'))
-hdsv4_sources.remove(os.path.join(hdsv4_path, 'make-hds-types.c'))
-hdsv4_sources.remove(os.path.join(hdsv4_path, 'hdsTest.c'))
+#hdsv4_sources = glob.glob(os.path.join(hdsv4_path, '*.c'))
+#hdsv4_sources.remove(os.path.join(hdsv4_path, 'hds_test_prm.c'))
+#hdsv4_sources.remove(os.path.join(hdsv4_path, 'hds_machine.c'))
+#hdsv4_sources.remove(os.path.join(hdsv4_path, 'make-hds-types.c'))
+#hdsv4_sources.remove(os.path.join(hdsv4_path, 'hdsTest.c'))
 #hdsv4_sources.remove(os.path.join(hdsv4_path, 'fortran_interface.c'))
 
-hdsv5_sources = glob.glob(os.path.join(hdsv5_path, '*.c'))
-hdsv5_sources.remove(os.path.join(hdsv5_path, 'hds_machine.c'))
-hdsv5_sources.remove(os.path.join(hdsv5_path, 'make-hds-types.c'))
-hdsv5_sources.remove(os.path.join(hdsv5_path, 'hdsTest.c'))
-hdsv5_sources.remove(os.path.join(hdsv5_path, 'fortran_interface.c'))
+#hdsv5_sources = glob.glob(os.path.join(hdsv5_path, '*.c'))
+#hdsv5_sources.remove(os.path.join(hdsv5_path, 'hds_machine.c'))
+#hdsv5_sources.remove(os.path.join(hdsv5_path, 'make-hds-types.c'))
+#hdsv5_sources.remove(os.path.join(hdsv5_path, 'hdsTest.c'))
+#hdsv5_sources.remove(os.path.join(hdsv5_path, 'fortran_interface.c'))
 
 hds_C_ROUTINES = glob.glob(os.path.join(hds_path, '*.c'))
 # hds_C_ROUTINES = [
@@ -584,7 +596,9 @@ include_dirs.append(os.path.join(hdf5_path,'hdf5/hdf5/hl/src/'))
 
 include_dirs.append(os.path.join('.', 'starlink', 'hds'))
 
-include_dirs += [os.path.join('.', i) for i in [starmem_path, ems_path, one_path, sae_path, cnf_path, hdsv4_path, hdsv5_path, hds_path]]
+#include_dirs += [os.path.join('.', i) for i in [starmem_path, ems_path, one_path, sae_path, cnf_path, hdsv4_path, hdsv5_path, hds_path]]
+
+include_dirs += [os.path.join('.', i) for i in [starmem_path, ems_path, one_path, sae_path, cnf_path, hds_path]]
 
 #Now set up all the source files, starting with the main modules and
 #then all the .c files needed to build the libraries
@@ -596,8 +610,8 @@ sources += one_sources
 sources += cnf_sources
 sources += ems_sources
 sources += mers_sources
-sources += hdsv4_sources
-sources += hdsv5_sources
+#sources += hdsv4_sources
+#sources += hdsv5_sources
 sources += hds_sources
 
 define_macros.append(('HDS_INTERNAL_INCLUDES', '1'))
@@ -607,8 +621,18 @@ define_macros.append(('ERR__SZPAR', '15'))
 define_macros.append(('_GNU_SOURCE', 1))
 
 
-# Now set up the Extension.
+
+# Define the extras -- just put in all '.o' files except those known to cause problems.
 extras = glob.glob('star-thirdparty-hdfgroup-1.0/hdf5/hdf5/src/.libs/*.o')
+extras += glob.glob(os.path.join(hdsv4_path, '*.o'))
+extras += glob.glob(os.path.join(hdsv5_path, '*.o'))
+
+extras.remove(os.path.join(hdsv4_path, 'make-hds-types.o'))
+extras.remove(os.path.join(hdsv4_path, 'hds_machine.o'))
+extras.remove(os.path.join(hdsv5_path, 'make-hds-types.o'))
+
+
+# Now set up the Extension.
 hds = Extension('starlink.hds',
                 define_macros        = define_macros,
                 include_dirs         = include_dirs,
