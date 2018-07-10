@@ -3,9 +3,11 @@ starlink.hds
 
 starlink.hds is a Python extension of the C-based Starlink HDS
 library, allowing reading and writing of Starlink HDS format files
-inside Python. It does not require the Starlink software suite to be
-installed on your system. It also uses numpy, and it requires a c
-compiler to built.
+inside Python. It can read and write version 4 and version 5 (HDF5
+based) HDSfiles. It does not require the Starlink software suite to be
+installed on your system. It also requires numpy, and it requires a c
+compiler to built. It will build the HDF5 library itself and
+does not require a separate installation of that.
 
 This was adapted from the starlink.hds packaged shipped inside
 starlink-pyndf: https://github.com/timj/starlink-pyndf The primary
