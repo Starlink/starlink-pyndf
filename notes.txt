@@ -48,3 +48,5 @@ utarray.h
 Currently missing
 
 hds_v4_map.h
+
+# Mers -- cannot use dist builds a requires fortran?
