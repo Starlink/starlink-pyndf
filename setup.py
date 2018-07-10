@@ -576,7 +576,7 @@ include_dirs.append(os.path.join(hdf5_path,'hdf5/hdf5/hl/src/'))
 
 include_dirs.append(os.path.join('.', 'starlink', 'hds'))
 
-include_dirs += [os.path.join('.', i) for i in [starmem_path, ems_path, sae_path, cnf_path, hdsv4_path, hdsv5_path, hds_path]]
+include_dirs += [os.path.join('.', i) for i in [starmem_path, ems_path, one_path, sae_path, cnf_path, hdsv4_path, hdsv5_path, hds_path]]
 
 #Now set up all the source files, starting with the main modules and
 #then all the .c files needed to build the libraries
@@ -597,16 +597,16 @@ define_macros.append(('SAI__OK', '0'))
 define_macros.append(('ERR__SZMSG', '200'))
 define_macros.append(('ERR__SZPAR', '15'))
 define_macros.append(('_GNU_SOURCE', 1))
+
+
 # Now set up the Extension.
-
-
+extras = glob.glob('star-thirdparty-hdfgroup-1.0/hdf5/hdf5/src/.libs/*.o')
 hds = Extension('starlink.hds',
                 define_macros        = define_macros,
                 include_dirs         = include_dirs,
                 sources              = sources,
-                library_dirs = ['/export/data/sgraves/starlink-pyhds/star-thirdparty-hdfgroup-1.0/hdf5/hdf5/src/.libs'],
-                libraries = ['hdf5'],
-                runtime_library_dirs = ['/export/data/sgraves/starlink-pyhds/star-thirdparty-hdfgroup-1.0/hdf5/hdf5/src/.libs'],
+                extra_objects        = extras,
+                libraries = ['z'],
                 )
 
 
