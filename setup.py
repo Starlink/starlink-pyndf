@@ -15,16 +15,28 @@ import ctypes
 Setup script for the hds python extension
 """
 
-# The hds library requires: starmem, ems, hds and sae to build.
-#  These must all be built before hds is.
+# The hds library requires: starmem, ems, hds and sae to build. Then
+#  hds-v4 and hds-v5.  These must all be built before hds is. hds-v5
+#  requires hdf5_path -- can this use installed version??
 
-hds_path = 'hds-v4-5.2-1/'
+hdsv4_path = 'hds-v4/'
+hdsv5_path = 'hds-v5/'
+hds_path = 'hds-6.0-1/'
+
 ems_path = 'ems-2.4-0/'
 starmem_path = 'starmem-0.2-1/'
 sae_path = 'sae-1.1/'
 cnf_path = 'cnf-5.1-0/'
 mers_path = 'mers-2.2-0/'
 starutil_path = 'starutil-0.1-1/'
+hdf5_path = 'star-thirdparty-hdfgroup-1.0'
+one_path = 'one-1.5-1'
+
+
+one_sources = glob.glob(os.path.join(one_path, '*.c'))
+one_sources.remove(os.path.join(one_path, 'cone_test.c'))
+one_sources.remove(os.path.join(one_path, 'one_wordexp_noglob.c'))
+one_sources.remove(os.path.join(one_path, 'one_wordexp_file.c'))
 
 # starmem: these sources are taking from the Makefile.am after doing a
 # make dist in starmem.
@@ -168,64 +180,92 @@ mers_C_INTERFACE_ADAM = [
 
 mers_sources = [os.path.join(mers_path, i) for i in
                 mers_C_INTERFACE_ROUTINES + mers_C_ROUTINES_STAND + mers_C_ROUTINES]# + mers_C_ROUTINES_ADAM]# + mers_C_INTERFACE_ADAM]
-#hds
-hds_C_ROUTINES = [
-    'dat1_alloc_lcp.c', 'dat1_annul_lcp.c', 'dat1_check_mode.c',
-    'dat1_check_type.c', 'dat1_cvt_format.c', 'dat1_cvt_order.c',
-    'dat1_decoy.c', 'dat1_get_ncomp.c', 'dat1_get_odl.c', 'dat1_getenv.c',
-    'dat1_import_loc.c', 'dat1_init.c', 'dat1_init_ndr.c', 'dat1_intune.c',
-    'dat1_locate_name.c', 'dat1_pack_crv.c', 'dat1_pack_odl.c',
-    'dat1_pack_srv.c', 'dat1_put_ncomp.c', 'dat1_put_odl.c',
-    'dat1_show_ndr.c', 'dat1_unpack_crv.c', 'dat1_unpack_odl.c',
-    'dat1_unpack_srv.c', 'dat1_unpack_type.c', 'dat1_free_hdsloc.c',
-    'datClen.c', 'datCopy.c', 'datMsg.c', 'datRef.c',
-    'datDrep.c', 'datErmsg.c', 'datParen.c', 'datPrec.c', 'datPrmry.c', 'datRefct.c',
-    'datWhere.c', 'datalter.c', 'datannul.c', 'datccopy.c', 'daterase.c', 'datfinind.c',
-    'datget.c', 'datget0x.c', 'datinq.c', 'datlocops.c', 'datmap.c', 'datmove.c', 'datnew.c',
-    'datnew0.c', 'datMapN.c', 'datPut1C.c', 'datPutVC.c', 'datGet1C.c', 'datGetVC.c',
-    'datChscn.c',
-    'datput.c', 'datput0x.c', 'dattemp.c', 'daucheck.c', 'daucnv.c', 'daucopy.c',
-    'dauflush.c',
-    'dauloc.c', 'daumove.c', 'dauscatgath.c', 'daushape.c', 'dautypes.c',
-    'hds1_cleanup.c',
-    'hds1_exit.c', 'hdsCopy.c', 'hdsEwild.c', 'hds_globals.c', 'hdsGtune.c',
-    'hdsState.c', 'hdsStop.c', 'hdsTune.c',
-    'hdsWild.c', 'hdserase.c', 'hdsgroup.c', 'hdslock.c', 'hdsnew.c', 'hdsnull.c',
-    'hdsopclos.c', 'hdstools.c', 'hdsInfoI.c',
-    'dat1emsSetBigi.c', 'dat1emsSetBigu.c', 'dat1emsSetHdsdim.c',
-    'rec1_alloc_frame.c', 'rec1_clear_cbm.c', 'rec1_close_file.c',
-    'rec1_close_slot.c', 'rec1_create_file.c', 'rec1_deall_frame.c',
-    'rec1_extend_file.c', 'rec1_extend_frame.c', 'rec1_find_file.c',
-    'rec1_flush_block.c', 'rec1_fmsg.c', 'rec1_get_fid.c', 'rec1_get_path.c',
-    'rec1_getcwd.c', 'rec1_locate_hcb.c', 'rec1_lock_slot.c',
-    'rec1_map_frame.c', 'rec1_open_file.c', 'rec1_pack_chain.c',
-    'rec1_pack_hcb.c', 'rec1_pack_ncomp.c', 'rec1_pack_rcl.c',
-    'rec1_read_file.c', 'rec1_save_addr.c', 'rec1_scan_cbm.c',
-    'rec1_set_cbm.c', 'rec1_shell.c', 'rec1_test_cbm.c', 'rec1_unlock_slot.c',
-    'rec1_unmap_frame.c', 'rec1_unpack_chain.c', 'rec1_unpack_hcb.c',
-    'rec1_unpack_ncomp.c', 'rec1_unpack_rcl.c', 'rec1_update_free.c',
-    'rec1_write_file.c',
-    'rec_adopt_record.c', 'rec_alloc_mem.c', 'rec_alloc_xmem.c',
-    'rec_attach_file.c', 'rec_close_file.c', 'rec_create_record.c',
-    'rec_count_files.c',
-    'rec_deall_mem.c', 'rec_deall_xmem.c', 'rec_delete_record.c',
-    'rec_end_wild.c', 'rec_extend_record.c', 'rec_get_handle.c',
-    'rec_get_rcl.c', 'rec_get_rid.c', 'rec_list_files.c',
-    'rec_locate_block.c', 'rec_locate_data.c', 'rec_locate_fns.c',
-    'rec_lock.c', 'rec_mark_delete.c', 'rec_reall_mem.c', 'rec_refcnt.c',
-    'rec_release_block.c', 'rec_release_data.c', 'rec_reset_record.c',
-    'rec_same_file.c', 'rec_shrink_record.c', 'rec_start.c', 'rec_stop.c',
-    'rec_unlock.c', 'rec_where.c', 'rec_wild_file.c',
-    'rtl_fixups.c',
-    'win_fixups.c',
-    'hds_start.c']
-hds_PUBLIC_CINCLUDES = ['hds_v4.h', 'hds_types.h', 'hds_v4_map.h']
+
+hdsv4_sources = glob.glob(os.path.join(hdsv4_path, '*.c'))
+hdsv4_sources.remove(os.path.join(hdsv4_path, 'hds_test_prm.c'))
+hdsv4_sources.remove(os.path.join(hdsv4_path, 'hds_machine.c'))
+hdsv4_sources.remove(os.path.join(hdsv4_path, 'make-hds-types.c'))
+hdsv4_sources.remove(os.path.join(hdsv4_path, 'hdsTest.c'))
+#hdsv4_sources.remove(os.path.join(hdsv4_path, 'fortran_interface.c'))
+
+hdsv5_sources = glob.glob(os.path.join(hdsv5_path, '*.c'))
+hdsv5_sources.remove(os.path.join(hdsv5_path, 'hds_machine.c'))
+hdsv5_sources.remove(os.path.join(hdsv5_path, 'make-hds-types.c'))
+hdsv5_sources.remove(os.path.join(hdsv5_path, 'hdsTest.c'))
+hdsv5_sources.remove(os.path.join(hdsv5_path, 'fortran_interface.c'))
+
+hds_C_ROUTINES = glob.glob(os.path.join(hds_path, '*.c'))
+# hds_C_ROUTINES = [
+#     'dat1_alloc_lcp.c', 'dat1_annul_lcp.c', 'dat1_check_mode.c',
+#     'dat1_check_type.c', 'dat1_cvt_format.c', 'dat1_cvt_order.c',
+#     'dat1_decoy.c', 'dat1_get_ncomp.c', 'dat1_get_odl.c', 'dat1_getenv.c',
+#     'dat1_import_loc.c', 'dat1_init.c', 'dat1_init_ndr.c', 'dat1_intune.c',
+#     'dat1_locate_name.c', 'dat1_pack_crv.c', 'dat1_pack_odl.c',
+#     'dat1_pack_srv.c', 'dat1_put_ncomp.c', 'dat1_put_odl.c',
+#     'dat1_show_ndr.c', 'dat1_unpack_crv.c', 'dat1_unpack_odl.c',
+#     'dat1_unpack_srv.c', 'dat1_unpack_type.c', 'dat1_free_hdsloc.c',
+#     'datClen.c', 'datCopy.c', 'datMsg.c', 'datRef.c',
+#     'datDrep.c', 'datErmsg.c', 'datParen.c', 'datPrec.c', 'datPrmry.c', 'datRefct.c',
+#     'datWhere.c', 'datalter.c', 'datannul.c', 'datccopy.c', 'daterase.c', 'datfinind.c',
+#     'datget.c', 'datget0x.c', 'datinq.c', 'datlocops.c', 'datmap.c', 'datmove.c', 'datnew.c',
+#     'datnew0.c', 'datMapN.c', 'datPut1C.c', 'datPutVC.c', 'datGet1C.c', 'datGetVC.c',
+#     'datChscn.c',
+#     'datput.c', 'datput0x.c', 'dattemp.c', 'daucheck.c', 'daucnv.c', 'daucopy.c',
+#     'dauflush.c',
+#     'dauloc.c', 'daumove.c', 'dauscatgath.c', 'daushape.c', 'dautypes.c',
+#     'hds1_cleanup.c',
+#     'hds1_exit.c', 'hdsCopy.c', 'hdsEwild.c', 'hds_globals.c', 'hdsGtune.c',
+#     'hdsState.c', 'hdsStop.c', 'hdsTune.c',
+#     'hdsWild.c', 'hdserase.c', 'hdsgroup.c', 'hdslock.c', 'hdsnew.c', 'hdsnull.c',
+#     'hdsopclos.c', 'hdstools.c', 'hdsInfoI.c',
+#     'dat1emsSetBigi.c', 'dat1emsSetBigu.c', 'dat1emsSetHdsdim.c',
+#     'rec1_alloc_frame.c', 'rec1_clear_cbm.c', 'rec1_close_file.c',
+#     'rec1_close_slot.c', 'rec1_create_file.c', 'rec1_deall_frame.c',
+#     'rec1_extend_file.c', 'rec1_extend_frame.c', 'rec1_find_file.c',
+#     'rec1_flush_block.c', 'rec1_fmsg.c', 'rec1_get_fid.c', 'rec1_get_path.c',
+#     'rec1_getcwd.c', 'rec1_locate_hcb.c', 'rec1_lock_slot.c',
+#     'rec1_map_frame.c', 'rec1_open_file.c', 'rec1_pack_chain.c',
+#     'rec1_pack_hcb.c', 'rec1_pack_ncomp.c', 'rec1_pack_rcl.c',
+#     'rec1_read_file.c', 'rec1_save_addr.c', 'rec1_scan_cbm.c',
+#     'rec1_set_cbm.c', 'rec1_shell.c', 'rec1_test_cbm.c', 'rec1_unlock_slot.c',
+#     'rec1_unmap_frame.c', 'rec1_unpack_chain.c', 'rec1_unpack_hcb.c',
+#     'rec1_unpack_ncomp.c', 'rec1_unpack_rcl.c', 'rec1_update_free.c',
+#     'rec1_write_file.c',
+#     'rec_adopt_record.c', 'rec_alloc_mem.c', 'rec_alloc_xmem.c',
+#     'rec_attach_file.c', 'rec_close_file.c', 'rec_create_record.c',
+#     'rec_count_files.c',
+#     'rec_deall_mem.c', 'rec_deall_xmem.c', 'rec_delete_record.c',
+#     'rec_end_wild.c', 'rec_extend_record.c', 'rec_get_handle.c',
+#     'rec_get_rcl.c', 'rec_get_rid.c', 'rec_list_files.c',
+#     'rec_locate_block.c', 'rec_locate_data.c', 'rec_locate_fns.c',
+#     'rec_lock.c', 'rec_mark_delete.c', 'rec_reall_mem.c', 'rec_refcnt.c',
+#     'rec_release_block.c', 'rec_release_data.c', 'rec_reset_record.c',
+#     'rec_same_file.c', 'rec_shrink_record.c', 'rec_start.c', 'rec_stop.c',
+#     'rec_unlock.c', 'rec_where.c', 'rec_wild_file.c',
+#     'rtl_fixups.c',
+#     'win_fixups.c',
+#     'hds_start.c']
+hds_sources = hds_C_ROUTINES
+
+hds_sources.remove(os.path.join(hds_path, 'hdsTest.c'))
+hds_sources.remove(os.path.join(hds_path, 'make-hds-types.c'))
+hds_sources.remove(os.path.join(hds_path, 'fortran_interface.c'))
+hds_sources.remove(os.path.join(hds_path, 'hdsdim.c'))
+hds_sources.remove(os.path.join(hds_path, 'hdsDimtoc.c'))
+hds_sources.remove(os.path.join(hds_path, 'hdsFind.c'))
+hds_sources.remove(os.path.join(hds_path, 'hdsSplit.c'))
+hds_sources.remove(os.path.join(hds_path, 'hds_split.c'))
+hds_sources.remove(os.path.join(hds_path, 'hds_run.c'))
+
+hds_PUBLIC_CINCLUDES = ['hds_v4.h', 'hds_types.h']
 hds_PRIVATE_INCLUDES =[
 	'dat_par.h hds.h',
         'dat1.h','hds1.h','hds2.h', 'hds1_types.h',
 	'rec.h','rec1.h','str.h',
         'win_fixups.h']
-hds_sources = [os.path.join(hds_path, i) for i in hds_C_ROUTINES]
+#hds_sources = [os.path.join(hds_path, i) for i in hds_C_ROUTINES]
+
+
 
 # with sources, we now need to replicate the configure action. I'm
 # doing this manually witht he compiler,but I'm very sure this is a
@@ -530,8 +570,13 @@ define_macros.append(('_POSIX_C_SOURCE', '200112L'))
 include_dirs = []
 include_dirs.append(np.get_include())
 include_dirs.append(os.path.join('.', 'includefiles'))
+include_dirs.append(os.path.join(hdf5_path,'hdf5/hdf5/src/'))
+include_dirs.append(os.path.join(hdf5_path,'hdf5/hdf5/hl/src/'))
+
+
 include_dirs.append(os.path.join('.', 'starlink', 'hds'))
-include_dirs += [os.path.join('.', i) for i in [starmem_path, ems_path, sae_path, cnf_path, hds_path]]
+
+include_dirs += [os.path.join('.', i) for i in [starmem_path, ems_path, sae_path, cnf_path, hdsv4_path, hdsv5_path, hds_path]]
 
 #Now set up all the source files, starting with the main modules and
 #then all the .c files needed to build the libraries
@@ -539,23 +584,29 @@ sources = [os.path.join('starlink', 'hds', 'hds.c')]
 
 sources += starmem_sources
 sources += starutil_sources
+sources += one_sources
 sources += cnf_sources
 sources += ems_sources
 sources += mers_sources
+sources += hdsv4_sources
+sources += hdsv5_sources
 sources += hds_sources
 
 define_macros.append(('HDS_INTERNAL_INCLUDES', '1'))
 define_macros.append(('SAI__OK', '0'))
 define_macros.append(('ERR__SZMSG', '200'))
 define_macros.append(('ERR__SZPAR', '15'))
-
+define_macros.append(('_GNU_SOURCE', 1))
 # Now set up the Extension.
 
 
 hds = Extension('starlink.hds',
                 define_macros        = define_macros,
                 include_dirs         = include_dirs,
-                sources              = sources
+                sources              = sources,
+                library_dirs = ['/export/data/sgraves/starlink-pyhds/star-thirdparty-hdfgroup-1.0/hdf5/hdf5/src/.libs'],
+                libraries = ['hdf5'],
+                runtime_library_dirs = ['/export/data/sgraves/starlink-pyhds/star-thirdparty-hdfgroup-1.0/hdf5/hdf5/src/.libs'],
                 )
 
 
@@ -583,6 +634,6 @@ setup(name='starlink-pyhds',
           'Topic :: Scientific/Engineering :: Astronomy',
           ],
       install_requires = [
-          'numpy',
+          'numpy', 'h5py',
           ],
       )
