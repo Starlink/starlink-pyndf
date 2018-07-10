@@ -628,7 +628,6 @@ extras += glob.glob(os.path.join(hdsv4_path, '*.o'))
 extras += glob.glob(os.path.join(hdsv5_path, '*.o'))
 
 extras.remove(os.path.join(hdsv4_path, 'make-hds-types.o'))
-extras.remove(os.path.join(hdsv4_path, 'hds_machine.o'))
 extras.remove(os.path.join(hdsv5_path, 'make-hds-types.o'))
 
 
