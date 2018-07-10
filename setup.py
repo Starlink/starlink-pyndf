@@ -10,7 +10,7 @@ import numpy as np
 import ctypes
 
 
-
+import subprocess
 """
 Setup script for the hds python extension
 """
@@ -32,6 +32,14 @@ starutil_path = 'starutil-0.1-1/'
 hdf5_path = 'star-thirdparty-hdfgroup-1.0'
 one_path = 'one-1.5-1'
 
+
+
+# The first thing is to build the hdf5 library.
+basedir = os.getcwd()
+os.chdir(os.path.join(hdf5_path,'hdf5'))
+subprocess.call('./configure')
+subprocess.call('make')
+os.chdir(basedir)
 
 one_sources = glob.glob(os.path.join(one_path, '*.c'))
 one_sources.remove(os.path.join(one_path, 'cone_test.c'))
@@ -634,6 +642,6 @@ setup(name='starlink-pyhds',
           'Topic :: Scientific/Engineering :: Astronomy',
           ],
       install_requires = [
-          'numpy', 'h5py',
+          'numpy',
           ],
       )
