@@ -3,6 +3,7 @@ from __future__ import print_function
 from distutils import ccompiler, sysconfig
 from setuptools import setup
 from setuptools import Extension
+from distutils.command.build_ext import build_ext
 import glob
 import sys
 import os
@@ -12,7 +13,7 @@ import ctypes
 
 import subprocess
 """
-Setup script for the hds python extension
+Setup script for the hds python extension.
 """
 
 # The hds library requires: starmem, ems, hds and sae to build. Then
@@ -32,28 +33,6 @@ starutil_path = 'starutil-0.1-1/'
 hdf5_path = 'star-thirdparty-hdfgroup-1.0'
 one_path = 'one-1.5-1'
 
-
-
-# The first thing is to build the hdf5 library.
-basedir = os.getcwd()
-os.chdir(os.path.join(hdf5_path,'hdf5'))
-subprocess.call('./configure')
-subprocess.call('make')
-os.chdir(basedir)
-
-
-#Now build the hdsv4 and hdsv5 libraries.
-basedir = os.getcwd()
-os.chdir(hdsv4_path)
-subprocess.call('./configure')
-subprocess.call('make')
-os.chdir(basedir)
-
-basedir = os.getcwd()
-os.chdir(hdsv5_path)
-subprocess.call('./configure')
-subprocess.call('make')
-os.chdir(basedir)
 
 
 # Get the source files. Odds and ends (one) repo:
@@ -543,36 +522,60 @@ define_macros.append(('_GNU_SOURCE', 1))
 
 
 
-# Define the extras -- just put in all '.o' files except those known
-# to cause problems.
-extras = glob.glob(os.path.join(hdf5_path,
-                                'hdf5','hdf5','src', '.libs', '*.o'))
-extras += glob.glob(os.path.join(hdsv4_path, '*.o'))
-extras += glob.glob(os.path.join(hdsv5_path, '*.o'))
-
-# Don't try and include make-hds-types.o file.
-extras.remove(os.path.join(hdsv4_path, 'make-hds-types.o'))
-extras.remove(os.path.join(hdsv5_path, 'make-hds-types.o'))
-
 
 # Now set up the Extension.
 hds = Extension('starlink.hds',
                 define_macros        = define_macros,
                 include_dirs         = include_dirs,
                 sources              = sources,
-                extra_objects        = extras,
                 libraries = ['z'],
                 )
+
+# Set up the custom build_ext options, to call ./configure and make
+# for hdf5, hdsv4 and hdsv5.
+def configuremake(path):
+    basedir = os.getcwd()
+    os.chdir(path)
+    subprocess.call('./configure')
+    subprocess.call('make')
+    os.chdir(basedir)
+
+
+class custom_build(build_ext):
+    def run(self):
+
+        # Before we can build the extension, we have to run
+        # ./configure and make for hdf5, hdsv4 and hdsv5.
+        configuremake(os.path.join(hdf5_path, 'hdf5'))
+        configuremake(hdsv4_path)
+        configuremake(hdsv5_path)
+
+        # We now need to add all of the appropriate .o files to the
+        # extra_objects option for this extension.
+        extras = glob.glob(os.path.join(hdf5_path,
+                                'hdf5','hdf5','src', '.libs', '*.o'))
+        extras += glob.glob(os.path.join(hdsv4_path, '*.o'))
+        extras += glob.glob(os.path.join(hdsv5_path, '*.o'))
+        extras.remove(os.path.join(hdsv4_path, 'make-hds-types.o'))
+        extras.remove(os.path.join(hdsv5_path, 'make-hds-types.o'))
+
+        self.extensions[0].extra_objects = extras
+
+        build_ext.run(self)
 
 
 with open('README.rst') as file:
     long_description = file.read()
+
+
+
 
 setup(name='starlink-pyhds',
       version='0.2',
       description='Python interface to the Starlink HDS library',
       long_description=long_description,
       packages=['starlink'],
+      cmdclass={'build_ext': custom_build},
       ext_modules=[hds],
       test_suite='test',
 
