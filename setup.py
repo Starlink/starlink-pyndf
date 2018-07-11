@@ -515,7 +515,7 @@ sources += mers_sources
 sources += hds_sources
 
 define_macros.append(('HDS_INTERNAL_INCLUDES', '1'))
-define_macros.append(('SAI__OK', '0'))
+#define_macros.append(('SAI__OK', '0'))
 define_macros.append(('ERR__SZMSG', '200'))
 define_macros.append(('ERR__SZPAR', '15'))
 define_macros.append(('_GNU_SOURCE', 1))
@@ -533,11 +533,25 @@ hds = Extension('starlink.hds',
 
 # Set up the custom build_ext options, to call ./configure and make
 # for hdf5, hdsv4 and hdsv5.
-def configuremake(path):
+def configuremake(path, cppflags=None, lddflags=None,
+                  maketargets=None):
     basedir = os.getcwd()
     os.chdir(path)
-    subprocess.call('./configure')
-    subprocess.call('make')
+    env = os.environ
+    if cppflags:
+        env['CPPFLAGS']=cppflags
+    if lddflags:
+        env['LDDFLAGS']=lddflags
+    print('running subprocess!')
+    subprocess.call('./configure', env=env)
+    print('Done running configure in subprocess!')
+    if not maketargets:
+        print('Running make')
+        subprocess.call('make', env=env)
+    else:
+        for target in maketargets:
+            print('Running make {}'.format(target))
+            subprocess.call(['make', target], env=env)
     os.chdir(basedir)
 
 
@@ -546,9 +560,23 @@ class custom_build(build_ext):
 
         # Before we can build the extension, we have to run
         # ./configure and make for hdf5, hdsv4 and hdsv5.
+        print('\n\nBuilding HDF5')
         configuremake(os.path.join(hdf5_path, 'hdf5'))
-        configuremake(hdsv4_path)
-        configuremake(hdsv5_path)
+
+        incfiles = os.path.join(os.pardir, 'includefiles')
+        print('\n\nBuilding HDSV4')
+        configuremake(hdsv4_path, cppflags='-I{}'.format(incfiles),
+                      maketargets=['hds_types.h', 'libhds_v4.la'])
+        print('\n\nBuilding HDSV5')
+        hdf5loc = os.path.join(os.pardir,hdf5_path, 'hdf5', 'hdf5', 'src')
+        hdf5hlloc = os.path.join(os.pardir,hdf5_path, 'hdf5', 'hdf5', 'hl', 'src')
+        hdf5lib_loc = os.path.join(hdf5loc, '.libs')
+        print('hdf5lib_loc is {}'.format(hdf5lib_loc))
+        configuremake(hdsv5_path, cppflags='-I{} -I{} -I{}'.format(incfiles,
+                                                                   hdf5loc,
+                                                                   hdf5hlloc),
+                      lddflags = '-L{}'.format(hdf5lib_loc),
+                      maketargets=['hds_types.h', 'libhds_v5.la'])
 
         # We now need to add all of the appropriate .o files to the
         # extra_objects option for this extension.
@@ -561,6 +589,7 @@ class custom_build(build_ext):
 
         self.extensions[0].extra_objects = extras
 
+        print('\n\n\n Building main hds extension')
         build_ext.run(self)
 
 
