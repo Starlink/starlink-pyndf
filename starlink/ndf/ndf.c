@@ -472,6 +472,38 @@ pyndf_begin(NDF *self)
     Py_RETURN_NONE;
 };
 
+
+/* With an NDF object and an ndf section expression,return a new NDF.*/
+static PyObject*
+pyndf_section(NDF *self, PyObject *args)
+{
+  const char *expression;
+
+  if(!PyArg_ParseTuple(args, "s:pyndf_section", &expression))
+    return NULL;
+
+  // Get the hds locator
+  int status = SAI__OK;
+  HDSLoc* loc = NULL;
+
+  errBegin(&status);
+
+  char *mode;
+  mode = "READ";
+
+  ndfLoc(self->_ndfid, mode, &loc, &status);
+  if (raiseNDFException(&status)) return NULL;
+
+  int indf;
+  errBegin(&status);
+  indf = NDF__NOID;
+  ndfFind(loc, expression, &indf, &status);
+  if (raiseNDFException(&status)) return NULL;
+
+  int place = NDF__NOPL;
+  return NDF_create_object(indf, place);
+};
+
 static PyObject*
 pyndf_bound(NDF *self)
 {
@@ -1107,6 +1139,9 @@ static PyMethodDef NDF_methods[] = {
 
     {"gtwcs", (PyCFunction)pyndf_gtwcs, METH_NOARGS,
      "wcs = indf.gtwcs() -- returns an pyast FrameSet describing the WCS."},
+
+    {"section", (PyCFunction)pyndf_section, METH_VARARGS,
+     "newndf = indf.section(sect) -- return a new NDF, sect should include brackets e.g. sect='(1:10,,~85%)'"},
 
     {"open", (PyCFunction)pyndf_open, METH_VARARGS,
      "indf = ndf.open(name) -- opens an NDF file."},
