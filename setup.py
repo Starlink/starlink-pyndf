@@ -545,10 +545,17 @@ def configuremake(path, cppflags=None, lddflags=None,
         env['LDDFLAGS']=lddflags
 
     # We ahve to touch the files to ensure they have the write timestamps.
-    fnames = ['aclocal.m4', 'configure', 'Makefile.in']
+    fnames = ['ltmain.sh',
+              'missing',
+              'install-sh',
+              'config.sub',
+              'config.guess',
+              'compile',
+              'configure.ac', 'Makefile.am', 'aclocal.m4', 'configure', 'Makefile.in']
     for fn in fnames:
-        os.utime(fn, None)
-        time.sleep(1)
+        if os.path.isfile(fn):
+            os.utime(fn, None)
+            time.sleep(1)
     subprocess.check_call('./configure', env=env)
 
     if not maketargets:
