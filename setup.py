@@ -6,6 +6,7 @@ from setuptools import Extension
 from distutils.command.build_ext import build_ext
 import glob
 import sys
+import time
 import os
 import numpy as np
 import ctypes
@@ -542,16 +543,21 @@ def configuremake(path, cppflags=None, lddflags=None,
         env['CPPFLAGS']=cppflags
     if lddflags:
         env['LDDFLAGS']=lddflags
-    print('running subprocess!')
-    subprocess.call('./configure', env=env)
-    print('Done running configure in subprocess!')
+
+    # We ahve to touch the files to ensure they have the write timestamps.
+    fnames = ['aclocal.m4', 'configure', 'Makefile.in']
+    for fn in fnames:
+        os.utime(fn, None)
+        time.sleep(1)
+    subprocess.check_call('./configure', env=env)
+
     if not maketargets:
-        print('Running make')
-        subprocess.call('make', env=env)
+        print('Running make.')
+        subprocess.check_call('make', env=env)
     else:
         for target in maketargets:
             print('Running make {}'.format(target))
-            subprocess.call(['make', target], env=env)
+            subprocess.check_call(['make', target], env=env)
     os.chdir(basedir)
 
 
@@ -571,7 +577,7 @@ class custom_build(build_ext):
         hdf5loc = os.path.join(os.pardir,hdf5_path, 'hdf5', 'hdf5', 'src')
         hdf5hlloc = os.path.join(os.pardir,hdf5_path, 'hdf5', 'hdf5', 'hl', 'src')
         hdf5lib_loc = os.path.join(hdf5loc, '.libs')
-        print('hdf5lib_loc is {}'.format(hdf5lib_loc))
+
         configuremake(hdsv5_path, cppflags='-I{} -I{} -I{}'.format(incfiles,
                                                                    hdf5loc,
                                                                    hdf5hlloc),
