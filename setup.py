@@ -16,10 +16,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from numpy.distutils.core import setup, Extension
+from numpy.distutils.core import setup
 import numpy.distutils.fcompiler as fcompiler
-
+from distutils.core import Extension
 import sys, os, subprocess, numpy
+from starlink import hds
 
 # Can not seem to work out how to get the --fcompiler option
 # to work with numpy.distutils so look for it myself
@@ -57,11 +58,21 @@ if 'STARLINK_DIR' in os.environ:
         libraries = [ x.decode('ascii') for x in libraries]
     library_dirs.append(os.path.join(os.environ['STARLINK_DIR'], 'lib'))
     include_dirs.append(os.path.join(os.environ['STARLINK_DIR'], 'include'))
+
 else:
     print("Environment variable STARLINK_DIR not defined!")
     exit(1)
 
+
+
+
 include_dirs.append(numpy.get_include())
+
+
+# Need to include the python HDS library, otherwise the hds._transfer command
+# won't be able to import NDF locators.
+extra_objects = [hds.__file__]
+library_dirs.append(os.path.split(hds.__file__)[0])
 
 # NDF needs fortran runtime library for linking and HDS does still
 # come with a small fortran dependency
@@ -82,24 +93,15 @@ ndf = Extension('starlink.ndf',
                 library_dirs         = library_dirs,
                 runtime_library_dirs = library_dirs,
                 libraries            = libraries,
+                extra_objects        = extra_objects,
                 sources              = [os.path.join('starlink', 'ndf', 'ndf.c')]
                 )
 
-hds = Extension('starlink.hds',
-                define_macros        = [('MAJOR_VERSION', '0'),
-                                        ('MINOR_VERSION', '2')],
-                undef_macros         = ['USE_NUMARRAY'],
-                include_dirs         = include_dirs,
-                library_dirs         = library_dirs,
-                runtime_library_dirs = library_dirs,
-                libraries            = libraries,
-                sources              = [os.path.join('starlink', 'hds','hds.c')]
-                )
 
 setup(name='starlink-pyndf',
-      version='0.2',
+      version='0.3',
       packages =['starlink','starlink.ndfpack'],
-      ext_modules=[ndf,hds],
+      ext_modules=[ndf],
       # metadata
       author='Tom Marsh',
       author_email='t.r.marsh@warwick.ac.uk',
