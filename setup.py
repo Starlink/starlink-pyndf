@@ -534,15 +534,12 @@ hds = Extension('starlink.hds',
 
 # Set up the custom build_ext options, to call ./configure and make
 # for hdf5, hdsv4 and hdsv5.
-def configuremake(path, cppflags=None, lddflags=None,
+def configuremake(path, cppflags=None, ldflags=None,
                   maketargets=None):
     basedir = os.getcwd()
     os.chdir(path)
     env = os.environ
-    if cppflags:
-        env['CPPFLAGS']=cppflags
-    if lddflags:
-        env['LDDFLAGS']=lddflags
+
 
     # We ahve to touch the files to ensure they have the write timestamps.
     fnames = ['ltmain.sh',
@@ -558,6 +555,10 @@ def configuremake(path, cppflags=None, lddflags=None,
             time.sleep(1)
     subprocess.check_call('./configure', env=env)
 
+    if cppflags:
+        env['CPPFLAGS']=cppflags
+    if ldflags:
+        env['LDFLAGS']=ldflags
     if not maketargets:
         print('Running make.')
         subprocess.check_call('make', env=env)
@@ -588,7 +589,7 @@ class custom_build(build_ext):
         configuremake(hdsv5_path, cppflags='-I{} -I{} -I{}'.format(incfiles,
                                                                    hdf5loc,
                                                                    hdf5hlloc),
-                      lddflags = '-L{}'.format(hdf5lib_loc),
+                      ldflags = '-L{}'.format(hdf5lib_loc),
                       maketargets=['hds_types.h', 'libhds_v5.la'])
 
         # We now need to add all of the appropriate .o files to the
