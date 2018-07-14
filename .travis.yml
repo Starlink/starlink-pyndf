@@ -23,5 +23,5 @@ matrix:
 
 env:
   global:
-    - CIBW_TEST_COMMAND="pytest -v {project}/test; export HDS_VERSION=5; pytest -v {project}/test"
+    - CIBW_TEST_COMMAND="pytest -v {project}/test"
     - CIBW_TEST_REQUIRES=pytest
