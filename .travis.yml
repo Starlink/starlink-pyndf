@@ -1,21 +1,31 @@
+
 language: python
 
-python:
- - "3.6"
- - "3.5"
- - "2.7"
+matrix:
+    include:
+     - sudo: required
+       services:
+        - docker
+        python: "3.6"
+        env:
+          - CIBW_BEFORE_BUILD='yum install gfortran && {pip} install Cython && {pip} install .'
+          - PIP=pip
+        install:
+        - $PIP install cibuildwheel==0.9.3
+        script:
+        - cibuildwheel --output-dir wheelhouse
+     -os: osx
+      language: generic
+      env:
+        - CIBW_BEFORE_BUILD='brew update && brew install gcc && {pip} install Cython && {pip} install .'
+        - PIP=pip2
+      install:
+       - $PIP install cibuildwheel==0.9.3;
+      script:
+       - cibuildwheel --output-dir wheelhouse
 
-os:
- - linux
-
-
-before_install:
- - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install gfortran; fi
-
-
-
-install:
- - pip install Cython
- - pip install .
-
-script:  pytest
+env:
+  global:
+    - CIBW_BUILD_VERBOSITY=3
+    - CIBW_TEST_COMMAND='pytest -v {project}/test'
+    - CIBW_TEST_REQUIRES=pytest
