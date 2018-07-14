@@ -230,7 +230,7 @@ static int hdstype2numpy( const char * type ) {
   } else if(strcmp(type,"_UBYTE") == 0) {
     retval = NPY_UBYTE;
   } else if(strcmp(type,"_LOGICAL") == 0) {
-    retval = NPY_BOOL;
+    retval = NPY_INT;
   } else if(strncmp(type,"_CHAR*",6) == 0) {
     retval = NPY_STRING;
   } else {
@@ -383,7 +383,7 @@ pydat_get(HDSObject *self)
     if(strcmp(typ_str, "_INTEGER") == 0){
         arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_INT);
     }else if(strcmp(typ_str, "_LOGICAL") == 0){
-        arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_BOOL);
+        arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_INT);
     }else if(strcmp(typ_str, "_REAL") == 0){
 	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_FLOAT);
     }else if(strcmp(typ_str, "_DOUBLE") == 0){
@@ -421,6 +421,12 @@ pydat_get(HDSObject *self)
     datGet(loc, typ_str, ndim, tdim, arr->data, &status);
     if(status != SAI__OK) goto fail;
     errEnd(&status);
+
+    if (strcmp(typ_str, "_LOGICAL") == 0) {
+        // convert back to Boolean.
+        PyArray_Descr* typedescr = PyArray_DescrFromType(NPY_BOOL);
+        arr = PyArray_CastToType(arr, typedescr, 0);
+      }
     return PyArray_Return(arr);
 
 fail:
