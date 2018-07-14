@@ -7,7 +7,16 @@ matrix:
        services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy" PIP=pip
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.13" PIP=pip CIBW_SKIP=manylinux1_i686
+       install:
+         - $PIP install cibuildwheel==0.9.3
+       script:
+         - cibuildwheel --output-dir wheelhouse
+     - sudo: required
+       services:
+         - docker
+       python: "3.6"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.13" PIP=pip CIBW_SKIP=manylinux1_x86_64
        install:
          - $PIP install cibuildwheel==0.9.3
        script:
@@ -15,7 +24,7 @@ matrix:
      - os: osx
        before_install: brew update;brew cask uninstall oclint; brew install gcc
        language: generic
-       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy" PIP=pip2
+       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.13" PIP=pip2
        install:
          - $PIP install cibuildwheel==0.9.3;
        script:
@@ -23,5 +32,5 @@ matrix:
 
 env:
   global:
-    - CIBW_TEST_COMMAND="pytest -v {project}/test"
+    - CIBW_TEST_COMMAND="bash {project}/test/run_test.sh"
     - CIBW_TEST_REQUIRES=pytest

@@ -1,8 +1,9 @@
+import os
 from unittest import TestCase
 import numpy as np
 
 import starlink.hds as hds
-import os
+
 
 # Dictionary of things to write into a test HDS file.  The key is the
 # name, and then the values are the type, the dimensions and the
@@ -30,9 +31,12 @@ attributes_to_write = {
 keys = list(attributes_to_write.keys())
 keys.sort()
 
-def create_hds(testobj, version=4):
-    os.environ['HDS_VERSION'] = str(version)
-    loc = hds.new('test-{}.sdf'.format(version), 'HDS_TEST', 'HDSEXAMPLE')
+def create_hds(testobj):
+    version = os.environ.get('HDS_VERSION', 4)
+
+
+    filename = 'test-{}.sdf'.format(version)
+    loc = hds.new(filename, 'HDS_TEST', 'HDSEXAMPLE')
 
     # Write each attribute as a new component in the HDS.
     for attribute in keys:
@@ -54,7 +58,7 @@ def create_hds(testobj, version=4):
 
 
     # Now open the written HDS and read each component.
-    loc = hds.open('test.sdf', 'READ')
+    loc = hds.open(filename, 'READ')
     for i in range(loc.ncomp):
         comploc = loc.index(i)
         name = comploc.name
@@ -84,10 +88,10 @@ def create_hds(testobj, version=4):
 
 class TestHds(TestCase):
 
-    def test_create_hds_v5(self):
-        create_hds(self, version=5)
-    def test_create_hds_v4(self):
-        create_hds(self, version=4)
+    def test_create_hds(self):
+        create_hds(self)
+
 
 if __name__ == "__main__":
     unittest.main()
+
