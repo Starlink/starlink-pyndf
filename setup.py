@@ -535,7 +535,7 @@ hds = Extension('starlink.hds',
 # Set up the custom build_ext options, to call ./configure and make
 # for hdf5, hdsv4 and hdsv5.
 def configuremake(path, cppflags=None, ldflags=None,
-                  maketargets=None):
+                  maketargets=None, environ_override=None):
     basedir = os.getcwd()
     os.chdir(path)
     env = os.environ
@@ -553,19 +553,30 @@ def configuremake(path, cppflags=None, ldflags=None,
         if os.path.isfile(fn):
             os.utime(fn, None)
             time.sleep(1)
-    subprocess.check_call('./configure', env=env)
 
     if cppflags:
         env['CPPFLAGS']=cppflags
+
     if ldflags:
         env['LDFLAGS']=ldflags
+    subprocess.check_call('./configure', env=env)
+
+    if environ_override:
+        for key in environ_override:
+            env[key] = environ_override[key]
     if not maketargets:
         print('Running make.')
-        subprocess.check_call('make', env=env)
+        if environ_override:
+            subprocess.check_call(['make', '-e'], env=env)
+        else:
+            subprocess.check_call('make', env=env)
     else:
         for target in maketargets:
             print('Running make {}'.format(target))
-            subprocess.check_call(['make', target], env=env)
+            if environ_override:
+                subprocess.check_call(['make', '-e', target], env=env)
+            else:
+                subprocess.check_call(['make', target], env=env)
     os.chdir(basedir)
 
 
@@ -581,15 +592,22 @@ class custom_build(build_ext):
         print('\n\nBuilding HDSV4')
         configuremake(hdsv4_path, cppflags='-I{}'.format(incfiles),
                       maketargets=['hds_types.h', 'libhds_v4.la'])
-        print('\n\nBuilding HDSV5')
-        hdf5loc = os.path.join(os.pardir,hdf5_path, 'hdf5', 'hdf5', 'src')
-        hdf5hlloc = os.path.join(os.pardir,hdf5_path, 'hdf5', 'hdf5', 'hl', 'src')
-        hdf5lib_loc = os.path.join(hdf5loc, '.libs')
 
+        print('\n\nBuilding HDSV5')
+
+        hdf5loc = os.path.abspath(os.path.join(hdf5_path,
+                'hdf5', 'hdf5', 'src'))
+        hdf5hlloc = os.path.abspath(os.path.join(hdf5_path,
+                'hdf5', 'hdf5', 'hl', 'src'))
+
+        hdf5lib_loc = (os.path.join(hdf5loc, '.libs'))
+        hdf5lib = os.path.join(hdf5lib_loc, 'libhdf5.so')
+
+        environ_override = {'libhds_v5_la_LIBADD': ''}
         configuremake(hdsv5_path, cppflags='-I{} -I{} -I{}'.format(incfiles,
                                                                    hdf5loc,
                                                                    hdf5hlloc),
-                      ldflags = '-L{}'.format(hdf5lib_loc),
+                      environ_override = environ_override,
                       maketargets=['hds_types.h', 'libhds_v5.la'])
 
         # We now need to add all of the appropriate .o files to the
