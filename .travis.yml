@@ -5,22 +5,20 @@ matrix:
     include:
      - sudo: required
        services:
-        - docker
+         - docker
        python: "3.6"
-       env:
-          CIBW_BEFORE_BUILD='yum install gfortran && {pip} install Cython && {pip} install .' PIP=pip
+       env: CIBW_BEFORE_BUILD="yum install gfortran && {pip} install Cython && {pip} install ." PIP=pip
        install:
-        - $PIP install cibuildwheel==0.9.3
+         - $PIP install cibuildwheel==0.9.3
        script:
-        - cibuildwheel --output-dir wheelhouse
-     -os: osx
-      language: generic
-      env:
-        CIBW_BEFORE_BUILD='brew update && brew install gcc && {pip} install Cython && {pip} install .' PIP=pip2
-      install:
-       - $PIP install cibuildwheel==0.9.3;
-      script:
-       - cibuildwheel --output-dir wheelhouse
+         - cibuildwheel --output-dir wheelhouse
+     - os: osx
+       language: generic
+       env: CIBW_BEFORE_BUILD="brew update && brew install gcc && {pip} install Cython && {pip} install ." PIP=pip2
+       install:
+         - $PIP install cibuildwheel==0.9.3;
+       script:
+         - cibuildwheel --output-dir wheelhouse
 
 env:
   global:
