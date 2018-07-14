@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 export HDS_VERSION=5
-nosetests -v
+pytest -v
 export HDS_VERSION=4
-nosetests -v
+pytest -v
 unset HDS_VERSION
