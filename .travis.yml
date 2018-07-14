@@ -7,14 +7,15 @@ matrix:
        services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum install gfortran && pip install Cython && pip install numpy" PIP=pip
+       env: CIBW_BEFORE_BUILD="yum install zlib-devel && pip install Cython && pip install numpy" PIP=pip
        install:
          - $PIP install cibuildwheel==0.9.3
        script:
          - cibuildwheel --output-dir wheelhouse
      - os: osx
+       before_install: brew update;brew cask uninstall oclint; brew install gcc
        language: generic
-       env: CIBW_BEFORE_BUILD="brew update && brew cask uninstall oclint && brew install gcc && pip install Cython && pip install numpy" PIP=pip2
+       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy" PIP=pip2
        install:
          - $PIP install cibuildwheel==0.9.3;
        script:
