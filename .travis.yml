@@ -7,7 +7,7 @@ matrix:
        services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum install zlib-devel && pip install Cython && pip install numpy" PIP=pip
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy" PIP=pip
        install:
          - $PIP install cibuildwheel==0.9.3
        script:
@@ -24,5 +24,5 @@ matrix:
 env:
   global:
     - CIBW_BUILD_VERBOSITY=3
-    - CIBW_TEST_COMMAND='pytest -v {project}/test'
+    - CIBW_TEST_COMMAND='pytest -v {project}/test'; export HDS_VERSION=5; 'pytest -v {project}/test'
     - CIBW_TEST_REQUIRES=pytest
