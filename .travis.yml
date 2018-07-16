@@ -9,8 +9,9 @@ script:
  - if [[ $TRAVIS_TAG ]]; then
      echo $TRAVIS_TAG;
      brew update;
+     brew install python2;
      brew link --overwrite python2;
-     $PIP install twine;
+     sudo $PIP install twine;
      twine upload --skip-existing wheelhouse/*.whl;
    fi
 
