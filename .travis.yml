@@ -12,8 +12,9 @@ install:
 script:
  - cibuildwheel --output-dir wheelhouse
  - if [[ $TRAVIS_TAG ]]; then
-     pip3 install twine
-     python3 -m twine upload wheelhouse/*.whl
+     echo $TRAVIS_TAG;
+     pip3 install twine;
+     python3 -m twine upload wheelhouse/*.whl;
    fi
 
 matrix:
