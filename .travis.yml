@@ -40,12 +40,12 @@ matrix:
      - os: osx
        before_install: brew update;brew cask uninstall oclint; brew install gcc
        language: generic
-       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.13" PIP=pip3 CIBW_SKIP="cp37*"
+       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.13" PIP=pip2 CIBW_SKIP="cp37*"
 
      - os: osx
        before_install: brew update;brew cask uninstall oclint; brew install gcc
        language: generic
-       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.14.5" PIP=pip3 CIBW_SKIP="cp27 cp34* cp35* cp36*"
+       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.14.5" PIP=pip2 CIBW_SKIP="cp27 cp34* cp35* cp36*"
 
 env:
   global:
