@@ -25,7 +25,7 @@ matrix:
        services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.14" PIP=pip CIBW_SKIP="cp27* cp34* cp35* cp36*"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.14.5" PIP=pip CIBW_SKIP="cp27* cp34* cp35* cp36*"
        install:
          - $PIP install cibuildwheel==0.9.3
        script:
