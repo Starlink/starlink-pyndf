@@ -49,10 +49,10 @@ matrix:
        script:
          - cibuildwheel --output-dir wheelhouse
          - |
-         if [[ $TRAVIS_TAG ]]; then
-           python -m pip install twine
-           python -m twine upload wheelhouse/*.whl
-         fi
+           if [[ $TRAVIS_TAG ]]; then
+             python -m pip install twine
+             python -m twine upload wheelhouse/*.whl
+           fi
 
 env:
   global:
