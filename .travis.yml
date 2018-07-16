@@ -48,9 +48,14 @@ matrix:
          - $PIP install cibuildwheel==0.9.3;
        script:
          - cibuildwheel --output-dir wheelhouse
-
+         - |
+         if [[ $TRAVIS_TAG ]]; then
+           python -m pip install twine
+           python -m twine upload wheelhouse/*.whl
+         fi
 
 env:
   global:
     - CIBW_TEST_COMMAND="bash {project}/test/run_test.sh"
     - CIBW_TEST_REQUIRES=pytest
+    - TWINE_USERNAME=sgraves
