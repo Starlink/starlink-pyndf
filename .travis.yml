@@ -2,14 +2,18 @@
 language: python
 
 install:
+ - if [ "${TRAVIS_OS_NAME:-}" == "osx" ]; then
+      brew update;
+      brew upgrade python;
+   fi
+
  - $PIP install cibuildwheel==0.9.3;
 
 script:
  - cibuildwheel --output-dir wheelhouse
- - |
-   if [[ $TRAVIS_TAG ]]; then
-     python -m pip install twine
-     python -m twine upload wheelhouse/*.whl
+ - if [[ $TRAVIS_TAG ]]; then
+     pip3 install twine
+     python3 -m twine upload wheelhouse/*.whl
    fi
 
 matrix:
