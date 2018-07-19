@@ -632,7 +632,7 @@ with open('README.rst') as file:
 
 
 setup(name='starlink-pyhds',
-      version='0.2.rc1',
+      version='0.2',
       description='Python interface to the Starlink HDS library',
       long_description=long_description,
       packages=['starlink'],

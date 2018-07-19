@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: starlink-pyhds
-Version: 0.2rc1
+Version: 0.2
 Summary: Python interface to Starlink hds libraries
 Home-page: http://www.starlink.ac.uk
 License: GPL 3
