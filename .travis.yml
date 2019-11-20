@@ -21,29 +21,29 @@ matrix:
        services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.13" PIP=pip CIBW_SKIP="*i686 cp37*"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.13 && pip install starlink-pyast" PIP=pip CIBW_SKIP="*i686 cp37*"
 
      - sudo: required
        services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.13" PIP=pip CIBW_SKIP="*x86_64 cp37*"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.13 && pipinstall starlink-pyast" PIP=pip CIBW_SKIP="*x86_64 cp37*"
 
      - sudo: required
        services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.14.5" PIP=pip CIBW_SKIP="cp27* cp34* cp35* cp36*"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.14.5 && pip install starlink-pyast" PIP=pip CIBW_SKIP="cp27* cp34* cp35* cp36*"
 
      - os: osx
        before_install: brew update;brew cask uninstall oclint; brew install gcc
        language: generic
-       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.13" PIP=pip2 CIBW_SKIP="cp37*"
+       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.13 && pip install starlink-pyast" PIP=pip2 CIBW_SKIP="cp37*"
 
      - os: osx
        before_install: brew update;brew cask uninstall oclint; brew install gcc;
        language: generic
-       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.14.5" PIP=pip2 CIBW_SKIP="cp27 cp34* cp35* cp36*"
+       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.17 && pip install starlink-pyast" PIP=pip2 CIBW_SKIP="cp27 cp34* cp35* cp36*"
 
 env:
   global:
