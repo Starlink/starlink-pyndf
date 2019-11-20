@@ -7,6 +7,7 @@ import shutil
 import os
 import sys
 import subprocess
+import numpy
 
 
 """
@@ -518,7 +519,8 @@ for name_ in ['prm', 'ast', 'ary']:
 
 hdsex_includedirs = ['include/', 'hds/', 'missingincludes/', 'include/',
                      'hds_missingincludes/', 'hdf5/src/', 'hdf5/hl/src'] + \
-    ['starutil', 'starmem/', 'cnf', 'ems', 'mers', 'chr', 'hds-v4', 'hds-v5', 'one']
+    ['starutil', 'starmem/', 'cnf', 'ems', 'mers', 'chr', 'hds-v4', 'hds-v5', 'one'] + \
+    [numpy.get_include()]
 
 ndfex_includedirs = hdsex_includedirs + ['prm', 'ast', 'ary', 'ast_missingincludes/']
 
@@ -559,7 +561,7 @@ setup(name='starlink-pyndf',
       packages=['starlink', 'starlink.ndfpack'],
       cmdclass={'build_ext': custom_star_build},
       ext_modules=[hdsExtension,ndfExtension],
-      test_suit='test',
+      test_suite='test',
 
       # metdata
       author='SF Graves',
