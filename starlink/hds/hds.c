@@ -30,7 +30,7 @@
 
 // Wrap the PyCObject -> PyCapsule transition to allow
 // this to build with python2.
-#include "npy_3kcompat.h"
+#include "../ndf/npy_3kcompat.h"
 
 #include <stdio.h>
 #include <string.h>
