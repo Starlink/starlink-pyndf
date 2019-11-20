@@ -512,7 +512,7 @@ try:
     from starlink import Ast
     defines.append(('HAVE_AST', '1'))
     have_ast = True
-except importError:
+except ImportError:
     have_ast = False
     print("")
     print("  Will not be building with AST facilities.")
