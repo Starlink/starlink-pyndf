@@ -507,6 +507,19 @@ ndfext_objects = []
 compiler = ccompiler.new_compiler()
 defines = get_starlink_macros()
 
+# Check for ast
+try:
+    from starlink import Ast
+    defines.append(('HAVE_AST', '1'))
+    have_ast = True
+except importError:
+    have_ast = False
+    print("")
+    print("  Will not be building with AST facilities.")
+    print("  Install starlink.Ast in order to read and write AST FrameSets.")
+    print("")
+
+
 hds_source_dep = []
 for name_ in ['starutil', 'starmem', 'cnf', 'ems', 'mers', 'chr', 'hds-v4', 'hds-v5', 'one']:
     hds_source_dep += get_source(name_)
@@ -522,7 +535,11 @@ hdsex_includedirs = ['include/', 'hds/', 'missingincludes/', 'include/',
     ['starutil', 'starmem/', 'cnf', 'ems', 'mers', 'chr', 'hds-v4', 'hds-v5', 'one'] + \
     [numpy.get_include()]
 
+
 ndfex_includedirs = hdsex_includedirs + ['prm', 'ast', 'ary', 'ast_missingincludes/']
+
+if have_ast:
+    ndfex_includedirs.append(Ast.get_include())
 
 
 
