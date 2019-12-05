@@ -53,8 +53,8 @@ class custom_star_build(build_ext):
         basedir = os.getcwd()
         os.chdir('hdf5')
         env = os.environ
-        #subprocess.check_call('./configure', env=env)
-        #subprocess.check_call('make', env=env)
+        subprocess.check_call('./configure', env=env)
+        subprocess.check_call('make', env=env)
         os.chdir(basedir)
 
         #Now we need to get the header files we need copied into our
@@ -106,7 +106,6 @@ defines = get_starlink_macros()
 # TODO: ensure at run time library checks for this instead!
 try:
     from starlink import Ast
-    ast_sofile = Ast.__file__
     defines.append(('HAVE_AST', '1'))
     have_ast = True
 except ImportError:
