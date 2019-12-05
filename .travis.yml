@@ -21,51 +21,28 @@ jobs:
      - services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*x86_64 cp27*"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="cp27-*"
 
      - services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*x86_64 cp34*"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="cp34-*"
 
      - services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*x86_64 cp35*"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="cp35-*"
 
      - services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*x86_64 cp36*"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*cp36-*"
 
      - services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*x86_64 cp37*"
-     - services:
-         - docker
-       python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*i686 cp27*"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="cp37-*"
 
-     - services:
-         - docker
-       python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*i686 cp34*"
-
-     - services:
-         - docker
-       python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*i686 cp35*"
-
-     - services:
-         - docker
-       python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*i686 cp36*"
-
-     - services:
-         - docker
-       python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*i686 cp37*"
 
 
      - os: osx
