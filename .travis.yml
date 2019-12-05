@@ -1,8 +1,9 @@
 
 language: python
 
+
 install:
- - $PIP install --upgrade cibuildwheel==0.9.3;
+ - $PIP install --upgrade cibuildwheel==1.0.0;
 
 script:
  - cibuildwheel --output-dir wheelhouse
