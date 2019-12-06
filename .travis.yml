@@ -26,7 +26,7 @@ jobs:
      - services:
          - docker
        python: "3.6"
-       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="cp27-*i386"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="cp27-*i686"
 
      - services:
          - docker
