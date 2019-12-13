@@ -1,0 +1,201 @@
+*+
+*  Name:
+*     NUM_DEC_CVT
+
+*  Purpose:
+*     Declarations for NUM_ data type conversion routines and arguments.
+
+*  Copyright:
+*     Copyright (C) 1988, 1991 Science & Engineering Research Council.
+*     All Rights Reserved.
+
+*  Licence:
+*     This program is free software; you can redistribute it and/or
+*     modify it under the terms of the GNU General Public License as
+*     published by the Free Software Foundation; either version 2 of
+*     the License, or (at your option) any later version.
+*     
+*     This program is distributed in the hope that it will be
+*     useful,but WITHOUT ANY WARRANTY; without even the implied
+*     warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+*     PURPOSE. See the GNU General Public License for more details.
+*     
+*     You should have received a copy of the GNU General Public License
+*     along with this program; if not, write to the Free Software
+*     Foundation, Inc., 51 Franklin Street,Fifth Floor, Boston, MA
+*     02110-1301, USA
+
+*  Authors:
+*     RFWS: R.F. Warren-Smith (DUVAD::RFWS)
+
+*  History:
+*     16-AUG-1988 (RFWS):
+*         Original version
+*     24-OCT-1991 (RFWS):
+*        Added declarations for internal (NUM1_) functions.
+
+*-
+
+*  Declarations of internal functions which encapsulate the most
+*  important conversions.
+      BYTE NUM1_RTOB
+      BYTE NUM1_WTOUB
+      BYTE NUM1_KTOUB
+      BYTE NUM1_KTOB
+      INTEGER * 2 NUM1_ITOUW
+      INTEGER * 2 NUM1_ITOW
+      INTEGER * 2 NUM1_RTOW
+      INTEGER * 2 NUM1_UBTOUW
+      INTEGER * 2 NUM1_UBTOW
+      INTEGER * 2 NUM1_KTOUW
+      INTEGER * 2 NUM1_KTOW
+      INTEGER NUM1_BTOI
+      INTEGER NUM1_UBTOI
+      INTEGER NUM1_UWTOI
+      INTEGER NUM1_WTOI
+      INTEGER NUM1_KTOI
+      REAL NUM1_ITOR
+      REAL NUM1_WTOR
+ 
+
+*   INTEGER * 8 dummy arguments
+      INTEGER * 8 NUM_ARGK
+      INTEGER * 8 NUM_ARGK1
+      INTEGER * 8 NUM_ARGK2
+
+*   BYTE dummy arguments.
+      BYTE NUM_ARGB
+      BYTE NUM_ARGB1
+      BYTE NUM_ARGB2
+
+ 
+*   Functions for data type conversion to BYTE.
+      BYTE NUM_BTOB
+      BYTE NUM_UBTOB
+      BYTE NUM_DTOB
+      BYTE NUM_ITOB
+      BYTE NUM_RTOB
+      BYTE NUM_UWTOB
+      BYTE NUM_WTOB
+      BYTE NUM_KTOB
+ 
+ 
+*   UNSIGNED BYTE dummy arguments.
+      BYTE NUM_ARGUB
+      BYTE NUM_ARGUB1
+      BYTE NUM_ARGUB2
+
+ 
+*   Functions for data type conversion to UNSIGNED BYTE.
+      BYTE NUM_BTOUB
+      BYTE NUM_UBTOUB
+      BYTE NUM_DTOUB
+      BYTE NUM_ITOUB
+      BYTE NUM_RTOUB
+      BYTE NUM_UWTOUB
+      BYTE NUM_WTOUB
+      BYTE NUM_KTOUB
+ 
+ 
+*   WORD dummy arguments.
+      INTEGER*2 NUM_ARGW
+      INTEGER*2 NUM_ARGW1
+      INTEGER*2 NUM_ARGW2
+
+ 
+*   Functions for data type conversion to WORD.
+      INTEGER*2 NUM_BTOW
+      INTEGER*2 NUM_UBTOW
+      INTEGER*2 NUM_DTOW
+      INTEGER*2 NUM_ITOW
+      INTEGER*2 NUM_RTOW
+      INTEGER*2 NUM_UWTOW
+      INTEGER*2 NUM_WTOW
+      INTEGER*2 NUM_KTOW
+ 
+ 
+*   UNSIGNED WORD dummy arguments.
+      INTEGER*2 NUM_ARGUW
+      INTEGER*2 NUM_ARGUW1
+      INTEGER*2 NUM_ARGUW2
+
+ 
+*   Functions for data type conversion to UNSIGNED WORD.
+      INTEGER*2 NUM_BTOUW
+      INTEGER*2 NUM_UBTOUW
+      INTEGER*2 NUM_DTOUW
+      INTEGER*2 NUM_ITOUW
+      INTEGER*2 NUM_RTOUW
+      INTEGER*2 NUM_UWTOUW
+      INTEGER*2 NUM_WTOUW
+      INTEGER*2 NUM_KTOUW
+ 
+ 
+*   INTEGER dummy arguments.
+      INTEGER NUM_ARGI
+      INTEGER NUM_ARGI1
+      INTEGER NUM_ARGI2
+
+ 
+*   Functions for data type conversion to INTEGER.
+      INTEGER NUM_BTOI
+      INTEGER NUM_UBTOI
+      INTEGER NUM_DTOI
+      INTEGER NUM_ITOI
+      INTEGER NUM_RTOI
+      INTEGER NUM_UWTOI
+      INTEGER NUM_WTOI
+      INTEGER NUM_KTOI
+
+*   Functions for data type conversion to INTEGER*8.
+      INTEGER*8 NUM_BTOK
+      INTEGER*8 NUM_UBTOK
+      INTEGER*8 NUM_DTOK
+      INTEGER*8 NUM_ITOK
+      INTEGER*8 NUM_RTOK
+      INTEGER*8 NUM_UWTOK
+      INTEGER*8 NUM_WTOK
+      INTEGER*8 NUM_KTOK
+ 
+*   REAL dummy arguments.
+      REAL NUM_ARGR
+      REAL NUM_ARGR1
+      REAL NUM_ARGR2
+
+ 
+*   Functions for data type conversion to REAL.
+      REAL NUM_BTOR
+      REAL NUM_UBTOR
+      REAL NUM_DTOR
+      REAL NUM_ITOR
+      REAL NUM_RTOR
+      REAL NUM_UWTOR
+      REAL NUM_WTOR
+      REAL NUM_KTOR
+ 
+ 
+*   DOUBLE PRECISION dummy arguments.
+      DOUBLE PRECISION NUM_ARGD
+      DOUBLE PRECISION NUM_ARGD1
+      DOUBLE PRECISION NUM_ARGD2
+
+ 
+*   Functions for data type conversion to DOUBLE PRECISION.
+      DOUBLE PRECISION NUM_BTOD
+      DOUBLE PRECISION NUM_UBTOD
+      DOUBLE PRECISION NUM_DTOD
+      DOUBLE PRECISION NUM_ITOD
+      DOUBLE PRECISION NUM_RTOD
+      DOUBLE PRECISION NUM_UWTOD
+      DOUBLE PRECISION NUM_WTOD
+      DOUBLE PRECISION NUM_KTOD
+ 
+
+ 
+************************************************************************
+*                               END                                    *
+*                                                                      *
+*   Declarations of NUM_ data type conversion routines and arguments   *
+*                                                                      *
+*                               END                                    *
+************************************************************************

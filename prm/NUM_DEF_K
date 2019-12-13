@@ -1,0 +1,164 @@
+*+
+*  Name:
+*     NUM_DEF_K
+
+*  Purpose:
+*     Defintions of NUM_ INTEGER*8 functions
+
+*  Copyright:
+*     Copyright (C) 1988 Science & Engineering Research Council.
+*     All Rights Reserved.
+
+*  Licence:
+*     This program is free software; you can redistribute it and/or
+*     modify it under the terms of the GNU General Public License as
+*     published by the Free Software Foundation; either version 2 of
+*     the License, or (at your option) any later version.
+*
+*     This program is distributed in the hope that it will be
+*     useful,but WITHOUT ANY WARRANTY; without even the implied
+*     warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+*     PURPOSE. See the GNU General Public License for more details.
+*
+*     You should have received a copy of the GNU General Public License
+*     along with this program; if not, write to the Free Software
+*     Foundation, Inc., 51 Franklin Street,Fifth Floor, Boston, MA
+*     02110-1301, USA
+
+*  Authors:
+*     RFWS: R.F. Warren-Smith (DUVAD::RFWS)
+
+*  History:
+*     16-AUG-1988 (RFWS):
+*         Original version
+*     2012-05-04 (TIMJ):
+*         INTEGER*8 cloned from INTEGER
+
+*-
+
+**********************************************
+*   Arithmetic between two INTEGER*8 numbers *
+**********************************************
+
+*   Add.
+      NUM_ADDK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          NUM_ARGK1 + NUM_ARGK2
+
+*   Subtract.
+      NUM_SUBK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          NUM_ARGK1 - NUM_ARGK2
+
+*   Floating multiply.
+      NUM_MULK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          NUM_ARGK1 * NUM_ARGK2
+
+*   Floating divide.
+      NUM_DIVK( NUM_ARGK1, NUM_ARGK2 ) = NUM_RTOK(
+     :                          NUM_KTOR( NUM_ARGK1 ) /
+     :                          NUM_KTOR( NUM_ARGK2 ) )
+
+*   Integer divide.
+      NUM_IDVK( NUM_ARGK1, NUM_ARGK2 ) = NUM_ARGK1 / NUM_ARGK2
+
+*   Raise to power.
+      NUM_PWRK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          NUM_ARGK1 ** NUM_ARGK2
+
+
+
+********************************************************
+*   INTEGER*8 functions with a single INTEGER*8 argument   *
+********************************************************
+
+
+*   Negate argument.
+      NUM_NEGK( NUM_ARGK ) = - NUM_ARGK
+
+*   Square root.
+      NUM_SQRTK( NUM_ARGK ) = NUM_RTOK( SQRT( NUM_KTOR( NUM_ARGK ) ) )
+
+*   Natural logarithm (base e).
+      NUM_LOGK( NUM_ARGK ) = NUM_RTOK( LOG( NUM_KTOR( NUM_ARGK ) ) )
+
+*   Common logarithm (base 10).
+      NUM_LG10K( NUM_ARGK ) = NUM_RTOK( LOG10( NUM_KTOR( NUM_ARGK ) ) )
+
+*   Exponential function.
+      NUM_EXPK( NUM_ARGK ) = NUM_RTOK( EXP( NUM_KTOR( NUM_ARGK ) ) )
+
+*   Absolute (positive) value.
+      NUM_ABSK( NUM_ARGK ) = ABS( NUM_ARGK )
+
+*   Nearest integer.
+      NUM_NINTK( NUM_ARGK ) = NUM_ARGK
+
+*   Truncation to integer.
+      NUM_INTK( NUM_ARGK ) = NUM_ARGK
+
+
+
+***************************************************
+*  INTEGER*8 functions with two INTEGER*8 arguments   *
+***************************************************
+
+
+*   Minimum of two numbers.
+      NUM_MINK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          MIN( NUM_ARGK1, NUM_ARGK2 )
+
+*   Maximum of two numbers.
+      NUM_MAXK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          MAX( NUM_ARGK1, NUM_ARGK2 )
+
+*   Fortran DIM (positive difference) function.
+      NUM_DIMK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          DIM( NUM_ARGK1, NUM_ARGK2 )
+
+*   Fortran MOD (remainder) function.
+      NUM_MODK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          MOD( NUM_ARGK1, NUM_ARGK2 )
+
+*   Fortran SIGN (transfer of sign) function.
+      NUM_SIGNK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          SIGN( NUM_ARGK1, NUM_ARGK2 )
+
+
+
+*******************************************************
+*   Logical functions comparing two INTEGER*8 numbers   *
+*******************************************************
+
+
+*   Equality.
+      NUM_EQK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          NUM_ARGK1 .EQ. NUM_ARGK2
+
+*   Inequality.
+      NUM_NEK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          NUM_ARGK1 .NE. NUM_ARGK2
+
+*   Greater than.
+      NUM_GTK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          NUM_ARGK1 .GT. NUM_ARGK2
+
+*   Greater than or equal.
+      NUM_GEK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          NUM_ARGK1 .GE. NUM_ARGK2
+
+*   Less than.
+      NUM_LTK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          NUM_ARGK1 .LT. NUM_ARGK2
+
+*   Less than or equal.
+      NUM_LEK( NUM_ARGK1, NUM_ARGK2 ) =
+     :                          NUM_ARGK1 .LE. NUM_ARGK2
+
+
+
+************************************************************************
+*                               END                                    *
+*                                                                      *
+*              Definitions of NUM_ INTEGER*8 functions                 *
+*                                                                      *
+*                               END                                    *
+************************************************************************
