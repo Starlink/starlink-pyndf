@@ -1,7 +1,7 @@
+#include <string.h>
 #include "sae_par.h"
 #include "mers.h"
 #include "star/hds.h"
-#include "star/hds_fortran.h"
 #include "prm_par.h"
 #include "ary.h"
 #include "ary_err.h"
