@@ -24,9 +24,9 @@ Setup script for the HDS and NDF python extensions.
 
 # variable to hold the list of dependencies for HDS.
 HDS_DEP_LIBS = ('starutil', 'starmem', 'cnf', 'ems', 'mers',
-                'chr', 'hds-v4', 'hds-v5', 'one')
+                'chr', 'one')
 HDS_DEP_INCLUDES = ('include/', 'missingincludes/') + HDS_DEP_LIBS + \
-                   ('hds-v4_missingincludes', 'hds-v5_missingincludes', 'hdf5/src/', 'hdf5/hl/src')
+                   ('hdf5/src/', 'hdf5/hl/src')
 
 class custom_star_build(build_ext):
 
@@ -91,10 +91,20 @@ class custom_star_build(build_ext):
                                      macros=define_macros, include_dirs=HDS_DEP_INCLUDES,
                                      )
 
+        # Now build hds-v4 and hds-v5: have to do this separately.
+        extraobjs_hdsv4 = compiler.compile(sources = get_source('hds-v4'), output_dir=outputdir,
+                                           macros=define_macros,
+                                           include_dirs=('hds-v4_missingincludes',) + HDS_DEP_INCLUDES)
+
+        extraobjs_hdsv5 = compiler.compile(sources = get_source('hds-v5'), output_dir=outputdir,
+                                           macros=define_macros,
+                                           include_dirs=('hds-v5_missingincludes',) + HDS_DEP_INCLUDES)
 
         for ext in self.extensions:
             ext.extra_objects += hdf5_extras
             ext.extra_objects += extraobjs
+            ext.extra_objects += extraobjs_hdsv4
+            ext.extra_objects += extraobjs_hdsv5
 
         build_ext.run(self)
 
@@ -125,7 +135,9 @@ for name_ in ['prm', 'ast', 'ary']:
 
 hdsex_includedirs = ['include/', 'hds/', 'missingincludes/',
                      'hds_missingincludes/', 'hdf5/src/', 'hdf5/hl/src'] + \
-    ['starutil', 'starmem/', 'cnf', 'ems', 'mers', 'chr', 'hds-v4', 'hds-v5', 'one'] + \
+    ['starutil', 'starmem/', 'cnf', 'ems', 'mers', 'chr',\
+#'hds-v4', 'hds-v5',\
+     'one'] + \
     [numpy.get_include()]
 
 

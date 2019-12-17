@@ -44,11 +44,11 @@ typedef uint64_t hdsu64_t;
 
 /* Private types and sizes relating to dimensions */
 typedef int FORTRAN_INDEX_TYPE;
-#define SIZEOF_HDSDIM 4
+#define SIZEOF_HDSDIM 8
 #define HDSDIM_IS_UNSIGNED 0
 
 /* Decide whether Fortran dims should be copied element by element */
-#define HDS_COPY_FORTRAN_DIMS 0
+#define HDS_COPY_FORTRAN_DIMS 1
 
 #endif /* _INCLUDED */
 
