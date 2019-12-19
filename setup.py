@@ -7,6 +7,7 @@ import shutil
 import os
 import subprocess
 import numpy
+from Cython.Build import cythonize
 
 # Hide all the horrible parts away.
 from setup_functions import get_starlink_macros, get_source, \
@@ -291,7 +292,7 @@ ndfex_includedirs.append(Ast.get_include())
 # Define the two extensions.
 
 hdsExtension = Extension('starlink.hds',
-                         sources = [os.path.join('starlink', 'hds', 'hds.c')],
+                         sources = get_source('hds') + ['starlink/hds/hds.pyx'],
                          include_dirs = hdsex_includedirs,
                          define_macros = defines,
                          libraries = ['z'],
@@ -313,7 +314,7 @@ setup(name='starlink-pyndf',
       long_description=long_description,
       packages=['starlink', 'starlink.ndfpack'],
       cmdclass={'build_ext': custom_star_build},
-      ext_modules = [hdsExtension, ndfExtension],
+      ext_modules=cythonize([hdsExtension], language_level="3"),
       test_suite='test',
       namespace_packages=['starlink'],
       # metadata
