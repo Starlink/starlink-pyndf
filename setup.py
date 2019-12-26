@@ -269,20 +269,23 @@ class custom_star_build(build_ext):
 # Get the Starlink specific defines.
 defines = get_starlink_macros()
 
+
 # Get the lists of source files for the NDF extra dependencies.
 ndf_source_dep = []
 for name_ in ['prm', 'ast', 'ary']:
     ndf_source_dep += get_source(name_)
 
 
-
+from starlink import Ast
 hdsex_includedirs = ['include/', 'hds/', 'missingincludes/',
                      'hds_missingincludes/', 'hdf5/src/', 'hdf5/hl/src'] + \
     ['starutil', 'starmem/', 'cnf', 'ems', 'mers', 'chr',\
      'one'] + \
     [numpy.get_include()]
 
+
 from starlink import Ast
+
 ndfex_includedirs = hdsex_includedirs + ['prm', 'ast', 'ary', 'ast_missingincludes/', Ast.get_include()]
 
 # Can't build NDF without Ast!
@@ -291,6 +294,7 @@ ndfex_includedirs.append(Ast.get_include())
 
 # Define the two extensions.
 
+
 hdsExtension = Extension('starlink.hds',
                          sources = ['starlink/hds.pyx'],
                          include_dirs = hdsex_includedirs,
@@ -298,12 +302,15 @@ hdsExtension = Extension('starlink.hds',
                          libraries = ['z'],
 )
 
+
 ndfExtension = Extension('starlink.ndf',
-                         sources = [os.path.join('starlink', 'ndf', 'ndf.c')],
+                         sources = ['starlink/ndf.pyx'],
                          include_dirs = ['ndf/', 'ndf_missingincludes/'] + ndfex_includedirs,
                          define_macros = defines,
                          libraries = ['z'],
 )
+
+
 
 
 with open('README.rst') as file:
