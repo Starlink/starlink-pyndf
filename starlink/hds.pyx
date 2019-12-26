@@ -30,7 +30,7 @@ HDS object methods & attributes:
 
 """
 
-cimport hds as chds
+cimport mytesthds as chds
 from cpython.exc cimport PyErr_NewException, PyErr_SetString
 from libc.stdint cimport uint32_t, int64_t
 from libc.stdlib cimport free
@@ -40,18 +40,20 @@ from cpython.array cimport array, clone
 cnp.import_array()
 
 
-class StarlinkHDSError(Exception):
+class StarlinkError(Exception):
     pass
 
-cdef int raiseHDSException( int status ) except *:
+cdef int raiseStarlinkException( int status ) except *:
     """ flush errors and close error context.
 
     errBegin must have been called before this.
     """
     # if no errors, end status and return 0
+    print('In raiseStarlinkException: Status is', status)
     if status == chds.SAI__OK:
         chds.errEnd(&status);
         return 0;
+
     # Otherwise we want to get the full error message. Each call to
     # chds.errLoad will set param to the error message name, and opstr
     # to the error message itself. The status will be set to SAI__OK
@@ -73,19 +75,21 @@ cdef int raiseHDSException( int status ) except *:
     chds.errEnd(&status)
     errormessage = '\n'.join(errormessages)
     print(errormessage)
-    raise StarlinkHDSError(errormessage)
+    raise StarlinkError(errormessage)
 
 
 cdef  int _hdstype2numpy( const char * type):
     cdef int retval
     if type==b"_INTEGER":
         retval=cnp.NPY_INT
+    if type==b"_INT64":
+        retval=cnp.NPY_INT64
     elif type==b"_REAL":
         retval=cnp.NPY_FLOAT
     elif type==b"_DOUBLE":
         retval=cnp.NPY_DOUBLE
     elif type==b"_WORD":
-        retval=cnp.NPY_SHORT
+        retval=cnp.NPY_INT16
     elif type==b"_UWORD":
         retval=cnp.NPY_USHORT
     elif type==b"_BYTE":
@@ -97,7 +101,7 @@ cdef  int _hdstype2numpy( const char * type):
     elif type[0:6]==b"_CHAR*":
         retval=cnp.NPY_STRING
     else:
-        raise StarlinkHDSError('Unknown HDS type %s cannot be converted to numpy values'%type.decode())
+        raise StarlinkError('Unknown HDS type %s cannot be converted to numpy values'%type.decode())
     return retval
 
 # def  hdstype2numpy(type):
@@ -171,7 +175,7 @@ def open(filename, mode):
     cdef chds.HDSLoc * loc = NULL
     chds.errBegin(&status);
     chds.hdsOpen(filename, mode, &loc, &status);
-    raiseHDSException(status)
+    raiseStarlinkException(status)
     return HDSWrapperClass.from_pointer(loc, owner=1)
 
 
@@ -216,7 +220,7 @@ def new(filename, hdsname, hdstype, dims=None):
 
     chds.hdsNew(filename, hdsname, hdstype, ndim, cdims, &outloc, &status)
 
-    raiseHDSException(status)
+    raiseStarlinkException(status)
     return HDSWrapperClass.from_pointer(outloc, owner=1)
 
 
@@ -231,6 +235,20 @@ def new(filename, hdsname, hdstype, dims=None):
 # hdsobj = HDSWrapperClass.from_pointer(HDSLoc* locator_pointer)
 
 
+# cdef class HDSTest:
+#     cdef int a
+#     cdef int b
+
+#     def __cinit__(self):
+#         print('Testing!')
+
+
+#     def __init__(self, a, b):
+#         self.a = a
+#         self.b = b
+#         print('Testing init!', self.a, self.b)
+
+
 cdef class HDSWrapperClass:
     """
     A wrapper class for the HDSLoc C/C++ data structure
@@ -239,6 +257,8 @@ cdef class HDSWrapperClass:
     # This won't be reachable from the python code. We will need to
     # store the pointer to the lcoator, and if we own the pointer or
     # not.
+
+    #???Why are these declared here and also in the pxd file???
     cdef chds.HDSLoc* _locator
     cdef bint ptr_owner
 
@@ -264,7 +284,7 @@ cdef class HDSWrapperClass:
 
         chds.errBegin(&status)
         chds.datName(self._locator, name_str, &status);
-        raiseHDSException(status)
+        raiseStarlinkException(status)
 
         # Convert char to python string?
         return name_str.decode()
@@ -289,7 +309,7 @@ cdef class HDSWrapperClass:
 
         chds.errBegin(&status)
         chds.datClen(self._locator, &clen, &status);
-        raiseHDSException(status)
+        raiseStarlinkException(status)
 
         return clen
 
@@ -307,7 +327,7 @@ cdef class HDSWrapperClass:
         cdef int ncomp = 0
         chds.errBegin(&status)
         chds.datNcomp(self._locator, &ncomp, &status);
-        raiseHDSException(status)
+        raiseStarlinkException(status)
 
         return ncomp
 
@@ -323,7 +343,7 @@ cdef class HDSWrapperClass:
         cdef int ndim
         chds.errBegin(&status)
         chds.datShape(self._locator, chds.DAT__MXDIM, tdim, &ndim, &status);
-        raiseHDSException(status)
+        raiseStarlinkException(status)
         if ndim == 0:
             return None
 
@@ -343,7 +363,7 @@ cdef class HDSWrapperClass:
         cdef int state;
         chds.errBegin(&status)
         chds.datState(self._locator, &state, &status);
-        raiseHDSException(status)
+        raiseStarlinkException(status)
 
         return bool(state)
     @property
@@ -354,7 +374,7 @@ cdef class HDSWrapperClass:
         cdef int struc;
         chds.errBegin(&status)
         chds.datStruc(self._locator, &struc, &status);
-        raiseHDSException(status)
+        raiseStarlinkException(status)
 
         return bool(struc)
     @property
@@ -365,7 +385,7 @@ cdef class HDSWrapperClass:
         cdef char type_str[chds.DAT__SZTYP+1];
         chds.errBegin(&status)
         chds.datType(self._locator, type_str, &status);
-        raiseHDSException(status)
+        raiseStarlinkException(status)
 
         return type_str.decode()
     @property
@@ -376,7 +396,7 @@ cdef class HDSWrapperClass:
         cdef int valid;
         chds.errBegin(&status)
         chds.datValid(self._locator, &valid, &status);
-        raiseHDSException(status)
+        raiseStarlinkException(status)
 
         return bool(valid)
 
@@ -388,7 +408,7 @@ cdef class HDSWrapperClass:
         #cdef HDSLOC* locpointer = self._locator
         chds.errBegin(&status);
         chds.datAnnul(&self._locator, &status);
-        raiseHDSException(status)
+        raiseStarlinkException(status)
         self._locator = NULL;
 
     #[ ] loc.cell
@@ -411,7 +431,7 @@ cdef class HDSWrapperClass:
 
         chds.errBegin(&status);
         chds.datCell(self._locator, ndim, rdim, &outloc, &status)
-        raiseHDSException(status)
+        raiseStarlinkException(status)
         return HDSWrapperClass.from_pointer(outloc, owner=1)
 
 
@@ -433,7 +453,7 @@ cdef class HDSWrapperClass:
         compname = compname.encode('ascii')
         chds.errBegin(&status)
         chds.datFind(self._locator, compname, &outloc, &status)
-        raiseHDSException(status)
+        raiseStarlinkException(status)
         return HDSWrapperClass.from_pointer(outloc, owner=1)
 
 
@@ -449,9 +469,9 @@ cdef class HDSWrapperClass:
 
         # Check if its a structure!
         chds.datStruc(self._locator, &state, &status)
-        raiseHDSException(status)
+        raiseStarlinkException(status)
         if state == 1:
-            raise StarlinkHDSError("STRUCTURE ERROR: cannot use get on a structure")
+            raise StarlinkError("STRUCTURE ERROR: cannot use get on a structure")
 
         type_ = self.type
         shape = self.shape
@@ -461,7 +481,7 @@ cdef class HDSWrapperClass:
         cdef int ndim
 
         chds.datShape(self._locator, chds.DAT__MXDIM, tdim, &ndim, &status)
-        raiseHDSException(status)
+        raiseStarlinkException(status)
 
         cdef int i
         for i in range(0, ndim):
@@ -485,7 +505,7 @@ cdef class HDSWrapperClass:
         chds.errBegin(&status)
         chds.datGet(self._locator, type_.encode('ascii'), ndim, tdim, mypyarray.data, &status);
 
-        raiseHDSException(status)
+        raiseStarlinkException(status)
         # Now reshape narray from Fortran to Python.
         return mypyarray
 
@@ -496,7 +516,7 @@ cdef class HDSWrapperClass:
         cdef chds.HDSLoc* outloc = NULL
         chds.errBegin(&status);
         chds.datIndex(self._locator, index+1, &outloc, &status)
-        raiseHDSException(status)
+        raiseStarlinkException(status)
         return HDSWrapperClass.from_pointer(outloc, owner=1)
 
 
@@ -541,7 +561,7 @@ cdef class HDSWrapperClass:
         chds.datNew(self._locator, name, type, ndim, cdims, &status)
         chds.datFind(self._locator, name, &outloc, &status)
 
-        raiseHDSException(status)
+        raiseStarlinkException(status)
         return HDSWrapperClass.from_pointer(outloc, owner=1)
 
 
@@ -565,7 +585,7 @@ cdef class HDSWrapperClass:
 
         npyval = cnp.PyArray_FROMANY(value, np_type, 0, chds.DAT__MXDIM, requirements );
         if not npyval:
-            raise StarlinkHDSError('Could not create array for data')
+            raise StarlinkError('Could not create array for data')
 
         # Get the shape.
         cdef int ndim = npyval.ndim
@@ -577,7 +597,7 @@ cdef class HDSWrapperClass:
         # Call the HDS routine
         chds.errBegin(&status)
         chds.datPut(self._locator, type, ndim, hdims, <void *>npyval.data, &status ),
-        raiseHDSException(status)
+        raiseStarlinkException(status)
         return 
 
     #[ ] loc.putc
@@ -607,8 +627,14 @@ cdef class HDSWrapperClass:
 
             chds.errBegin(&status)
             chds.hdsTrace(self._locator, &nlev, path, fname, &status, sizeof(path), sizeof(fname) )
-            raiseHDSException(status)
+            raiseStarlinkException(status)
             outstr = '<%s.%s>'.format(fname, path)
         else:
             outstr = "<DAT__NOLOC>"
         return outstr
+
+
+
+#cdef HDSWrapperClass create_hds_from_pointer(chds.HDSLoc *_locator, bint owner=False):
+#    cdef HDSWrapperClass output = HDSWrapperClass.from_pointer(_locator, owner=owner)
+#    return output

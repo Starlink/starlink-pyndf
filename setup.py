@@ -292,7 +292,7 @@ ndfex_includedirs.append(Ast.get_include())
 # Define the two extensions.
 
 hdsExtension = Extension('starlink.hds',
-                         sources = get_source('hds') + ['starlink/hds/hds.pyx'],
+                         sources = ['starlink/hds.pyx'],
                          include_dirs = hdsex_includedirs,
                          define_macros = defines,
                          libraries = ['z'],
@@ -314,7 +314,11 @@ setup(name='starlink-pyndf',
       long_description=long_description,
       packages=['starlink', 'starlink.ndfpack'],
       cmdclass={'build_ext': custom_star_build},
-      ext_modules=cythonize([hdsExtension], language_level="3"),
+      ext_modules=cythonize([hdsExtension, ndfExtension], language_level="3",
+                            include_path=[
+                                'starlink/', Ast.get_include()]),
+
+      package_data={'starlink.hds':'starlink/hds.pxd','starlink.ndf':'starlink/ndf.pxd'},
       test_suite='test',
       namespace_packages=['starlink'],
       # metadata

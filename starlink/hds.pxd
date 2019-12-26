@@ -40,6 +40,7 @@ cdef extern from "dat_par.h":
         DAT__SZTYP
         DAT__SZNAM
         DAT__MXDIM
+        DAT__FILNF
 
 cdef extern from "err_par.h":
     cdef enum:
@@ -81,5 +82,18 @@ cdef extern from "hds.h":
 
 
 
+# Defintions from hds.pyx itself, so they can be used in other methods.
 
+cdef int raiseStarlinkException( int status ) except *
+cdef  int _hdstype2numpy( const char * type)
+#cdef class HDSWrapperClass:
+#    cdef HDSLoc* _locator
+#    cdef bint ptr_owner
+
+#    cdef HDSWrapperClass from_pointer(self, HDSLoc* _locator, bint owner)
+
+#cdef class HDSTest:
+    #pass
+    #cdef int a
+    #cdef int b
 
