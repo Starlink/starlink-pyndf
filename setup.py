@@ -182,7 +182,8 @@ class custom_star_build(build_ext):
 
 
             # Copy over the libraries to the build directory manually, and add to package data.
-
+            if not os.path.isdir(os.path.join(self.build_lib, 'starlink', extra_lib_dir)):
+                os.mkdir(os.path.join(self.build_lib, 'starlink', extra_lib_dir))
             for lib in linked_libraries:
                 shutil.copy(lib, os.path.join(self.build_lib, 'starlink', extra_lib_dir))
                 output_lib = os.path.join('starlink', extra_lib_dir, os.path.split(lib)[1])
