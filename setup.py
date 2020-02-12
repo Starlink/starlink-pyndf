@@ -242,7 +242,7 @@ setup(name='starlink-pyndf',
       cmdclass={'build_ext': custom_star_build},
       ext_modules = [hdsExtension, ndfExtension],
       test_suite='test',
-      namespacepackages=['starlink'],
+      namespace_packages=['starlink'],
       # metadata
       author='SF Graves',
       author_email='s.graves@eaobservatory.org',
