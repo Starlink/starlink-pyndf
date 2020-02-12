@@ -48,9 +48,9 @@ typedef struct HDSWild {
 } HDSWild;
 
 /* Public type for specifying HDS dimensions */
-typedef int hdsdim;
-#define HDS_DIM_FORMAT "d"
-#define HDS_DIM_TYPE I
+typedef int64_t hdsdim;
+#define HDS_DIM_FORMAT "ld"
+#define HDS_DIM_TYPE K
 
 /* Helper macros for HDS dimensions. For instance HDSDIM_TYPE(datFred)
    expands to datFredK or datFredI, as required. */
