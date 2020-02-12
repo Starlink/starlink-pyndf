@@ -1,5 +1,4 @@
 from libc.stdint cimport uint32_t, int64_t
-#from cpython.ref cimport PyObject
 
 cdef extern from "hds_types.h":
     ctypedef struct HDSLoc:
@@ -11,10 +10,13 @@ cdef extern from "hds_types.h":
 cdef extern from "ndf_types.h":
     cdef enum:
         NDF__SZTYP
+        NDF__SZFTYP
         NDF__SZMMD
         NDF__NOID
         NDF__NOPL
         NDF__MXDIM
+        NDF__SZXNM
+        NDF__SZFRM
 
 cdef extern from "sae_par.h":
     cdef enum:
@@ -152,6 +154,11 @@ cdef extern from "ndf.h":
                    const char *comp,
                    int *status );
 
+    void ndfAunmp( int indf,
+                    const char *comp,
+                    int iaxis,
+                    int *status );
+
     void ndfXloc( int indf,
                    const char *xname,
                    const char *mode,
@@ -181,4 +188,56 @@ cdef extern from "ndf.h":
                    int *there,
                    int *status );
 
+    void ndfXdel( int indf,
+                  const char *xname,
+                  int *status );
 
+
+    void ndfAcget( int indf,
+                   const char *comp,
+                   int iaxis,
+                   char *value,
+                   size_t value_length,
+                   int *status )
+
+    void ndfAclen( int indf,
+                    const char *comp,
+                   int iaxis,
+                   size_t *length,
+                   int *status );
+    void ndfAstat( int indf,
+                   const char *comp,
+                   int iaxis,
+                   int *state,
+                   int *status );
+    void ndfAtype( int indf,
+                    const char *comp,
+                    int iaxis,
+                    char *type,
+                    size_t type_length,
+                    int *status );
+    void ndfAmap( int indf,
+                   const char *comp,
+                   int iaxis,
+                   const char *type,
+                   const char *mmod,
+                   void *pntr[],
+                   size_t *el,
+                   int *status );
+    void ndfAunmp( int indf,
+                   const char *comp,
+                   int iaxis,
+                   int *status );
+    void ndfAform( int indf,
+                    const char *comp,
+                    int iaxis,
+                    char *form,
+                    size_t form_length,
+                    int *status );
+    void ndfAnorm( int indf,
+                    int iaxis,
+                    int *norm,
+                    int *status );
+    void ndfValid( int indf,
+                    int *valid,
+                    int *status );

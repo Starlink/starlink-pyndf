@@ -41,6 +41,7 @@ cdef extern from "dat_par.h":
         DAT__SZNAM
         DAT__MXDIM
         DAT__FILNF
+        DAT__SZLOC
 
 cdef extern from "err_par.h":
     cdef enum:
@@ -52,6 +53,7 @@ cdef extern from "sae_par.h":
         SAI__OK
 
 cdef extern from "hds.h":
+    int hdsInfoI(const HDSLoc * locator, const char *topic_str, const char *extra, int *result, int *status);
     int datAnnul(HDSLoc **locator, int *status);
     int datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[], HDSLoc **locator2, int *status);
     int datClen(const HDSLoc *locator, size_t *clen, int *status);
@@ -79,18 +81,26 @@ cdef extern from "hds.h":
     int hdsOpen(const char *file_str, const char *mode_str, HDSLoc **locator, int *status);
     int hdsTrace(const HDSLoc *locator, int *nlev, char *path_str, char *file_str, int *status,
                  size_t path_length, size_t file_length);
+    int datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status);
+    int datPrmry(int set_, const HDSLoc **locator, int *prim, int *status);
+    int hdsShow(const char *topic_str, int *status);
 
+    int datErase(const HDSLoc *locator, const char *name_str, int *status);
 
 
 # Defintions from hds.pyx itself, so they can be used in other methods.
 
 cdef int raiseStarlinkException( int status ) except *
 cdef  int _hdstype2numpy( const char * type)
-#cdef class HDSWrapperClass:
-#    cdef HDSLoc* _locator
-#    cdef bint ptr_owner
+cdef class HDSWrapperClass:
+    cdef HDSLoc* _locator
+    cdef bint ptr_owner
 
-#    cdef HDSWrapperClass from_pointer(self, HDSLoc* _locator, bint owner)
+    #@staticmethod
+    #cdef HDSWrapperClass new_loc()
+
+    @staticmethod
+    cdef HDSWrapperClass from_pointer(HDSLoc* _locator, bint owner=*)
 
 #cdef class HDSTest:
     #pass

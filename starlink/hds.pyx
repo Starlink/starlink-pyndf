@@ -1,3 +1,4 @@
+from libc.stdlib cimport free, malloc
 """
 
 Cython module wrapping some functions from the Starlink hds C library.
@@ -30,7 +31,7 @@ HDS object methods & attributes:
 
 """
 
-cimport mytesthds as chds
+cimport starlink.hds as chds
 from cpython.exc cimport PyErr_NewException, PyErr_SetString
 from libc.stdint cimport uint32_t, int64_t
 from libc.stdlib cimport free
@@ -38,6 +39,7 @@ cimport numpy as cnp
 import numpy as np
 from cpython.array cimport array, clone
 cnp.import_array()
+
 
 
 class StarlinkError(Exception):
@@ -49,7 +51,6 @@ cdef int raiseStarlinkException( int status ) except *:
     errBegin must have been called before this.
     """
     # if no errors, end status and return 0
-    print('In raiseStarlinkException: Status is', status)
     if status == chds.SAI__OK:
         chds.errEnd(&status);
         return 0;
@@ -82,7 +83,7 @@ cdef  int _hdstype2numpy( const char * type):
     cdef int retval
     if type==b"_INTEGER":
         retval=cnp.NPY_INT
-    if type==b"_INT64":
+    elif type==b"_INT64":
         retval=cnp.NPY_INT64
     elif type==b"_REAL":
         retval=cnp.NPY_FLOAT
@@ -97,7 +98,7 @@ cdef  int _hdstype2numpy( const char * type):
     elif type==b"_UBYTE":
         retval=cnp.NPY_UBYTE
     elif type==b"_LOGICAL":
-        retval=cnp.NPY_BOOL
+        retval=cnp.NPY_INT
     elif type[0:6]==b"_CHAR*":
         retval=cnp.NPY_STRING
     else:
@@ -234,34 +235,15 @@ def new(filename, hdsname, hdstype, dims=None):
 # To create a new instance, you would use:
 # hdsobj = HDSWrapperClass.from_pointer(HDSLoc* locator_pointer)
 
+def _transfer(loc):
+    return loc
 
-# cdef class HDSTest:
-#     cdef int a
-#     cdef int b
-
-#     def __cinit__(self):
-#         print('Testing!')
-
-
-#     def __init__(self, a, b):
-#         self.a = a
-#         self.b = b
-#         print('Testing init!', self.a, self.b)
 
 
 cdef class HDSWrapperClass:
     """
     A wrapper class for the HDSLoc C/C++ data structure
     """
-
-    # This won't be reachable from the python code. We will need to
-    # store the pointer to the lcoator, and if we own the pointer or
-    # not.
-
-    #???Why are these declared here and also in the pxd file???
-    cdef chds.HDSLoc* _locator
-    cdef bint ptr_owner
-
 
     def __cinit__(self):
         #Not the owner of this pointer
@@ -351,7 +333,7 @@ cdef class HDSWrapperClass:
         cdef int i
         for i in range(0, ndim):
             pydims.append(tdim[i])
-        return pydims
+        return pydims[::-1]
 
     @property
     def state(self):
@@ -380,9 +362,9 @@ cdef class HDSWrapperClass:
     @property
     def type(self):
         """Type of the HDS component."""
-
         cdef int status = chds.SAI__OK
         cdef char type_str[chds.DAT__SZTYP+1];
+
         chds.errBegin(&status)
         chds.datType(self._locator, type_str, &status);
         raiseStarlinkException(status)
@@ -503,10 +485,14 @@ cdef class HDSWrapperClass:
 
         # Get the actual data.
         chds.errBegin(&status)
-        chds.datGet(self._locator, type_.encode('ascii'), ndim, tdim, mypyarray.data, &status);
+        chds.datGet(self._locator, type_.encode('ascii'), ndim, tdim, mypyarray.data, &status)
 
         raiseStarlinkException(status)
-        # Now reshape narray from Fortran to Python.
+
+
+        # if you are in _LOGICAL, need to convert back from INT to BOOL. Not sure why.
+        if type_ == '_LOGICAL':
+            mypyarray = mypyarray.astype(bool)
         return mypyarray
 
 
@@ -565,7 +551,15 @@ cdef class HDSWrapperClass:
         return HDSWrapperClass.from_pointer(outloc, owner=1)
 
 
-    #[ ] loc.put
+    def erase(self, name):
+        """Recursively delete component name and its children"""
+        cdef int status = chds.SAI__OK
+        name = name.encode('ascii')
+        chds.errBegin(&status)
+        chds.datErase(self._locator, name, &status)
+        raiseStarlinkException(status)
+
+
     def put(self, value):
         """
         Write a primitive inside an HDS object
@@ -573,18 +567,24 @@ cdef class HDSWrapperClass:
         Note that this will force data to be converted to the type of
         the HDS object even if not safe. User beware.
         """
-
-
-
         cdef int status = chds.SAI__OK
-        ptype = self.type.encode('ascii')
-        cdef char* type = ptype
-        cdef chds.hdsdim hdims[chds.DAT__MXDIM];
-        cdef int np_type = _hdstype2numpy(type)
-        cdef int requirements = (cnp.NPY_ARRAY_DEFAULT | cnp.NPY_ARRAY_FORCECAST);
+        cdef char type_str[chds.DAT__SZTYP+1]
 
-        npyval = cnp.PyArray_FROMANY(value, np_type, 0, chds.DAT__MXDIM, requirements );
-        if not npyval:
+        # Get the type of the underlying structure.
+        chds.errBegin(&status)
+        chds.datType(self._locator, type_str, &status)
+        raiseStarlinkException(status)
+
+
+        # Create the array of the correct data type from the values.
+        cdef chds.hdsdim hdims[chds.DAT__MXDIM];
+        cdef int np_type = _hdstype2numpy(type_str)
+        cdef int requirements = (cnp.NPY_ARRAY_DEFAULT | cnp.NPY_ARRAY_FORCECAST)
+
+        cdef cnp.ndarray npyval
+        npyval = cnp.PyArray_FROMANY(value, np_type, 0, chds.DAT__MXDIM, requirements )
+
+        if npyval is None:
             raise StarlinkError('Could not create array for data')
 
         # Get the shape.
@@ -596,23 +596,28 @@ cdef class HDSWrapperClass:
 
         # Call the HDS routine
         chds.errBegin(&status)
-        chds.datPut(self._locator, type, ndim, hdims, <void *>npyval.data, &status ),
+        chds.datPut(self._locator, type_str, ndim, hdims, &npyval.data[0], &status )
         raiseStarlinkException(status)
-        return 
 
-    #[ ] loc.putc
 
 
     # Wrapper
     @staticmethod
     cdef HDSWrapperClass from_pointer(chds.HDSLoc *_locator, bint owner=False):
-        """Factory function to create HDSWrapperClass objects from
+        """Factory function:create HDSWrapperClass objects from
         given HDSLoc pointer.
 
         Setting ``owner`` flag to ``True`` causes
         the extension type to ``free`` the structure pointed to by ``_ptr``
         when the wrapper object is deallocated."""
-        # Call to __new__ byasses __init__ constructor.
+
+
+        # Check the status:
+        #cdef const char * topic_str
+        #cdef const char * extra
+#        cdef int result
+        cdef int status = chds.SAI__OK
+
         cdef HDSWrapperClass wrapper = HDSWrapperClass.__new__(HDSWrapperClass)
         wrapper._locator = _locator
         wrapper.ptr_owner = owner
@@ -628,10 +633,12 @@ cdef class HDSWrapperClass:
             chds.errBegin(&status)
             chds.hdsTrace(self._locator, &nlev, path, fname, &status, sizeof(path), sizeof(fname) )
             raiseStarlinkException(status)
-            outstr = '<%s.%s>'.format(fname, path)
+            outstr = '<{}.{}>'.format(fname, path)
         else:
             outstr = "<DAT__NOLOC>"
         return outstr
+
+
 
 
 
