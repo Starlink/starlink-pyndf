@@ -4,10 +4,13 @@ import glob
 import os
 import shutil
 
+
 def get_starlink_macros():
     # Need to define: HAVE_INT64_T && HAVE_UINT64_T
     define_macros = []
     compiler = ccompiler.new_compiler()
+
+    define_macros.append(('HAVE_AST', 1))
 
     #undef SIZEOF_INT
     define_macros.append(('SIZEOF_INT', ctypes.sizeof(ctypes.c_int)))
@@ -200,6 +203,8 @@ def get_starlink_macros():
         define_macros.append(('HAVE_GETPWUID', '1'))
     if compiler.has_function('geteuid'):
         define_macros.append(('HAVE_GETEUID', '1'))
+
+    #define_macros.append(('DEBUG_HDS', '1'))
     return define_macros
 
 

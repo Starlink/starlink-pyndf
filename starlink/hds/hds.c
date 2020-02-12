@@ -39,7 +39,7 @@
 // Starlink includes.
 #include "hds.h"
 #include "sae_par.h"
-
+#include "hds_types.h"
 
 // Define the bad values: taken from prm_par.h
 /* Bad values, used for flagging undefined data. */
@@ -299,7 +299,8 @@ pydat_cell(HDSObject *self, PyObject *args)
 
     // Convert Python-like --> Fortran-like
     int ndim = PyArray_SIZE(sub);
-    int i, rdim[ndim];
+    int i;
+    hdsdim rdim[ndim];
     int *sdata = (int*)PyArray_DATA(sub);
     for(i=0; i<ndim; i++) rdim[i] = sdata[ndim-i-1]+1;
 
@@ -750,11 +751,14 @@ static PyObject *HDS_repr( PyObject * self ) {
         char path[512];
         char fname[512];
         PyObject *result = NULL;
-        HDSLoc *loc = HDS_retrieve_locator((HDSObject*)self);
 
+        HDSLoc *loc = HDS_retrieve_locator((HDSObject*)self);
         if (loc) {
           int nlev = 0;
           int status = SAI__OK;
+
+          // TODO need to check error here -- otherwise can get an error as
+          // fname and path won't be set before printing out.
           hdsTrace( loc, &nlev, path, fname, &status, sizeof(path), sizeof(fname) );
           snprintf( buff, sizeof(buff), "<%s.%s>",
                     fname,path);

@@ -17,10 +17,11 @@ Setup script for the HDS and NDF python extensions.
 """
 
 
-# First we set up the files for building. This is safe to repeat again
-# and again.
+# For development purposes: set to True to not actually rebuild hdf5
+# and the individual libraries.
+FAKEBUILDING=False
 
-# Create a custom build script for the extension.
+OUTPUTDIR= 'temp'
 
 # variable to hold the list of dependencies for HDS.
 HDS_DEP_LIBS = ('starutil', 'starmem', 'cnf', 'ems', 'mers',
@@ -28,6 +29,11 @@ HDS_DEP_LIBS = ('starutil', 'starmem', 'cnf', 'ems', 'mers',
 HDS_DEP_INCLUDES = ('include/', 'missingincludes/') + HDS_DEP_LIBS + \
                    ('hdf5/src/', 'hdf5/hl/src')
 
+
+# Name of shared object library.
+libname_pattern = 'lib{libname}{soext}'
+
+# Create a custom build script for the extension.
 class custom_star_build(build_ext):
 
     """
@@ -53,8 +59,9 @@ class custom_star_build(build_ext):
         basedir = os.getcwd()
         os.chdir('hdf5')
         env = os.environ
-        subprocess.check_call('./configure', env=env)
-        subprocess.check_call('make', env=env)
+        if not FAKEBUILDING:
+            subprocess.check_call('./configure', env=env)
+            subprocess.check_call('make', env=env)
         os.chdir(basedir)
 
         #Now we need to get the header files we need copied into our
@@ -65,66 +72,128 @@ class custom_star_build(build_ext):
             os.mkdir(os.path.join('include', 'star'))
 
         # Copy hdf5 needed header files over.
-        shutil.copy('hdf5/src/hdf5.h', 'include')
-        shutil.copy('hdf5/src/H5public.h', 'include')
-        shutil.copy('hdf5/src/H5pubconf.h', 'include')
-        shutil.copy('hdf5/src/H5version.h', 'include')
+        shutil.copy(os.path.join('hdf5','src','hdf5.h'), 'include')
+        shutil.copy(os.path.join('hdf5','src','H5public.h'), 'include')
+        shutil.copy(os.path.join('hdf5','src','H5pubconf.h'), 'include')
+        shutil.copy(os.path.join('hdf5','src','H5version.h'), 'include')
 
-
-        # Get the built object files for later.
-        hdf5_extras = glob.glob('hdf5/src/.libs/*.o')
-
-        # now build the HDS dependency packages. Can we just do
-        # this all together?
+        # Get the sources for the ndf and hds dependencies.
         hds_source_dep = []
         for name_ in HDS_DEP_LIBS:
             hds_source_dep += get_source(name_)
+
+        ndf_source_dep = []
+        for name_ in ['prm', 'ast', 'ary']:
+            ndf_source_dep += get_source(name_)
+
+
+        hdsex_includedirs = ['include', 'hds', 'missingincludes',
+                             'hds_missingincludes', os.path.join('hdf5','src'), os.path.join('hdf5','hl','src')] + \
+            ['starutil', 'starmem', 'cnf', 'ems', 'mers', 'chr',\
+             'one'] + \
+            [numpy.get_include()]
+
+        from starlink import Ast
+        ndfex_includedirs = hdsex_includedirs + ['prm', 'ast', 'ary', 'ast_missingincludes', Ast.get_include()]
+
         define_macros = get_starlink_macros()
 
         # Now build all.
-        outputdir= 'temp'
-        compiler = ccompiler.new_compiler()
 
-        # use distutils customize compiler to fix this.
+        # This is the directory where the extra library's built here
+        # have to be copied to, relative to the final build.
+        extra_lib_dir = '.'
+
+        # Get the compilers.
+        compiler = ccompiler.new_compiler(dry_run=FAKEBUILDING)
+        compiler2 = ccompiler.new_compiler()
+
+        # Ensure we have any distutils options set.
         customize_compiler(compiler)
-        extraobjs = compiler.compile(sources=hds_source_dep, output_dir=outputdir,
-                                     macros=define_macros, include_dirs=HDS_DEP_INCLUDES,
-                                     )
+        customize_compiler(compiler2)
 
-        # Now build hds-v4 and hds-v5: have to do this separately.
-        extraobjs_hdsv4 = compiler.compile(sources = get_source('hds-v4'), output_dir=outputdir,
-                                           macros=define_macros,
-                                           include_dirs=('hds-v4_missingincludes',) + HDS_DEP_INCLUDES)
 
-        extraobjs_hdsv5 = compiler.compile(sources = get_source('hds-v5'), output_dir=outputdir,
-                                           macros=define_macros,
-                                           include_dirs=('hds-v5_missingincludes',) + HDS_DEP_INCLUDES)
-
+        # Now go through each extension, build the shared libraries we
+        # need and ensure they are copied to the build directory. We
+        # will use rpath and $ORIGIN to ensure everything is portable
+        # as it will be moved around during the build process by pip
+        # etc.
         for ext in self.extensions:
-            ext.extra_objects += hdf5_extras
-            ext.extra_objects += extraobjs
-            ext.extra_objects += extraobjs_hdsv4
-            ext.extra_objects += extraobjs_hdsv5
+            linked_libraries = []
+            if ext.name=='starlink.hds':
 
+                hds_deps = compiler.compile(sources=hds_source_dep, output_dir=OUTPUTDIR,
+                                         macros=define_macros, include_dirs=HDS_DEP_INCLUDES,
+                                         depends=hds_source_dep,
+                                        )
+                hds_deps_libname = libname_pattern.format(libname='pyhdsdeps', soext=compiler2.shared_lib_extension)
+                # Build this into a library
+                compiler2.link('shared', hds_deps, hds_deps_libname, output_dir=OUTPUTDIR)
+                linked_libraries += [os.path.join(OUTPUTDIR, hds_deps_libname)]
+
+                # Now build hds-v4 and hds-v5: have to do this separately.
+                hdsv4_libname = 'libpyhdsv4{}'.format(compiler2.shared_lib_extension)
+                hdsv4objs = compiler.compile(sources = get_source('hds-v4'), output_dir=OUTPUTDIR,
+                                                   macros=define_macros,
+                                                   include_dirs=('hds-v4_missingincludes',) + HDS_DEP_INCLUDES,
+                                                   depends=get_source('hds-v4'))
+                compiler2.link('shared', hdsv4objs, hdsv4_libname, output_dir=OUTPUTDIR)
+                linked_libraries += [os.path.join(OUTPUTDIR, hdsv4_libname)]
+
+                # Copy out HDF5 library
+                hdf5_libpath = os.path.join('hdf5', 'src', '.libs')
+                hdf5_library_pattern = 'libhdf5{}*'.format(compiler2.shared_lib_extension)
+                hdf5_libraries = glob.glob(os.path.join(hdf5_libpath, hdf5_library_pattern))
+                for l in hdf5_libraries:
+                    shutil.copy(l, OUTPUTDIR)
+                linked_libraries += glob.glob(os.path.join(OUTPUTDIR, hdf5_library_pattern))
+
+                hdsv5_libname = libname_pattern.format(libname='pyhdsv5',soext=compiler2.shared_lib_extension)
+                hdsv5objs = compiler.compile(sources = get_source('hds-v5'), output_dir=OUTPUTDIR,
+                                                   macros=define_macros,
+                                                   include_dirs=('hds-v5_missingincludes',) + HDS_DEP_INCLUDES,
+                                                   depends=get_source('hds-v5'))
+                compiler2.link('shared', hdsv5objs, hdsv5_libname, output_dir=OUTPUTDIR, libraries=['hdf5'], library_dirs=[OUTPUTDIR], runtime_library_dirs=['$ORIGIN/'])
+                linked_libraries += [os.path.join(OUTPUTDIR, hdsv5_libname)]
+
+
+                hds_libname = libname_pattern.format(libname='pyhds',soext=compiler2.shared_lib_extension)
+                hdsobjs = compiler.compile(sources = get_source('hds'), output_dir=OUTPUTDIR,
+                                            macros=define_macros, include_dirs=hdsex_includedirs,
+                                            depends=get_source('hds'))
+                compiler2.link('shared', hdsobjs, hds_libname, output_dir=OUTPUTDIR, libraries=['pyhdsdeps','pyhdsv5', 'pyhdsv4'], library_dirs=[OUTPUTDIR], runtime_library_dirs=['$ORIGIN/'])
+                linked_libraries += [os.path.join(OUTPUTDIR, hds_libname)]
+
+                ext.libraries += ['pyhds']
+                ext.library_dirs += [OUTPUTDIR]
+                ext.runtime_library_dirs += ['$ORIGIN/{}'.format(extra_lib_dir)]
+
+            if ext.name=='starlink.ndf':
+                ndf_libname = libname_pattern.format(libname='pyndf',soext=compiler2.shared_lib_extension)
+                ndfobjs = compiler.compile(sources = get_source('ndf') + ndf_source_dep,
+                                             include_dirs= ['ndf/', 'ndf_missingincludes/'] + ndfex_includedirs,
+                                             macros=define_macros,
+                                             depends=get_source('ndf'))
+                compiler2.link('shared', ndfobjs, ndf_libname, output_dir=OUTPUTDIR, libraries=['pyhdsdeps','pyhdsv5', 'pyhdsv4', 'pyhds'], library_dirs=[OUTPUTDIR], runtime_library_dirs=['$ORIGIN/'])
+                linked_libraries += [os.path.join(OUTPUTDIR, ndf_libname)]
+                ext.libraries += ['pyndf']
+                ext.library_dirs += [OUTPUTDIR]
+                ext.runtime_library_dirs += [os.path.join('$ORIGIN',extra_lib_dir)]
+
+
+            # Copy over the libraries to the build directory manually, and add to package data.
+            for lib in linked_libraries:
+                shutil.copy(lib, os.path.join(self.build_lib, 'starlink'))
+                output_lib = os.path.join('starlink', os.path.split(lib)[1])
+                self.distribution.package_data.get('starlink', list()).extend(output_lib)
+
+        # Run the standard build_ext process.
         build_ext.run(self)
+
 
 
 # Get the Starlink specific defines.
 defines = get_starlink_macros()
-
-# Check for ast: ensure it is present in all builds being done for pypi.
-# TODO: ensure at run time library checks for this instead!
-try:
-    from starlink import Ast
-    defines.append(('HAVE_AST', '1'))
-    have_ast = True
-except ImportError:
-    have_ast = False
-    print("")
-    print("  Will not be building with AST facilities.")
-    print("  Install starlink.Ast in order to read and write AST FrameSets.")
-    print("")
-
 
 # Get the lists of source files for the NDF extra dependencies.
 ndf_source_dep = []
@@ -136,55 +205,45 @@ for name_ in ['prm', 'ast', 'ary']:
 hdsex_includedirs = ['include/', 'hds/', 'missingincludes/',
                      'hds_missingincludes/', 'hdf5/src/', 'hdf5/hl/src'] + \
     ['starutil', 'starmem/', 'cnf', 'ems', 'mers', 'chr',\
-#'hds-v4', 'hds-v5',\
      'one'] + \
     [numpy.get_include()]
 
-
-ndfex_includedirs = hdsex_includedirs + ['prm', 'ast', 'ary', 'ast_missingincludes/']
+from starlink import Ast
+ndfex_includedirs = hdsex_includedirs + ['prm', 'ast', 'ary', 'ast_missingincludes/', Ast.get_include()]
 
 # Can't build NDF without Ast!
-if have_ast:
-    ndfex_includedirs.append(Ast.get_include())
+
+ndfex_includedirs.append(Ast.get_include())
 
 # Define the two extensions.
-pythonhds_source = [os.path.join('starlink', 'hds', 'hds.c')]
 
 hdsExtension = Extension('starlink.hds',
-                         sources = get_source('hds') + pythonhds_source,
+                         sources = [os.path.join('starlink', 'hds', 'hds.c')],
                          include_dirs = hdsex_includedirs,
                          define_macros = defines,
                          libraries = ['z'],
 )
 
-pythonndf_source = [os.path.join('starlink', 'ndf', 'ndf.c')]
-
 ndfExtension = Extension('starlink.ndf',
-                         sources = get_source('hds') + ndf_source_dep + get_source('ndf') + pythonndf_source,
+                         sources = [os.path.join('starlink', 'ndf', 'ndf.c')],
                          include_dirs = ['ndf/', 'ndf_missingincludes/'] + ndfex_includedirs,
                          define_macros = defines,
                          libraries = ['z'],
 )
 
 
-
-
-
-
 with open('README.rst') as file:
     long_description = file.read()
-
-
 
 setup(name='starlink-pyndf',
       version='0.3',
       long_description=long_description,
-      packages=['starlink'],#, 'starlink.ndfpack'],
+      packages=['starlink', 'starlink.ndfpack'],
       cmdclass={'build_ext': custom_star_build},
-      ext_modules=[hdsExtension, ndfExtension],
+      ext_modules = [hdsExtension, ndfExtension],
       test_suite='test',
-
-      # metdata
+      namespacepackages=['starlink'],
+      # metadata
       author='SF Graves',
       author_email='s.graves@eaobservatory.org',
       url='https://github.com/sfgraves/starlink-pyhds',
@@ -196,6 +255,7 @@ setup(name='starlink-pyndf',
           'Programming Language :: C',
           'Topic :: Scientific/Engineering :: Astronomy',
       ],
-      install_requires = ['numpy',],
+      setup_requires = ['numpy', 'starlink-pyast'],
+      install_requires = ['numpy','starlink-pyast'],
 
 )
