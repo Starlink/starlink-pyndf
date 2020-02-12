@@ -328,7 +328,7 @@ setup(name='starlink-pyndf',
                                 'starlink/', Ast.get_include()],
                             compiler_directives={'embedsignature':True}),
 
-      package_data={'starlink.hds':'starlink/hds.pxd','starlink.ndf':'starlink/ndf.pxd'},
+      package_data={'starlink.hds':['starlink/hds.pxd'],'starlink.ndf':['starlink/ndf.pxd']},
 
       test_suite='test',
       namespace_packages=['starlink'],
