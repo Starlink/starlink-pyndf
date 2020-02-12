@@ -15,6 +15,11 @@ class TestSimpleNDF(unittest.TestCase):
         ndf.end()
         os.remove( self.testndf )
 
+    def test_simpleread(self):
+        indf = ndf.open(os.path.join('data','ndf_test.sdf'))
+        self.assertEqual(self.label, 'Signal')
+        self.assertEqual(self.units, 'counts')
+        self.assertEqual(self.title, 'Test Data')
 
     def test_simplenew(self):
         # okay we have all the data, time to open us up an ndf
