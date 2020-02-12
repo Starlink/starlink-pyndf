@@ -23,7 +23,48 @@ jobs:
        python: "3.6"
        env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="cp27-*x86_64"
 
- 
+     - services:
+         - docker
+       python: "3.6"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="cp27-*i686"
+
+     - services:
+         - docker
+       python: "3.6"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="cp35-*"
+
+     - services:
+         - docker
+       python: "3.6"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="*cp36-*"
+
+     - services:
+         - docker
+       python: "3.6"
+       env: CIBW_BEFORE_BUILD="yum -y install zlib-devel && pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip CIBW_BUILD="cp37-*"
+
+
+
+     - os: osx
+       before_install: brew update;brew cask uninstall oclint; brew install gcc
+       language: generic
+       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip2 CIBW_BUILD="cp27*"
+
+     - os: osx
+       before_install: brew update;brew cask uninstall oclint; brew install gcc
+       language: generic
+       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip2 CIBW_BUILD="cp35*"
+
+     - os: osx
+       before_install: brew update;brew cask uninstall oclint; brew install gcc
+       language: generic
+       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip2 CIBW_BUILD="cp36*"
+
+     - os: osx
+       before_install: brew update;brew cask uninstall oclint; brew install gcc;
+       language: generic
+       env: CIBW_BEFORE_BUILD="pip install Cython && pip install numpy==1.16 && pip install starlink-pyast" PIP=pip2 CIBW_BUILD="cp37*"
+
 env:
   global:
     - CIBW_TEST_COMMAND="bash {project}/test/run_test.sh"
