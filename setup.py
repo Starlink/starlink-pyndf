@@ -102,7 +102,7 @@ class custom_star_build(build_ext):
 
         # This is the directory where the extra library's built here
         # have to be copied to, relative to the final build.
-        extra_lib_dir = '.'
+        extra_lib_dir = '.libs'
 
         # Get the compilers.
         compiler = ccompiler.new_compiler(dry_run=FAKEBUILDING)
@@ -182,9 +182,10 @@ class custom_star_build(build_ext):
 
 
             # Copy over the libraries to the build directory manually, and add to package data.
+
             for lib in linked_libraries:
-                shutil.copy(lib, os.path.join(self.build_lib, 'starlink'))
-                output_lib = os.path.join('starlink', os.path.split(lib)[1])
+                shutil.copy(lib, os.path.join(self.build_lib, 'starlink', extra_lib_dir))
+                output_lib = os.path.join('starlink', extra_lib_dir, os.path.split(lib)[1])
                 self.distribution.package_data.get('starlink', list()).extend(output_lib)
 
         # Run the standard build_ext process.
