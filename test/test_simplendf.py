@@ -13,7 +13,8 @@ class TestSimpleNDF(unittest.TestCase):
 
     def tearDown(self):
         ndf.end()
-        os.remove( self.testndf )
+        if os.path.isfile(self.testndf):
+            os.remove( self.testndf )
 
     def test_simpleread(self):
         indf = ndf.open(os.path.join('data','ndf_test.sdf'))
