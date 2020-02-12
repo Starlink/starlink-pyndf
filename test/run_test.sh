@@ -7,8 +7,9 @@ pybinary=`which python`
 pydir=`dirname $pybinary`
 ls -lhtr $pydir/../lib/python2.7/site-packages/starlink/
 ldd $pydir/../lib/python2.7/site-packages/starlink/hds.so
+readelf -d $pydir/../lib/python2.7/site-packages/starlink/hds.so
 ldd $pydir/../lib/python2.7/site-packages/starlink/ndf.so
-
+readelf -d $pydir/../lib/python2.7/site-packages/starlink/ndf.so
 
 
 # Relative path to this script.
