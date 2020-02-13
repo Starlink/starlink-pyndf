@@ -794,7 +794,7 @@ cdef class NDFMapped:
         if self.mode is 'READ':
             raise hds.StarlinkError('Array was mapped for reading: cannot update values')
         if npyval.size != self.nelem:
-            raise hds.StarlinkError('Number of elements in np array (%i) different from number of elements mapped (%i)' %(len(npyval), self.nelem))
+            raise hds.StarlinkError('Number of elements in np array (%i) different from number of elements mapped (%i)' %(npyval.size), self.nelem))
 
         # Get the size of each byte.
         cdef size_t nbyte = npyval.dtype.itemsize
