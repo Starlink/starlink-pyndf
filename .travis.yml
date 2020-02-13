@@ -70,4 +70,3 @@ env:
     - CIBW_TEST_COMMAND="bash {project}/test/run_test.sh"
     - CIBW_TEST_REQUIRES=pytest
     - TWINE_USERNAME=sgraves
-    - CIBW_BUILD_VERBOSITY=1
