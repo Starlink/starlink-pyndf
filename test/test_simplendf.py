@@ -18,7 +18,7 @@ class TestSimpleNDF(unittest.TestCase):
 
     def test_simpleread(self):
         indf = ndf.open(os.path.join('data','ndf_test.sdf'))
-        self.assertEqualindf.label, 'Signal')
+        self.assertEqual(indf.label, 'Signal')
         self.assertEqual(indf.units, 'counts')
         self.assertEqual(indf.title, 'Test Data')
 
