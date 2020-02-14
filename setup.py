@@ -265,5 +265,6 @@ setup(name='starlink-pyndf',
       ],
       setup_requires = ['numpy', 'starlink-pyast'],
       install_requires = ['numpy','starlink-pyast'],
+      test_requires = ['pathlib'],
 
 )
