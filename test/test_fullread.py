@@ -2,7 +2,7 @@ import unittest
 from starlink.ndfpack import Ndf
 import os.path
 import pathlib
-fulldir = pathlib.Path(__file__).parent.absolute()
+fulldir = pathlib.Path(__file__).parent.absolute().as_posix()
 class TestFullRead(unittest.TestCase):
 
     def setUp(self):

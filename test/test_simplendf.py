@@ -5,7 +5,7 @@ import numpy
 import os.path
 import os
 import pathlib
-fulldir = pathlib.Path(__file__).parent.absolute()
+fulldir = pathlib.Path(__file__).parent.absolute().as_posix()
 
 class TestSimpleNDF(unittest.TestCase):
 
