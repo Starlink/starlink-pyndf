@@ -4,6 +4,8 @@ import starlink.hds as hds
 import numpy
 import os.path
 import os
+import pathlib
+fulldir = pathlib.Path(__file__).parent.absolute()
 
 class TestSimpleNDF(unittest.TestCase):
 
@@ -17,7 +19,7 @@ class TestSimpleNDF(unittest.TestCase):
             os.remove( self.testndf )
 
     def test_simpleread(self):
-        indf = ndf.open(os.path.join('data','ndf_test.sdf'))
+        indf = ndf.open(os.path.join(fulldir, 'data','ndf_test.sdf'))
         self.assertEqual(indf.label, 'Signal')
         self.assertEqual(indf.units, 'counts')
         self.assertEqual(indf.title, 'Test Data')

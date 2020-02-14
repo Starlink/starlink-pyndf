@@ -2,12 +2,13 @@ import unittest
 import starlink.Ast
 from starlink.ndfpack import Ndf
 import os.path
-
+import pathlib
+fulldir = pathlib.Path(__file__).parent.absolute()
 class TestWcs(unittest.TestCase):
 
     def setUp(self):
         # Read the NDF for each test
-        self.ndf = Ndf( os.path.join('data','ndf_test.sdf') )
+        self.ndf = Ndf( os.path.join(fulldir, 'data','ndf_test.sdf') )
 
     def test_gtwcs(self):
         self.assertIsInstance( self.ndf.wcs, starlink.Ast.FrameSet )
