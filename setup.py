@@ -29,10 +29,6 @@ HDS_DEP_LIBS = ('starutil', 'starmem', 'cnf', 'ems', 'mers',
 HDS_DEP_INCLUDES = ('include/', 'missingincludes/') + HDS_DEP_LIBS + \
                    ('hdf5/src/', 'hdf5/hl/src')
 
-
-# Name of shared object library.
-libname_pattern = 'lib{libname}{soext}'
-
 # Create a custom build script for the extension.
 class custom_star_build(build_ext):
 
@@ -51,6 +47,13 @@ class custom_star_build(build_ext):
     lists. The result is only HDS itself will have to be built twice.
     """
     def run(self):
+
+        # Get the names of library files
+        # Name of shared object library.
+        libtype = 'shared'
+        if 'osx' in self.plat_name or 'darwin' in self.plat_name:
+            libtype = 'dylib'
+
         # Ensure the directories and files are in appropriate locations.
         setup_building()
 
@@ -101,7 +104,9 @@ class custom_star_build(build_ext):
         # Now build all.
 
         # This is the directory where the extra library's built here
-        # have to be copied to, relative to the final build.
+        # have to be copied to, relative to the final build. This must
+        # be called '.libs' if you want to use this with
+        # cibuildwheel/auditwheel.
         extra_lib_dir = '.libs'
 
         # Get the compilers.
@@ -126,13 +131,13 @@ class custom_star_build(build_ext):
                                          macros=define_macros, include_dirs=HDS_DEP_INCLUDES,
                                          depends=hds_source_dep,
                                         )
-                hds_deps_libname = libname_pattern.format(libname='pyhdsdeps', soext=compiler2.shared_lib_extension)
+                hds_deps_libname = compiler2.library_filename('pyhdsdeps',lib_type=libtype)
                 # Build this into a library
                 compiler2.link('shared', hds_deps, hds_deps_libname, output_dir=OUTPUTDIR)
                 linked_libraries += [os.path.join(OUTPUTDIR, hds_deps_libname)]
 
                 # Now build hds-v4 and hds-v5: have to do this separately.
-                hdsv4_libname = 'libpyhdsv4{}'.format(compiler2.shared_lib_extension)
+                hdsv4_libname = compiler.library_filename('pyhdsv4', lib_type=libtype)
                 hdsv4objs = compiler.compile(sources = get_source('hds-v4'), output_dir=OUTPUTDIR,
                                                    macros=define_macros,
                                                    include_dirs=('hds-v4_missingincludes',) + HDS_DEP_INCLUDES,
@@ -142,13 +147,13 @@ class custom_star_build(build_ext):
 
                 # Copy out HDF5 library
                 hdf5_libpath = os.path.join('hdf5', 'src', '.libs')
-                hdf5_library_pattern = 'libhdf5{}*'.format(compiler2.shared_lib_extension)
+                hdf5_library_pattern = compiler2.library_filename('hdf5*', lib_type=libtype) + '*'
                 hdf5_libraries = glob.glob(os.path.join(hdf5_libpath, hdf5_library_pattern))
                 for l in hdf5_libraries:
                     shutil.copy(l, OUTPUTDIR)
                 linked_libraries += glob.glob(os.path.join(OUTPUTDIR, hdf5_library_pattern))
 
-                hdsv5_libname = libname_pattern.format(libname='pyhdsv5',soext=compiler2.shared_lib_extension)
+                hdsv5_libname = compiler2.library_filename('pyhdsv5', lib_type=libtype)
                 hdsv5objs = compiler.compile(sources = get_source('hds-v5'), output_dir=OUTPUTDIR,
                                                    macros=define_macros,
                                                    include_dirs=('hds-v5_missingincludes',) + HDS_DEP_INCLUDES,
@@ -157,7 +162,7 @@ class custom_star_build(build_ext):
                 linked_libraries += [os.path.join(OUTPUTDIR, hdsv5_libname)]
 
 
-                hds_libname = libname_pattern.format(libname='pyhds',soext=compiler2.shared_lib_extension)
+                hds_libname = compiler2.library_filename('pyhds',lib_type=libtype)
                 hdsobjs = compiler.compile(sources = get_source('hds'), output_dir=OUTPUTDIR,
                                             macros=define_macros, include_dirs=hdsex_includedirs,
                                             depends=get_source('hds'))
@@ -169,7 +174,7 @@ class custom_star_build(build_ext):
                 ext.runtime_library_dirs += ['$ORIGIN/{}'.format(extra_lib_dir)]
 
             if ext.name=='starlink.ndf':
-                ndf_libname = libname_pattern.format(libname='pyndf',soext=compiler2.shared_lib_extension)
+                ndf_libname = compiler2.library_filename('pyndf', lib_type=libtype)
                 ndfobjs = compiler.compile(sources = get_source('ndf') + ndf_source_dep,
                                              include_dirs= ['ndf/', 'ndf_missingincludes/'] + ndfex_includedirs,
                                              macros=define_macros,
@@ -184,6 +189,7 @@ class custom_star_build(build_ext):
             # Copy over the libraries to the build directory manually, and add to package data.
             if not os.path.isdir(os.path.join(self.build_lib, 'starlink', extra_lib_dir)):
                 os.mkdir(os.path.join(self.build_lib, 'starlink', extra_lib_dir))
+
             for lib in linked_libraries:
                 shutil.copy(lib, os.path.join(self.build_lib, 'starlink', extra_lib_dir))
                 output_lib = os.path.join('starlink', extra_lib_dir, os.path.split(lib)[1])
