@@ -48,11 +48,14 @@ class custom_star_build(build_ext):
     """
     def run(self):
 
-        # Get the names of library files
-        # Name of shared object library.
+        # Get the names of library files Name of shared object
+        # library, and ensure -bundle isn't called in linking on osx.
         libtype = 'shared'
         if 'osx' in self.plat_name or 'darwin' in self.plat_name:
             libtype = 'dylib'
+            from distutils import sysconfig
+            vars = sysconfig.get_config_vars()
+            vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '-dynamiclib')
 
         # Ensure the directories and files are in appropriate locations.
         setup_building()
