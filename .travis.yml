@@ -68,5 +68,5 @@ jobs:
 env:
   global:
     - CIBW_TEST_COMMAND="bash {project}/test/run_test.sh"
-    - CIBW_TEST_REQUIRES=pytest
+    - CIBW_TEST_REQUIRES=pytest pathlib
     - TWINE_USERNAME=sgraves
