@@ -11,7 +11,7 @@ def get_starlink_macros():
     compiler = ccompiler.new_compiler()
 
     # Force using 8bit integers?
-    define_macros.append(('NDF_I8', 1))
+    #define_macros.append(('NDF_I8', 1))
     define_macros.append(('HAVE_AST', 1))
 
     #undef SIZEOF_INT
