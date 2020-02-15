@@ -168,7 +168,7 @@ class custom_star_build(build_ext):
                                                    macros=define_macros,
                                                    include_dirs=('hds-v5_missingincludes',) + HDS_DEP_INCLUDES,
                                                    depends=get_source('hds-v5'))
-                compiler2.link('shared', hdsv5objs, hdsv5_libname, output_dir=OUTPUTDIR, libraries=['hdf5'], library_dirs=[OUTPUTDIR], runtime_library_dirs=rdirs, extra_link_args=ldirs)
+                compiler2.link('shared', hdsv5objs, hdsv5_libname, output_dir=OUTPUTDIR, libraries=['hdf5'], library_dirs=[OUTPUTDIR], runtime_library_dirs=rdirs, extra_postargs=ldirs)
                 linked_libraries += [os.path.join(OUTPUTDIR, hdsv5_libname)]
 
 
@@ -176,7 +176,7 @@ class custom_star_build(build_ext):
                 hdsobjs = compiler.compile(sources = get_source('hds'), output_dir=OUTPUTDIR,
                                             macros=define_macros, include_dirs=hdsex_includedirs,
                                             depends=get_source('hds'))
-                compiler2.link('shared', hdsobjs, hds_libname, output_dir=OUTPUTDIR, libraries=['pyhdsdeps','pyhdsv5', 'pyhdsv4'], library_dirs=[OUTPUTDIR], runtime_library_dirs=rdirs, extra_link_args=ldirs)
+                compiler2.link('shared', hdsobjs, hds_libname, output_dir=OUTPUTDIR, libraries=['pyhdsdeps','pyhdsv5', 'pyhdsv4'], library_dirs=[OUTPUTDIR], runtime_library_dirs=rdirs, extra_postargs=ldirs)
                 linked_libraries += [os.path.join(OUTPUTDIR, hds_libname)]
 
                 ext.libraries += ['pyhds']
@@ -192,7 +192,7 @@ class custom_star_build(build_ext):
                                              include_dirs= ['ndf/', 'ndf_missingincludes/'] + ndfex_includedirs,
                                              macros=define_macros,
                                              depends=get_source('ndf'))
-                compiler2.link('shared', ndfobjs, ndf_libname, output_dir=OUTPUTDIR, libraries=['pyhdsdeps','pyhdsv5', 'pyhdsv4', 'pyhds'], library_dirs=[OUTPUTDIR], runtime_library_dirs=rdirs, extra_link_args=ldirs)
+                compiler2.link('shared', ndfobjs, ndf_libname, output_dir=OUTPUTDIR, libraries=['pyhdsdeps','pyhdsv5', 'pyhdsv4', 'pyhds'], library_dirs=[OUTPUTDIR], runtime_library_dirs=rdirs, extra_postargs=ldirs)
                 linked_libraries += [os.path.join(OUTPUTDIR, ndf_libname)]
                 ext.libraries += ['pyndf']
                 ext.library_dirs += [OUTPUTDIR]
