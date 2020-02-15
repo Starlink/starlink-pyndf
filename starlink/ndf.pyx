@@ -162,7 +162,7 @@ cdef _char_getter( int ndfid, char * component):
     cndf.ndfCget(ndfid, component, &c_string[0], clen+1, &status)
     hds.raiseStarlinkException(status)
 
-    py_string = c_string[:clen].decode()
+    py_string = c_string[:clen].decode('ascii')
     return py_string
 
 
@@ -494,7 +494,9 @@ cdef class NDFWrapperClass:
         cdef size_t nelem
         cdef void * ptr
         hds.errBegin(&status)
+
         cndf.ndfMap(self._ndfid, comp, type_, mode, &ptr, &nelem, &status)
+
         hds.raiseStarlinkException(status)
 
         return NDFMapped.from_pointer(self._ndfid, ptr, comp, type_, mode, nelem, iaxis=0)
@@ -651,7 +653,7 @@ cdef class NDFWrapperClass:
         cndf.errBegin(&status)
         cndf.ndfType(self._ndfid, comp, type, cndf.NDF__SZTYP+1, &status)
         hds.raiseStarlinkException(status)
-        return type.decode()
+        return type.decode('ascii')
 
     def xname(self, nex):
         """
@@ -664,7 +666,7 @@ cdef class NDFWrapperClass:
         cndf.errBegin(&status)
         cndf.ndfXname(self._ndfid, nex+1, xname, cndf.NDF__SZXNM+1, &status)
         hds.raiseStarlinkException(status)
-        return xname.decode()
+        return xname.decode('ascii')
 
     def xloc(self, extname, mode):
         """
@@ -818,17 +820,18 @@ cdef class NDFMapped:
         mapped.iaxis = iaxis
         return mapped
 
+
     @property
     def comp(self):
-        return self._comp.decode()
+        return self._comp.decode('ascii')
 
     @property
     def mode(self):
-        return self._mode.decode()
+        return self._mode.decode('ascii')
 
     @property
     def type(self):
-        return self._type.decode()
+        return self._type.decode('ascii')
 
 
 
