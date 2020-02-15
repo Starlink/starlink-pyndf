@@ -73,6 +73,8 @@ from libc.stdlib cimport free, malloc
 
 from starlink import Ast
 
+import sys
+
 
 import warnings
 
@@ -532,11 +534,10 @@ cdef class NDFWrapperClass:
 
     def gtwcs(self):
         """Return the WCS as an AST frameset"""
-        #print('Starting WCS')
+
         cdef cndf.AstFrameSet * wcs = NULL
         cdef int status  = cndf.SAI__OK
         cdef char * wcsstring
-        #cdef  PyObject * pywcs
 
         return_obj = None
         cndf.errBegin(&status)
@@ -545,12 +546,17 @@ cdef class NDFWrapperClass:
 
 
         if (wcs):
-
             wcsstring = cndf.astToString(<cndf.AstObject *>wcs)
             cndf.astAnnul(<cndf.AstObject *> wcs)
-            pywcsstring = wcsstring[:].decode()
+
+            # Deal with py2/py3 differences in bytes objects.
+            if sys.version_info[0] ==2:
+                pywcsstring = wcsstring[:]
+                pywcsstring = pywcsstring.split('\n')
+            else:
+                pywcsstring = wcsstring[:].decode().split('\n')
             cndf.astFree(wcsstring)
-            chan = Ast.Channel(pywcsstring.split('\n'))
+            chan = Ast.Channel(pywcsstring)
             return_obj = chan.read()
         cndf.astEnd
         hds.raiseStarlinkException(status)
