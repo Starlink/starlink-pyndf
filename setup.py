@@ -51,12 +51,19 @@ class custom_star_build(build_ext):
         # Get the names of library files Name of shared object
         # library, and ensure -bundle isn't called in linking on osx.
         libtype = 'shared'
+        rdirs = ['$ORIGIN']
+        ldirs = []
+        ext_runtime_library_dirs = '$ORIGIN/{}'
+        ext_extra_link_args = None
         if 'osx' in self.plat_name or 'darwin' in self.plat_name:
             libtype = 'dylib'
             from distutils import sysconfig
             vars = sysconfig.get_config_vars()
             vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '-dynamiclib')
-
+            rdirs = []
+            ldirs=['-Wl,-rpath,'+'@loader_path/']
+            ext_runtime_library_dirs = None
+            ext_extra_link_args = '-Wl,-rpath,@loader_path/{}'
         # Ensure the directories and files are in appropriate locations.
         setup_building()
 
@@ -161,7 +168,7 @@ class custom_star_build(build_ext):
                                                    macros=define_macros,
                                                    include_dirs=('hds-v5_missingincludes',) + HDS_DEP_INCLUDES,
                                                    depends=get_source('hds-v5'))
-                compiler2.link('shared', hdsv5objs, hdsv5_libname, output_dir=OUTPUTDIR, libraries=['hdf5'], library_dirs=[OUTPUTDIR], runtime_library_dirs=['$ORIGIN/'])
+                compiler2.link('shared', hdsv5objs, hdsv5_libname, output_dir=OUTPUTDIR, libraries=['hdf5'], library_dirs=[OUTPUTDIR], runtime_library_dirs=rdirs, extra_link_args=ldirs)
                 linked_libraries += [os.path.join(OUTPUTDIR, hdsv5_libname)]
 
 
@@ -169,12 +176,15 @@ class custom_star_build(build_ext):
                 hdsobjs = compiler.compile(sources = get_source('hds'), output_dir=OUTPUTDIR,
                                             macros=define_macros, include_dirs=hdsex_includedirs,
                                             depends=get_source('hds'))
-                compiler2.link('shared', hdsobjs, hds_libname, output_dir=OUTPUTDIR, libraries=['pyhdsdeps','pyhdsv5', 'pyhdsv4'], library_dirs=[OUTPUTDIR], runtime_library_dirs=['$ORIGIN/'])
+                compiler2.link('shared', hdsobjs, hds_libname, output_dir=OUTPUTDIR, libraries=['pyhdsdeps','pyhdsv5', 'pyhdsv4'], library_dirs=[OUTPUTDIR], runtime_library_dirs=rdirs, extra_link_args=ldirs)
                 linked_libraries += [os.path.join(OUTPUTDIR, hds_libname)]
 
                 ext.libraries += ['pyhds']
                 ext.library_dirs += [OUTPUTDIR]
-                ext.runtime_library_dirs += ['$ORIGIN/{}'.format(extra_lib_dir)]
+                if ext_runtime_library_dirs:
+                    ext.runtime_library_dirs += [ext_runtime_library_dirs.format(extra_lib_dir)]
+                if ext_extra_link_args:
+                    ext.extra_link_args += [ext_extra_link_args.format(extra_lib_dir)]
 
             if ext.name=='starlink.ndf':
                 ndf_libname = compiler2.library_filename('pyndf', lib_type=libtype)
@@ -182,12 +192,14 @@ class custom_star_build(build_ext):
                                              include_dirs= ['ndf/', 'ndf_missingincludes/'] + ndfex_includedirs,
                                              macros=define_macros,
                                              depends=get_source('ndf'))
-                compiler2.link('shared', ndfobjs, ndf_libname, output_dir=OUTPUTDIR, libraries=['pyhdsdeps','pyhdsv5', 'pyhdsv4', 'pyhds'], library_dirs=[OUTPUTDIR], runtime_library_dirs=['$ORIGIN/'])
+                compiler2.link('shared', ndfobjs, ndf_libname, output_dir=OUTPUTDIR, libraries=['pyhdsdeps','pyhdsv5', 'pyhdsv4', 'pyhds'], library_dirs=[OUTPUTDIR], runtime_library_dirs=rdirs, extra_link_args=ldirs)
                 linked_libraries += [os.path.join(OUTPUTDIR, ndf_libname)]
                 ext.libraries += ['pyndf']
                 ext.library_dirs += [OUTPUTDIR]
-                ext.runtime_library_dirs += [os.path.join('$ORIGIN',extra_lib_dir)]
-
+                if ext_runtime_library_dirs:
+                    ext.runtime_library_dirs += [ext_runtime_library_dirs.format(extra_lib_dir)]
+                if ext_extra_link_args:
+                    ext.extra_link_args += [ext_extra_link_args.format(extra_lib_dir)]
 
             # Copy over the libraries to the build directory manually, and add to package data.
             if not os.path.isdir(os.path.join(self.build_lib, 'starlink', extra_lib_dir)):
