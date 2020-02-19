@@ -159,17 +159,17 @@ def get_starlink_macros():
     # variable, so just define it as true.
     define_macros.append(('HAVE_STDDEF_H', '1'))
 
+    #For  OSX, we need the following macros.
+    define_macros.append(('HAVE_STRLCAT', '1'))
+    define_macros.append(('HAVE_STRLCPY', '1'))
 
     #undef HAVE_STRERROR_R
     if compiler.has_function('strerror_r'):
         define_macros.append(('HAVE_STRERROR_R', '1'))
 
-
     #undef HAVE_STRTOK_R
     if compiler.has_function('strtok_r'):
         define_macros.append(('HAVE_STRTOK_R', '1'))
-
-
 
     #undef HAVE_SYS_WAIT_H
     if sysconfig.get_config_var('HAVE_SYS_WAIT_H')==1:
