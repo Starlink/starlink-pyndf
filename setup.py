@@ -322,7 +322,7 @@ setup(name='starlink-pyndf',
       packages=['starlink', 'starlink.ndfpack'],
       cmdclass={'build_ext': custom_star_build},
       ext_modules=cythonize([hdsExtension, ndfExtension],
-                            language_level="2",
+                            language_level=2,
                             gdb_debug=True,
                             include_path=[
                                 'starlink/', Ast.get_include()],
