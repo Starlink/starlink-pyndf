@@ -114,7 +114,7 @@ class custom_star_build(build_ext):
         from starlink import Ast
         ndfex_includedirs = hdsex_includedirs + ['prm', 'ast', 'ary', 'ast_missingincludes', Ast.get_include()]
 
-        define_macros = get_starlink_macros()
+        define_macros = get_starlink_macros(osx=osx)
 
         # Now build all.
 

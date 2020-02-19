@@ -5,7 +5,7 @@ import os
 import shutil
 
 
-def get_starlink_macros():
+def get_starlink_macros(osx=False):
     # Need to define: HAVE_INT64_T && HAVE_UINT64_T
     define_macros = []
     compiler = ccompiler.new_compiler()
@@ -160,8 +160,9 @@ def get_starlink_macros():
     define_macros.append(('HAVE_STDDEF_H', '1'))
 
     #For  OSX, we need the following macros.
-    define_macros.append(('HAVE_STRLCAT', '1'))
-    define_macros.append(('HAVE_STRLCPY', '1'))
+    if osx:
+        define_macros.append(('HAVE_STRLCAT', '1'))
+        define_macros.append(('HAVE_STRLCPY', '1'))
 
     #undef HAVE_STRERROR_R
     if compiler.has_function('strerror_r'):
