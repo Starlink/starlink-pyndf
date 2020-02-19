@@ -1,8 +1,0 @@
-FACILITY ONE
-1,NOFILES,No more files
-2,PIPEERR,Pipe Error
-3,LENERR,Name Length Error
-4,MALLOCERR,Malloc error
-5,EXECERROR,Error in exec/fork
-6,TRUNC,String truncated
-7,CNVERR,Format conversion error

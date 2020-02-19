@@ -1,6 +1,0 @@
-FACILITY CMP
-100,TYPIN,Type invalid
-101,DIMIN,Dimensions invalid
-102,ISMAP,Data currently mapped
-103,FATAL,Fatal internal error
-104,NOMAP,Not mapped
