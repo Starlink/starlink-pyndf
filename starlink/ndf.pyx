@@ -6,9 +6,7 @@ import numpy as np
 cimport numpy as cnp
 
 cnp.import_array()
-
-
-from libc.string cimport
+from libc.string cimport memcpy
 from cpython.exc cimport PyErr_NewException, PyErr_SetString
 from libc.stdint cimport uint32_t, int64_t
 from libc.stdlib cimport free, malloc
