@@ -1,53 +1,5 @@
 """
-
 Cython module wrapping some functions from the Starlink ndf C library.
-
-Modelled after the existing NDF wrapper.
-0. Method wrappers
-SKIP [ ] ndf.init (redundant)
-[x] ndf.begin
-[x] ndf.end
-[x] ndf.open
-SKIP [ ] ndf.ndf_getbadpixval
-
-
-1.: An NDF object with the following methods:
-# read only accessors;
-# Get settrs...
-[x] title
-[x] label
-[x] units
-[x] dim
-[x] bound
-[x] xnumb
-
-
-
-# Also an NDFMapped object?
-
-# Methods
-LOWER PRIORITY?  axis ones -- maybe not do? acget, aform, anorm, aread, astat, amap
-
-[x] indf.acget
-[x] indf.aform
-[x] indf.anorm
-[x] indf.aread
-[x] indf.astat
-[x] indf.amap
-
-[x] indf.annul
-[x] indf.bound
-** don't need**[ ] indf.cget
-[x] indf.gtwcs
-[x] indf.read
-[x] indf.state
-[x] indf.xloc
-[x] indf.xname
-[x] indf.xstat
-[x] indf.new       ???
-[x] indf.xnew
-[x] indf.map
-
 """
 
 import numpy as np
@@ -55,28 +7,21 @@ cimport numpy as cnp
 
 cnp.import_array()
 
-#from cpython.ref cimport PyObject
 
-from libc.string cimport memcpy
-
+from libc.string cimport
 from cpython.exc cimport PyErr_NewException, PyErr_SetString
 from libc.stdint cimport uint32_t, int64_t
-from libc.stdlib cimport free
+from libc.stdlib cimport free, malloc
+import sys
+import warnings
 
 from starlink import hds
 from starlink cimport hds
-
-
 cimport ndf as cndf
-
-from libc.stdlib cimport free, malloc
 
 from starlink import Ast
 
-import sys
 
-
-import warnings
 
 cdef char* _allocate_cstring(length):
     cdef char* c_string = <char *> malloc(length * sizeof(char))
@@ -95,8 +40,10 @@ def begin():
     cndf.ndfBegin()
 
 def end():
-    """
-    End the current NDF context.
+    """End the current NDF context.
+
+    This will annul any NDF identifiers currently active, and raise any
+    errors that occur doing that.
     """
     cdef int status=cndf.SAI__OK
     cndf.errBegin(&status)
@@ -110,7 +57,7 @@ def open(filename, mode='READ', stat='OLD'):
 
     args
     ----
-    filename: str, path toNDF file on disk.
+    filename: str, path to NDF file on disk.
 
     kwargs
     ------
@@ -165,6 +112,7 @@ cdef _char_getter( int ndfid, char * component):
     hds.raiseStarlinkException(status)
 
     py_string = c_string[:clen].decode('ascii')
+    free(c_string)
     return py_string
 
 
@@ -326,7 +274,9 @@ cdef class NDFWrapperClass:
         cndf.ndfAcget(self._ndfid, comp, naxis, axisname, clen+1, &status)
         hds.raiseStarlinkException(status)
 
-        return axisname.decode('ascii')
+        pyaxisname = axisname.decode('ascii')
+        free(axisname)
+        return pyaxisname
 
     def anorm(self, iaxis):
         """
