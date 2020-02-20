@@ -8,6 +8,7 @@ import os
 import subprocess
 import numpy
 from Cython.Build import cythonize
+from starlink import Ast
 
 # Hide all the horrible parts away.
 from setup_functions import get_starlink_macros, get_source, \
@@ -21,7 +22,6 @@ Setup script for the HDS and NDF python extensions.
 # For development purposes: set to True to not actually rebuild hdf5
 # and the individual libraries.
 FAKEBUILDING=False
-
 OUTPUTDIR= '.libs'
 
 # variable to hold the list of dependencies for HDS.
@@ -143,11 +143,14 @@ class custom_star_build(build_ext):
             linked_libraries = []
             if ext.name=='starlink.hds':
 
+
                 hds_deps = compiler.compile(sources=hds_source_dep, output_dir=OUTPUTDIR,
                                          macros=define_macros, include_dirs=HDS_DEP_INCLUDES,
                                          depends=hds_source_dep,
                                         )
+
                 hds_deps_libname = compiler2.library_filename('pyhdsdeps',lib_type=libtype)
+
                 # Build this into a library
 
                 print('Linking HDSDEPS\n\n\n')
@@ -234,6 +237,7 @@ class custom_star_build(build_ext):
                                              include_dirs= ['ndf/', 'ndf_missingincludes/'] + ndfex_includedirs,
                                              macros=define_macros,
                                              depends=get_source('ndf'))
+
                 extra_preargs = None
                 if osx:
                     extra_preargs = [install_name_pattern.format(ndf_libname)]
@@ -276,7 +280,7 @@ for name_ in ['prm', 'ast', 'ary']:
     ndf_source_dep += get_source(name_)
 
 
-from starlink import Ast
+
 hdsex_includedirs = ['include/', 'hds/', 'missingincludes/',
                      'hds_missingincludes/', 'hdf5/src/', 'hdf5/hl/src'] + \
     ['starutil', 'starmem/', 'cnf', 'ems', 'mers', 'chr',\
@@ -284,16 +288,13 @@ hdsex_includedirs = ['include/', 'hds/', 'missingincludes/',
     [numpy.get_include()]
 
 
-from starlink import Ast
 
 ndfex_includedirs = hdsex_includedirs + ['prm', 'ast', 'ary', 'ast_missingincludes/', Ast.get_include()]
 
 # Can't build NDF without Ast!
 
-ndfex_includedirs.append(Ast.get_include())
 
 # Define the two extensions.
-
 
 hdsExtension = Extension('starlink.hds',
                          sources = ['starlink/hds.pyx'],
@@ -312,7 +313,6 @@ ndfExtension = Extension('starlink.ndf',
 
 
 
-
 with open('README.rst') as file:
     long_description = file.read()
 
@@ -321,13 +321,18 @@ setup(name='starlink-pyndf',
       long_description=long_description,
       packages=['starlink', 'starlink.ndfpack'],
       cmdclass={'build_ext': custom_star_build},
-      ext_modules=cythonize([hdsExtension, ndfExtension], language_level="3",
+      ext_modules=cythonize([hdsExtension, ndfExtension],
+                            language_level="2",
+                            gdb_debug=True,
                             include_path=[
-                                'starlink/', Ast.get_include()]),
+                                'starlink/', Ast.get_include()],
+                            compiler_directives={'embedsignature':True}),
 
       package_data={'starlink.hds':'starlink/hds.pxd','starlink.ndf':'starlink/ndf.pxd'},
+
       test_suite='test',
       namespace_packages=['starlink'],
+
       # metadata
       author='SF Graves',
       author_email='s.graves@eaobservatory.org',
@@ -340,6 +345,7 @@ setup(name='starlink-pyndf',
           'Programming Language :: C',
           'Topic :: Scientific/Engineering :: Astronomy',
       ],
+
       setup_requires = ['numpy', 'starlink-pyast'],
       install_requires = ['numpy','starlink-pyast'],
       test_requires = ['pathlib'],
