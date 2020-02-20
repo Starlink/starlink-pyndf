@@ -3,41 +3,15 @@ from libc.stdlib cimport free, malloc
 
 Cython module wrapping some functions from the Starlink hds C library.
 
-[ ] hds._transfer # do I need this?
-[x] hds.new
-[x] hds.open
-[x] hds.getbadvalue
-[x] hds.raiseHDSException
-
-
-HDS object methods & attributes:
-[x] loc.annul
-[x] loc.cell
-[x] loc.find
-[x] loc.get
-[x] loc.index
-[x] loc.new
-[x] loc.put
-[x] loc.putc
-
-[x] loc.clen
-[x] loc.name
-[x] loc.ncomp
-[x] loc.shape
-[x] loc.state
-[x] loc.struc
-[x] loc.type
-[x] loc.valid
-
 """
 
 cimport starlink.hds as chds
 from cpython.exc cimport PyErr_NewException, PyErr_SetString
 from libc.stdint cimport uint32_t, int64_t
 from libc.stdlib cimport free
+
 cimport numpy as cnp
 import numpy as np
-from cpython.array cimport array, clone
 cnp.import_array()
 
 
@@ -104,30 +78,6 @@ cdef  int _hdstype2numpy( const char * type):
     else:
         raise StarlinkError('Unknown HDS type %s cannot be converted to numpy values'%type.decode())
     return retval
-
-# def  hdstype2numpy(type):
-#     retval = None
-#     if type=="_INTEGER":
-#         retval=np.int
-#     elif type=="_REAL":
-#         retval=np.float
-#     elif type=="_DOUBLE":
-#         retval=np.double
-#     elif type=="_WORD":
-#         retval=np.short
-#     elif type=="_UWORD":
-#         retval=np.ushort
-#     elif type=="_BYTE":
-#         retval=np.byte
-#     elif type=="_UBYTE":
-#         retval=np.ubyte
-#     elif type=="_LOGICAL":
-#         retval=np.bool
-#     elif type[0:6]=="_CHAR*":
-#         retval=np.
-#     else:
-#         raise StarlinkHDSError('Unknown HDS type %s cannot be converted to numpy values'%type.decode())
-#     return retval
 
 
 
@@ -236,6 +186,7 @@ def new(filename, hdsname, hdstype, dims=None):
 # hdsobj = HDSWrapperClass.from_pointer(HDSLoc* locator_pointer)
 
 def _transfer(loc):
+    """ This no longer needs to do anything."""
     return loc
 
 
@@ -383,7 +334,6 @@ cdef class HDSWrapperClass:
         return bool(valid)
 
     # Methods of the class.
-    #[ ] loc.annul
     def annul(self):
         """Annuls the HDS locator"""
         cdef int status = chds.SAI__OK;
@@ -393,7 +343,6 @@ cdef class HDSWrapperClass:
         raiseStarlinkException(status)
         self._locator = NULL;
 
-    #[ ] loc.cell
     def cell(self, indices):
         """returns new locator to a cell of an array.
 
@@ -417,7 +366,6 @@ cdef class HDSWrapperClass:
         return HDSWrapperClass.from_pointer(outloc, owner=1)
 
 
-    #[ ] loc.find
     def find(self, compname):
         """
         Find a named component inside the HDS object.
@@ -642,6 +590,3 @@ cdef class HDSWrapperClass:
 
 
 
-#cdef HDSWrapperClass create_hds_from_pointer(chds.HDSLoc *_locator, bint owner=False):
-#    cdef HDSWrapperClass output = HDSWrapperClass.from_pointer(_locator, owner=owner)
-#    return output
