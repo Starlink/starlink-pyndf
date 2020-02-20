@@ -250,13 +250,18 @@ cdef class HDSWrapperClass:
 
     @property
     def ncomp(self):
-        """
-        Number of components in HDS structure
+        """Number of components in HDS structure
 
-        If this is a scalar, ncomp will raise a StarlinkHDSError
+        If this is not a scalar, this will return None.
         """
 
         cdef int status = chds.SAI__OK
+
+        # Check if its primitive: if so, return None instead of counting
+        # components.
+        if not self.struc:
+            return None
+
         cdef int ncomp = 0
         chds.errBegin(&status)
         chds.datNcomp(self._locator, &ncomp, &status);
@@ -290,7 +295,8 @@ cdef class HDSWrapperClass:
     def state(self):
         """The state of the HDS component
 
-        Enquire the state of a primitive, ie. whether its value is defined or not.
+        Enquire the state of a primitive, ie. whether its value is
+        defined or not.
         """
         cdef int status = chds.SAI__OK
         cdef int state;
