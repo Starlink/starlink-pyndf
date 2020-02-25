@@ -217,6 +217,8 @@ static int hdstype2numpy( const char * type ) {
 
   if(strcmp(type,"_INTEGER") == 0) {
     retval = NPY_INT;
+  } else if(strcmp(type, "_INT64") == 0) {
+    retval = NPY_INT64;
   } else if(strcmp(type,"_REAL") == 0) {
     retval = NPY_FLOAT;
   } else if(strcmp(type,"_DOUBLE") == 0) {
@@ -383,6 +385,8 @@ pydat_get(HDSObject *self)
 
     if(strcmp(typ_str, "_INTEGER") == 0){
         arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_INT);
+    }else if (strcmp(typ_str, "_INT64") == 0){
+        arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_INT64);
     }else if(strcmp(typ_str, "_LOGICAL") == 0){
         arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_INT);
     }else if(strcmp(typ_str, "_REAL") == 0){

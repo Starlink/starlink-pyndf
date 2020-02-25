@@ -203,6 +203,9 @@ static int ndftype2numpy( const char * type, size_t *nbytes ) {
   if(strcmp(type,"_INTEGER") == 0) {
     retval = NPY_INT;
     nb = sizeof(int);
+  } else if(strcmp(type, "_INT64") == 0) {
+    retval = NPY_INT64;
+    nb = sizeof(int64_t);
   } else if(strcmp(type,"_REAL") == 0) {
     retval = NPY_FLOAT;
     nb = sizeof(float);
@@ -669,7 +672,7 @@ pyndf_new(NDF *self, PyObject *args)
 // check an HDS type
 static int checkHDStype(const char *type)
 {
-	if(strcmp(type,"_INTEGER") != 0 && strcmp(type,"_REAL") != 0 && strcmp(type,"_DOUBLE") != 0 &&
+        if(strcmp(type,"_INTEGER") != 0 && strcmp(type, "_INT64") != 0 && strcmp(type,"_REAL") != 0 && strcmp(type,"_DOUBLE") != 0 &&
 			strcmp(type,"_LOGICAL") != 0 && strcmp(type,"_WORD") != 0 && strcmp(type,"UWORD") != 0 &&
 			strcmp(type,"_BYTE") != 0 && strcmp(type,"_UBYTE") != 0 && strcmp(type,"_CHAR") != 0 &&
 			strncmp(type,"_CHAR*",6) != 0)
@@ -725,6 +728,8 @@ pyndf_getbadpixval(NDF *self, PyObject *args)
 		return Py_BuildValue("f",VAL__BADR);
 	else if (strcmp(type,"_INTEGER") == 0)
 		return Py_BuildValue("i",VAL__BADI);
+	else if (strcmp(type,"_INT64") == 0)
+		return Py_BuildValue("i",VAL__BADK);
 	else
 		return NULL;
 }
