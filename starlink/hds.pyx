@@ -13,7 +13,7 @@ from libc.stdlib cimport free
 cimport numpy as cnp
 import numpy as np
 cnp.import_array()
-
+import sys
 
 
 class StarlinkError(Exception):
@@ -443,11 +443,26 @@ cdef class HDSWrapperClass:
 
         raiseStarlinkException(status)
 
-
         # if you are in _LOGICAL, need to convert back from INT to BOOL. Not sure why.
         if type_ == '_LOGICAL':
             mypyarray = mypyarray.astype(bool)
-        return mypyarray
+
+        # Don't return an array if its a scalar.
+        if ndim == 0:
+            returnval = mypyarray.item()
+        else:
+            returnval = mypyarray
+
+        # If python 3, decode byte strings assuming ascii format.
+        if sys.version_info[0] > 2 and type_[0:6] == '_CHAR*':
+            if ndim == 0:
+                returnval = returnval.decode('ascii')
+            else:
+                returnval = returnval.astype('unicode_')
+                for idx in np.ndindex(returnval.shape):
+                    returnval[idx] = mypyarray[idx].decode('ascii')
+
+        return returnval
 
 
     def index(self, index):
@@ -583,11 +598,10 @@ cdef class HDSWrapperClass:
         cdef char path[512]
         cdef char fname[512]
         if self._locator:
-
             chds.errBegin(&status)
             chds.hdsTrace(self._locator, &nlev, path, fname, &status, sizeof(path), sizeof(fname) )
             raiseStarlinkException(status)
-            outstr = '<{}.{}>'.format(fname, path)
+            outstr = '<{}.{}>'.format(fname.decode('ascii'), path.decode('ascii'))
         else:
             outstr = "<DAT__NOLOC>"
         return outstr
