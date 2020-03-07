@@ -1,0 +1,16 @@
+void aryGtszD( Ary *ary, double *scale, double *zero, int *status );
+void aryPtszD( Ary *ary, double scale, double zero, int *status );
+void aryGtszF( Ary *ary, float *scale, float *zero, int *status );
+void aryPtszF( Ary *ary, float scale, float zero, int *status );
+void aryGtszI( Ary *ary, int *scale, int *zero, int *status );
+void aryPtszI( Ary *ary, int scale, int zero, int *status );
+void aryGtszW( Ary *ary, short int *scale, short int *zero, int *status );
+void aryPtszW( Ary *ary, short int scale, short int zero, int *status );
+void aryGtszUW( Ary *ary, unsigned short int *scale, unsigned short int *zero, int *status );
+void aryPtszUW( Ary *ary, unsigned short int scale, unsigned short int zero, int *status );
+void aryGtszB( Ary *ary, char *scale, char *zero, int *status );
+void aryPtszB( Ary *ary, char scale, char zero, int *status );
+void aryGtszUB( Ary *ary, unsigned char *scale, unsigned char *zero, int *status );
+void aryPtszUB( Ary *ary, unsigned char scale, unsigned char zero, int *status );
+void aryGtszK( Ary *ary, int64_t *scale, int64_t *zero, int *status );
+void aryPtszK( Ary *ary, int64_t scale, int64_t zero, int *status );

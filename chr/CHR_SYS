@@ -1,0 +1,61 @@
+*+
+*  Name:
+*     CHR_SYS
+
+*  Purpose:
+*     Define the CHR_ private constants.
+
+*  Language:
+*     Starlink Fortran 77
+
+*  Type of module:
+*     Global constants include file.
+
+*  Description:
+*     This file contains the definitions of the global constants used 
+*     internally by the CHR_ system.  Note that the definition of ESCAPE
+*     is different on UNIX from that on VMS.
+
+*  Copyright:
+*     Copyright (C) 1993 Science & Engineering Research Council.
+*     All Rights Reserved.
+
+*  Licence:
+*     This program is free software; you can redistribute it and/or
+*     modify it under the terms of the GNU General Public License as
+*     published by the Free Software Foundation; either version 2 of
+*     the License, or (at your option) any later version.
+*     
+*     This program is distributed in the hope that it will be
+*     useful,but WITHOUT ANY WARRANTY; without even the implied
+*     warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+*     PURPOSE. See the GNU General Public License for more details.
+*     
+*     You should have received a copy of the GNU General Public License
+*     along with this program; if not, write to the Free Software
+*     Foundation, Inc., 51 Franklin Street,Fifth Floor, Boston, MA
+*     02110-1301, USA
+
+*  Authors:
+*     ACC: A.C. Charles (STARLINK)
+*     {enter_new_authors_here}
+
+*  History:
+*     28-SEP-1993 (ACC):
+*        Original version adapted from EMS_SYS.
+*     {enter_further_changes_here}
+
+*-
+
+*  Global Constants:
+      CHARACTER ESCAPE           ! Escape character
+*     PARAMETER ( ESCAPE = '\' ) ! VAX
+      PARAMETER ( ESCAPE = '\\' ) ! UNIX
+
+      CHARACTER WILDA            ! Single character wild-card
+      PARAMETER ( WILDA = '%' )
+
+      CHARACTER WILDN            ! Arbitrary length string wild-card
+      PARAMETER ( WILDN = '*' )
+
+*.

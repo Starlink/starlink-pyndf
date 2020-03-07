@@ -1,10 +1,8 @@
 Metadata-Version: 1.0
-Name: starlink-pyndf
+Name: starlink-pyhds
 Version: 0.2
-Summary: Python interface to Starlink ndf libraries
-Home-page: http://www.astro.warwick.ac.uk/
-Author: Tom Marsh
-Author-email: t.r.marsh@warwick.ac.uk
-License: UNKNOWN
+Summary: Python interface to Starlink hds libraries
+Home-page: http://www.starlink.ac.uk
+License: GPL 3
 Description: UNKNOWN
 Platform: UNKNOWN

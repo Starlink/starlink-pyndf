@@ -5,6 +5,7 @@
     Copyright 2009-2011 Tom Marsh
     Copyright 2011 Richard Hickman
     Copyright 2011 Tim Jenness
+    Copyright 2018 East Asian Observatory
     All Rights Reserved.
 
     This program is free software: you can redistribute it and/or modify
@@ -34,12 +35,25 @@
 #include <stdio.h>
 #include <string.h>
 
-// NDF includes
-#include "ndf.h"
-#include "mers.h"
-#include "star/hds.h"
+
+// Starlink includes.
+#include "hds.h"
 #include "sae_par.h"
-#include "prm_par.h"
+#include "hds_types.h"
+
+// Define the bad values: taken from prm_par.h
+/* Bad values, used for flagging undefined data. */
+#define VAL__BADUB 255
+#define VAL__BADB (-127 - 1)
+#define VAL__BADUW 65535
+#define VAL__BADW (-32767 - 1)
+#define VAL__BADI (-2147483647 - 1)
+#define VAL__BADK (-9223372036854775807LL - 1)
+#define VAL__BADR -3.40282347e+38F
+#define VAL__BADD -1.7976931348623157e+308
+
+
+
 
 static PyObject * StarlinkHDSError = NULL;
 
@@ -135,7 +149,7 @@ HDS_init(HDSObject *self, PyObject *args, PyObject *kwds)
 // in the code that is about to call Starlink routines.
 
 #include "dat_err.h"
-#include "ndf_err.h"
+//#include "ndf_err.h"
 
 static int
 raiseHDSException( int *status )
@@ -203,6 +217,8 @@ static int hdstype2numpy( const char * type ) {
 
   if(strcmp(type,"_INTEGER") == 0) {
     retval = NPY_INT;
+  } else if(strcmp(type, "_INT64") == 0) {
+    retval = NPY_INT64;
   } else if(strcmp(type,"_REAL") == 0) {
     retval = NPY_FLOAT;
   } else if(strcmp(type,"_DOUBLE") == 0) {
@@ -216,7 +232,7 @@ static int hdstype2numpy( const char * type ) {
   } else if(strcmp(type,"_UBYTE") == 0) {
     retval = NPY_UBYTE;
   } else if(strcmp(type,"_LOGICAL") == 0) {
-    retval = NPY_BOOL;
+    retval = NPY_INT;
   } else if(strncmp(type,"_CHAR*",6) == 0) {
     retval = NPY_STRING;
   } else {
@@ -285,7 +301,8 @@ pydat_cell(HDSObject *self, PyObject *args)
 
     // Convert Python-like --> Fortran-like
     int ndim = PyArray_SIZE(sub);
-    int i, rdim[ndim];
+    int i;
+    hdsdim rdim[ndim];
     int *sdata = (int*)PyArray_DATA(sub);
     for(i=0; i<ndim; i++) rdim[i] = sdata[ndim-i-1]+1;
 
@@ -368,8 +385,10 @@ pydat_get(HDSObject *self)
 
     if(strcmp(typ_str, "_INTEGER") == 0){
         arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_INT);
+    }else if (strcmp(typ_str, "_INT64") == 0){
+        arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_INT64);
     }else if(strcmp(typ_str, "_LOGICAL") == 0){
-        arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_BOOL);
+        arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_INT);
     }else if(strcmp(typ_str, "_REAL") == 0){
 	arr = (PyArrayObject*) PyArray_SimpleNew(ndim, rdim, NPY_FLOAT);
     }else if(strcmp(typ_str, "_DOUBLE") == 0){
@@ -407,6 +426,12 @@ pydat_get(HDSObject *self)
     datGet(loc, typ_str, ndim, tdim, arr->data, &status);
     if(status != SAI__OK) goto fail;
     errEnd(&status);
+
+    if (strcmp(typ_str, "_LOGICAL") == 0) {
+        // convert back to Boolean.
+        PyArray_Descr* typedescr = PyArray_DescrFromType(NPY_BOOL);
+        arr = PyArray_CastToType(arr, typedescr, 0);
+      }
     return PyArray_Return(arr);
 
 fail:
@@ -526,6 +551,8 @@ pydat_put(HDSObject *self, PyObject *args)
 	PyObject *dims_object = NULL;
 	hdsdim hdims[DAT__MXDIM];
 	int ndim;
+        int requirements;
+
 	if(!PyArg_ParseTuple(args,"O:pydat_put",&value))
 		return NULL;
 	HDSLoc* loc = HDS_retrieve_locator(self);
@@ -538,8 +565,17 @@ pydat_put(HDSObject *self, PyObject *args)
 
 	// create a pointer to an array of the appropriate data type
 	int npytype = hdstype2numpy( type );
-	if (npytype == 0) return NULL;
-	npyval = (PyArrayObject*) PyArray_ContiguousFromAny( value, npytype, 0, DAT__MXDIM );
+
+
+        // HDS behaviour is to always force the input data into the
+        // requested format. Therefore set the PyArray flag
+        // NPY_ARRAY_FORCECAST so that it will convert even if it is not
+        // safe. Requires using PyArray_FromAny instead of
+        // PyArray_ContiguousFromAny.
+        requirements = (NPY_ARRAY_DEFAULT | NPY_ARRAY_FORCECAST);
+        npyval = (PyArrayObject*) PyArray_FROMANY( value, npytype, 0, DAT__MXDIM, requirements );
+        if ( !npyval ) return NULL;
+
 
 	void *valptr = PyArray_DATA(npyval);
 	if (!numpy2hdsdim( npyval, &ndim, hdims )) return NULL;
@@ -719,11 +755,14 @@ static PyObject *HDS_repr( PyObject * self ) {
         char path[512];
         char fname[512];
         PyObject *result = NULL;
-        HDSLoc *loc = HDS_retrieve_locator((HDSObject*)self);
 
+        HDSLoc *loc = HDS_retrieve_locator((HDSObject*)self);
         if (loc) {
           int nlev = 0;
           int status = SAI__OK;
+
+          // TODO need to check error here -- otherwise can get an error as
+          // fname and path won't be set before printing out.
           hdsTrace( loc, &nlev, path, fname, &status, sizeof(path), sizeof(fname) );
           snprintf( buff, sizeof(buff), "<%s.%s>",
                     fname,path);
@@ -755,9 +794,52 @@ static PyGetSetDef HDS_getseters[] = {
   {NULL} /* Sentinel */
 };
 
-// The methods
+static PyObject*
+pyhds_getbadvalue(HDSObject *self, PyObject *args)
+{
+	const char *type;
+	if(!PyArg_ParseTuple(args, "s:pyhds_getbadvalue", &type))
+		return NULL;
+	if (strcmp(type,"_DOUBLE") == 0)
+		return Py_BuildValue("f",VAL__BADD);
+	else if (strcmp(type,"_REAL") == 0)
+		return Py_BuildValue("f",VAL__BADR);
+	else if (strcmp(type,"_INTEGER") == 0)
+		return Py_BuildValue("i",VAL__BADI);
+        else if (strcmp(type, "_BYTE") == 0)
+                return Py_BuildValue("i",VAL__BADB);
+        else if (strcmp(type, "_UBYTE") == 0)
+                return Py_BuildValue("i", VAL__BADUB);
+        else if (strcmp(type, "_WORD") == 0)
+                return Py_BuildValue("i", VAL__BADW);
+        else if (strcmp(type, "_UWORD") == 0)
+                return Py_BuildValue("i", VAL__BADUW);
+        //        else if (strcmp(type, "_INT64") == 0)
+        // return Py_BuildValue("i", VAL__BADK);
+	else
+          PyErr_Format(PyExc_ValueError, "type must be one of _DOUBLE, _REAL, _INTEGER, _BYTE, _UBYTE, _WORD, or U_WORD");
+		return NULL;
+}
 
-static PyMethodDef HDS_methods[] = {
+// module methods
+static PyMethodDef HDS_module_methods[] = {
+
+  {"_transfer", (PyCFunction)pydat_transfer, METH_VARARGS,
+   "starlink.hds.api.transfer(xloc) -- transfer HDS locator from NDF."},
+
+  {"new", (PyCFunction)pydat_new, METH_VARARGS,
+   "loc = new(filename, hdsname, type, dims) -- create a new HDS structure and return a locator. Dims is optional and implies a scalar object."},
+
+  {"open", (PyCFunction)pyhds_open, METH_VARARGS,
+   "loc = open(name, mode) -- open an existing HDS file with mode 'READ', 'WRITE' or 'UPDATE'"},
+
+  {"getbadvalue", (PyCFunction)pyhds_getbadvalue, METH_VARARGS,
+   "getbadvalue(type) -- return the bad pixel value for given HDS numerical data type."},
+  {NULL, NULL, 0, NULL} /* Sentinel */
+};
+
+// The methods of an hdsloc object
+static PyMethodDef HDSloc_methods[] = {
 
   {"_transfer", (PyCFunction)pydat_transfer, METH_VARARGS,
    "starlink.hds.api.transfer(xloc) -- transfer HDS locator from NDF."},
@@ -778,19 +860,18 @@ static PyMethodDef HDS_methods[] = {
    "loc2 = hdsloc1.index(index) -- returns locator of index'th component (starts at 0)."},
 
   {"new", (PyCFunction)pydat_new, METH_VARARGS,
-   "hdsloc.new(name,type,ndim,dim) -- create a primitive given a locator."},
-
-  {"open", (PyCFunction)pyhds_open, METH_VARARGS,
-   "loc = hds.open(name,type) -- open an HDS file."},
+   "newloc = hdsloc.new(name,type,dims) -- create a new HDS structure beneath the existing locator. Dims is optional and implies a scalar object."},
 
   {"put", (PyCFunction)pydat_put, METH_VARARGS,
-   "status = hdsloc.put(type,ndim,dim,value) -- write a primitive inside an hds item."},
+   "status = hdsloc.put(value) -- write a primitive inside an hds item."},
 
   {"putc", (PyCFunction)pydat_putc, METH_VARARGS,
    "hdsloc.putc(string) -- write a character string to primitive at locator."},
 
   {NULL, NULL, 0, NULL} /* Sentinel */
 };
+
+
 
 static PyTypeObject HDSType = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -814,14 +895,14 @@ static PyTypeObject HDSType = {
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
         Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    "Raw API for HDS access",           /* tp_doc */
+    "HDS Locator type: Raw API for HDS access",           /* tp_doc */
     0,		               /* tp_traverse */
     0,		               /* tp_clear */
     0,		               /* tp_richcompare */
     0,		               /* tp_weaklistoffset */
     0,		               /* tp_iter */
     0,		               /* tp_iternext */
-    HDS_methods,             /* tp_methods */
+    HDSloc_methods,             /* tp_methods */
     HDS_members,             /* tp_members */
     HDS_getseters,             /* tp_getset */
     0,                         /* tp_base */
@@ -872,7 +953,7 @@ static struct PyModuleDef moduledef = {
   "hds",
   "Raw HDS API",
   -1,
-  HDS_methods,
+  HDS_module_methods,
   NULL,
   NULL,
   NULL,
@@ -896,8 +977,8 @@ inithds(void)
 #ifdef USE_PY3K
     m = PyModule_Create(&moduledef);
 #else
-    m = Py_InitModule3("hds", HDS_methods,
-                      "Raw HDS API");
+    m = Py_InitModule3("hds", HDS_module_methods,
+                      "Raw HDS API:");
 #endif
     import_array();
 

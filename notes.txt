@@ -1,0 +1,52 @@
+According to its component.xml, HDS depends on sae, chr, cnf, ems and
+starmem to build, and links to chr, cnf, ems and starmem.
+
+We aren't going to build the fortran bindings, so we don't need: chr
+(F77 character handling improvments).
+
+HDS-v4 itself can be pulled in as a submodule, but sae, cnf, ems and
+starmem will be copied from a current Starlink checkout (note that
+these are not updated very often.)
+
+
+SAE: (minor development include files etc.) does not depend on anything to buil.
+
+CNF: used for writing code that can be C or F77 -- it feels like we shouldn't need this, but we do?
+
+EMS: error message service, no new requirements (cnf, sae and starmem)
+
+STARMEM: C memory management wrapper routines, no dependencies.
+
+
+
+
+Creating dist builds of a starlink submodule:
+
+1. ensure you have a recent $STARLINK_DIR/buildsupport/bin at the
+front of your path
+
+2. Run ./bootstrap and ./configure --without-stardocs in the direcotyr of the submodule.
+
+3. Run make dist in the directory of the submoudle.
+
+You should now have a tar ball named like e.g. hds-v4-5.2-1.tar.gz
+
+This will contain a configure script that can be distributed.
+
+
+# Dist builds of hds-v5
+currently missing:
+
+hds.h
+hds_v5_map.h
+hds1.h
+uthash.h
+utarray.h
+
+
+# Dist builds of hds-v4
+Currently missing
+
+hds_v4_map.h
+
+# Mers -- cannot use dist builds a requires fortran?

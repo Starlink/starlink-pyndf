@@ -1,0 +1,27 @@
+CHR Version 3.0
+   C equivalents to a number of the Fortran routines have been included
+   in the CHR library to assisit in porting Fortran code to C.
+
+CHR Version 2.4
+   Add CHR_KTOC for formatting a 64-bit INTEGER*8
+   Add CHR_CTOK for creating INTEGER*8 values from a string.
+   Add CHR_PUTK for putting
+
+CHR Version 2.3
+   Add CHR_FPARX for finding strings in parentheses
+   Add CHR_LASTO for finding the last occurrence of a character in a string.
+   Release under the GPL.
+
+CHR Version 2.2-5 is released
+   This version has CHR_ETOM and CHR_MTOE converted to C to overcome problems
+   introduced by Redhat Linux 7.0
+
+CHR Version 2.2-4 is released
+   This version adds a shared library on Linux
+
+CHR Version 2.2-3 is released
+   This release of CHR removes inefficiencies in CHR_APPND and the
+   'type to C' conversion routines.  The effect of this will depend upon
+   the size of the buffers specified.
+
+   The mk script is brought up to date for Linux.

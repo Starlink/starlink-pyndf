@@ -1,0 +1,100 @@
+HDS Library
+-----------
+
+   Version 7.0
+   ===========
+
+   The definition of the hdsdim type used in the C interface has been
+   changed from a 4-byte integer type (int) to an 8 byte integer type
+   (int64_t). This allows HDS-based applications to access arrays with
+   more than 2147483647 pixels (the largest value that can be stored in a
+   4-byte integer). Application code that uses the hdsdim type
+   consistently should continue to compile and run as before. However,
+   application code that assumes that the hdsdim type is 4-bytes long
+   (e.g. by inappropriate casting between int and hdsdim) may not compile
+   or run correctly. Such code should be changed to avoid the assumption
+   of a 4-byte hdsdim type.
+
+   The classic HDS Fortran interface has not been changed - INTEGER*4
+   variables are still used for arguments that pass array dimensions,
+   pixel indices or pixel counts. However, there is now a variant routine
+   for each routine that has one or more such arguments, which uses
+   INTEGER*8 variables for array dimensions, pixel indices or pixel
+   counts. Each variant routine is identical to the basic routine except
+   that the digiti "8" is appended to the end of its name.
+
+   Version 6.1
+   ===========
+
+   The default output data format has been changed from V4 (the classic
+   starlink format) to V5 (the HDF5-based format). To re-establish the
+   old behaviour, set environment variable HDS_VERSION to "4".
+
+   Version 6.0
+   ===========
+
+   Now supports HDSv5 files. These. files are based upon HDF5.
+   HDS can still read HDSv4 (and v3) files but will write files
+   in the new format. The HDSv5 files can be read by any
+   standard HDF5 tools (e.g. h5py in Python).
+
+   Version 5.1-1
+   =============
+
+   Add _INT64 data type corresponding to 64-bit integers
+   (INTEGER*8 in Fortran and int64_t in C).
+
+   Version 5.0-6
+   =============
+
+   When existing files are overwritten they appear corrupted to
+   any other processes that have the file open. To avoid this
+   existing files are now unlinked before creating a new file
+   with the same name.
+
+   Version 5.0-5
+   =============
+
+   A bug in the HDS_CLOSE routine has been fixed. Previously if you
+   called this routine just after another HDS routine had returned
+   an error status it would fail to execute. Note that HDS_CLOSE is
+   deprecated and you should be using a simple DAT_ANNUL instead.
+
+   Version 5.0-4
+   =============
+
+   * HDSv4 files (64bit) are now created by default. Set HDS_64BIT environment
+     variable to 0 to revert to old v3 format.
+
+   Version 5.0-3
+   =============
+
+   The hds_link script now correctly links against Fortran EMS.
+
+   A bug which stopped the repeated opening of some files has been
+   fixed.
+
+   Version 5.0
+   ===========
+
+   * Complete rewrite in C to support files larger than 2GB.
+   * First official C interface to HDS.
+   * Now possible to link HDS without requiring a Fortran runtime.
+   * Add HDS_FIND subroutine for obtaining a locator from an HDS path.
+   * Add datChscn for validating component names
+   * Add HDS_SPLIT for splitting an HDS path into a filename and components
+     (used by HDS_FIND but also useful for libraries based on HDS).
+   * Now uses the starmem library for memory allocation.
+
+   Version 4.3-4
+   =============
+
+   File mapping has been changed to conform with the latest standards. This
+   resolves corruption problems seen with files mapped over NFS using Linux
+   kernels 2.6.9 or later.
+
+   Version 4.3-3
+   =============
+
+   This version contains a minor internal change for compatibility
+   with the latest version of Linux.

@@ -1,0 +1,9 @@
+graft includefiles/star/
+graft starlink/hds/
+graft hds-v4-5.2-1/
+graft mers-2.2-0/
+graft ems-2.4-0/
+graft starmem-0.2-1/
+graft starutil-0.1-1/
+graft sae-1.1/
+graft cnf-5.1-0/
