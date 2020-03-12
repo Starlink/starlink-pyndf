@@ -460,7 +460,9 @@ cdef class NDFWrapperClass:
         hds.raiseStarlinkException(status)
 
     def bound(self):
-        """Return the pixel bounds of the NDF (2, ndim)"""
+        """Return the a list of lower and upper bounds of the NDF.
+
+        These are returned in python (z,y,x) order. This means they have the shape (2, ndim)."""
 
         cdef int status = cndf.SAI__OK
         cdef int ndim, i
@@ -471,13 +473,10 @@ cdef class NDFWrapperClass:
         cndf.ndfBound(self._ndfid, cndf.NDF__MXDIM, &lbnd[0],
                       &ubnd[0],
                       &ndim, &status)
-
-        pydims = []
-        for i in range(0, ndim):
-            pydims.append((lbnd[i], ubnd[i]))
-
         hds.raiseStarlinkException(status)
-        return pydims
+        lowerbound = <object>lbnd
+        upperbound = <object>ubnd
+        return lowerbound[ndim-1::-1],upperbound[ndim-1::-1]
 
 
     def gtwcs(self):
