@@ -1,24 +1,103 @@
-starlink-pyhds documentation
+starlink-pyndf documentation
 ============================
 
 This package installs a standalone python interface to the Starlink
-HDS library, allowing users to read and write Starlink HDS-V4 files
-without having the Starlink software suite installed. For more
+NDF and HDS libraries, allowing users to read and write NDF and HDS
+files, without having the Starlink software suite installed. It
+supports both HDS version 4 and version 5 (HDF5 based) For more
 information on the HDS library and data format, please see
-http://www.starlink.ac.uk/docs/sun92.htx/sun92.html , and for information on Starlink please see http://starlink.eao.hawaii.edu .
+http://www.starlink.ac.uk/docs/sun92.htx/sun92.html , for the NDF
+library and data format see
+http://www.starlink.ac.uk/docs/sun33.htx/sun33.html and for
+information on Starlink please see http://starlink.eao.hawaii.edu .
 
-This packagedoes not include the NDF library, although it can open and
-read NDF format files (extension .sdf), and could be used to write
-them if the user chooses to take care of following the data from the
-file. If you require a python interface to the NDF library, please see
-the starlink-pyndf package (at
-https://github.com/timj/starlink-pyndf ), although note that
-requires an existing Starlink software installation on your computer.
+It also includes a higher level interface to NDF objects in the
+`starlink.ndfpack` module. This interface predates the modern astropy
+conventions, and is not currently under active development.
 
+You will need to have the `numpy` package and the python interface to the
+Starlink Ast World Coordinate System  installed (`starlink.pyast`: see
+http://starlink.github.io/starlink-pyast/pyast.html).
+
+You can install this package with
+
+`pip install starlink-pyndf`
+
+Or view the source at:
+
+http://github.com/Starlink/starlink-pyndf
 
 
 Using the software
 ******************
+
+
+`starlink.ndf`
+--------------
+
+
+Import the module as:
+
+>>> from starlink import ndf
+
+In order to ensure accurate error handling and annuling of NDF objects
+when you are finished, it is recommended that you call:
+
+>>> ndf.begin()
+
+before you start using the ndf module, and
+
+>>> ndf.end()
+
+afterwards.
+
+You can open an existing NDF file and return an NDF object as:
+
+>>> myndf = ndf.open('~/mask_trim.sdf', 'UPDATE')
+
+The mode can be 'UPDATE', 'READ', 'WRITE' or 'NEW'.
+
+You can get the NDF Pixel bounds in (z,y,x) format with:
+
+>>> bounds = myndf.bound()
+
+
+The text attributes of the NDF are viewable as:
+>>> print(myndf.title)
+>>> print(myndf.label)
+>>> print(myndf.units)
+
+You can get the WCS information as an AST frameset with:
+>>> wcs = myndf.gtwcs()
+
+You can read the values from an array  (e.g. DATA or VARIANCE) with:
+>>> data = myndf.read('DATA')
+
+which will return a numpy array with the appropriate type.
+
+You can map an array (e.g. DATA or VARIANCE) with
+
+>>> mapped = myndf.map('DATA', '_DOUBLE', 'WRITE')
+
+And then update the values from a new numpy array with
+
+>>> mapped.numpytondf(newdata)
+
+You can then unmap the access with:
+
+>>> mapped.unmap()
+
+When you are finished with an NDF object, you can close it with:
+
+>>> myndf.annul()
+
+You can also access NDF extensions through the `starlink.ndf.xname`,
+`starlink.ndf.xnumb`, `starlink.ndf.xstat` and `starlink.ndf.xloc`
+methods.
+
+`starlink.hds`
+--------------
+
 Import the module as:
 
 >>> from starlink import hds
@@ -197,7 +276,9 @@ Contents:
 .. toctree::
    :maxdepth: 4
 
+   starlink.ndf
    starlink.hds
+   starlink.ndfpack
 
 
 Indices and tables
