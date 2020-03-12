@@ -53,12 +53,12 @@ def open(filename, mode='READ', stat='OLD'):
     """
     Open an existing or new NDF file.
 
-    args
-    ----
+    Arguments
+    ---------
     filename: str, path to NDF file on disk.
 
-    kwargs
-    ------
+    Keyword Arguments
+    -----------------
     mode: str, default='READ' ('UPDATE', 'READ' or 'WRITE')
     stat: str, default='OLD' ('OLD', 'NEW', or 'UNKNOWN')
 
@@ -418,13 +418,16 @@ cdef class NDFWrapperClass:
 
     def map(self, comp, type_, mode):
         """Map access to an array component
-        args
-        ----
+
+        Arguments
+        ---------
         comp: str, DATA, VARIANCE, QUALITY or ERROR
-        type_: str, HDS/NDF primitive type
+        type\_: str, HDS/NDF primitive type
         mode: str, ('READ', 'WRITE', UPDATE not supported)
 
-        Returns the mapped array object.
+        Returns
+        -------
+        A mapped array object.
         """
 
 

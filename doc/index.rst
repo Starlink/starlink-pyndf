@@ -12,16 +12,16 @@ http://www.starlink.ac.uk/docs/sun33.htx/sun33.html and for
 information on Starlink please see http://starlink.eao.hawaii.edu .
 
 It also includes a higher level interface to NDF objects in the
-`starlink.ndfpack` module. This interface predates the modern astropy
+:py:mod:`starlink.ndfpack` module. This interface predates the modern astropy
 conventions, and is not currently under active development.
 
-You will need to have the `numpy` package and the python interface to the
-Starlink Ast World Coordinate System  installed (`starlink.pyast`: see
+You will need to have the :py:mod:`numpy` package and the python interface to the
+Starlink Ast World Coordinate System  installed (:py:mod:`starlink.pyast`: see
 http://starlink.github.io/starlink-pyast/pyast.html).
 
 You can install this package with
 
-`pip install starlink-pyndf`
+:command:`pip install starlink-pyndf`
 
 Or view the source at:
 
@@ -32,8 +32,8 @@ Using the software
 ******************
 
 
-`starlink.ndf`
---------------
+:py:mod:`starlink.ndf`
+----------------------
 
 
 Import the module as:
@@ -63,14 +63,17 @@ You can get the NDF Pixel bounds in (z,y,x) format with:
 
 
 The text attributes of the NDF are viewable as:
+
 >>> print(myndf.title)
 >>> print(myndf.label)
 >>> print(myndf.units)
 
 You can get the WCS information as an AST frameset with:
+
 >>> wcs = myndf.gtwcs()
 
 You can read the values from an array  (e.g. DATA or VARIANCE) with:
+
 >>> data = myndf.read('DATA')
 
 which will return a numpy array with the appropriate type.
@@ -91,11 +94,11 @@ When you are finished with an NDF object, you can close it with:
 
 >>> myndf.annul()
 
-You can also access NDF extensions through the `starlink.ndf.xname`,
-`starlink.ndf.xnumb`, `starlink.ndf.xstat` and `starlink.ndf.xloc`
+You can also access NDF extensions through the :meth:`starlink.ndf.NDFWrapperClass.xname`,
+:meth:`starlink.ndf.NDFWrapperClass..xnumb`, :meth:`starlink.ndf.NDFWrapperClass..xstat` and :meth:`starlink.ndf.NDFWrapperClass..xloc`
 methods.
 
-`starlink.hds`
+:py:mod:`starlink.hds`
 --------------
 
 Import the module as:

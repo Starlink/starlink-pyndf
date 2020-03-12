@@ -111,13 +111,13 @@ def open(filename, mode):
     """
     Open an existing HDS file.
 
-    Args:
-    -----
+    Arguments
+    ---------
     filename: (str) name on disk for existing file.
     mode: (str): one of READ, WRITE or UPDATE
 
-    Return:
-    -------
+    Return
+    ------
     returns an HDSWrapper around the HDS Locator
     """
     filename = filename.encode()
@@ -134,14 +134,14 @@ def new(filename, hdsname, hdstype, dims=None):
     """
     Create a new HDS file.
 
-    Args:
-    -----
+    Arguments
+    ---------
     filename: (str): name on disk for new file.
     hdsname: (str) name of HDS object
     hdstype: (str) type of HDS object (e.g. NDF, _DOUBLE, ...)
 
-    Optional Kwargs:
-    ----------------
+    Keyword Arguments
+    -----------------
     dims: if given, implies scalar object.
 
     Returns
@@ -379,8 +379,8 @@ cdef class HDSWrapperClass:
         Returns an HDSWrapperObject about the new locator.
         Raises and HDSError if the component does not exist.
 
-        args:
-        -----
+        Arguments
+        ---------
         compname: str, name of an existing component.
 
         """
@@ -479,13 +479,13 @@ cdef class HDSWrapperClass:
         """
         Create a new HDS structure benath the existing locator.
 
-        Args:
-        -----
+        Arguments
+        ---------
         name: (str): name of new HDS object.
         type: (str) type of HDS object (e.g. NDF, _DOUBLE, ...)
 
-        Optional Kwargs:
-        ----------------
+        Keyword Arguments
+        -----------------
         dims: if given, implies scalar object.
 
         Returns
