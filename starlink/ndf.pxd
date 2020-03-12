@@ -17,6 +17,11 @@ cdef extern from "ndf_types.h":
         NDF__MXDIM
         NDF__SZXNM
         NDF__SZFRM
+        NDF__SZHDT
+        NDF__SZAPP
+        NDF__SZHST
+        NDF__SZUSR
+        NDF__SZREF
 
 cdef extern from "sae_par.h":
     cdef enum:
@@ -241,3 +246,18 @@ cdef extern from "ndf.h":
     void ndfValid( int indf,
                     int *valid,
                     int *status );
+    void ndfHinfo( int indf,
+                    const char *item,
+                    int irec,
+                    char *value,
+                    size_t value_length,
+                    int *status )
+
+    void ndfHnrec( int indf,
+                   int *nrec,
+                   int *status )
+
+    void ndfHout( int indf,
+                   int irec,
+                   void ( *routin )( int, char *const [], int * ),
+                   int *status );
