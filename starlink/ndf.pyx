@@ -106,9 +106,9 @@ cdef _char_getter( int ndfid, char * component):
 
     # Read the component into a C string
     cdef char* c_string = _allocate_cstring(clen+1)
+
     cndf.ndfCget(ndfid, component, &c_string[0], clen+1, &status)
     hds.raiseStarlinkException(status)
-
     py_string = c_string[:clen].decode('ascii')
     free(c_string)
     return py_string
@@ -207,7 +207,7 @@ cdef class NDFWrapperClass:
         """Get the storage form of an axis object"""
         comp = comp.encode('ascii')
         cdef int status = cndf.SAI__OK
-        naxis = len(self.ndim) - iaxis
+        naxis = len(self.dim) - iaxis
         cdef char value[cndf.NDF__SZFRM]
         hds.errBegin(&status)
         cndf.ndfAform(self._ndfid, comp, naxis, value, cndf.NDF__SZFRM, &status)
@@ -221,13 +221,13 @@ cdef class NDFWrapperClass:
         Raises an error if axis component does not exist.
         """
         comp = comp.encode('ascii')
-        naxis = len(self.ndfim) - iaxis
+        naxis = len(self.dim) - iaxis
         cdef int status = cndf.SAI__OK
         cdef int state = 0
         hds.errBegin(&status)
         cndf.ndfAstat(self._ndfid, comp, naxis, &state, &status)
         hds.raiseStarlinkException(status)
-        return bool(status)
+        return bool(state)
 
     def cget(self, comp):
         """
@@ -251,8 +251,11 @@ cdef class NDFWrapperClass:
         -------
         None if comp does not exist
         """
+
+        if comp.upper() not in ['LABEL', 'TITLE']:
+            raise hds.StarlinkError('Unknown axis character component {}: should be LABEL or TITLE'.format(comp))
         comp = comp.encode('ascii')
-        cdef int status = SAI__OK
+        cdef int status = cndf.SAI__OK
         cdef int state = 0
         cdef int naxis = len(self.dim) - iaxis
 
@@ -264,11 +267,11 @@ cdef class NDFWrapperClass:
         if state == 0:
             return None
         cdef size_t clen
-        cdef char * axisname = _allocate_cstring(clen + 1)
 
         # Get length of char string and name
         hds.errBegin(&status)
         cndf.ndfAclen(self._ndfid, comp, naxis, &clen, &status)
+        cdef char * axisname = _allocate_cstring(clen + 1)
         cndf.ndfAcget(self._ndfid, comp, naxis, axisname, clen+1, &status)
         hds.raiseStarlinkException(status)
 
@@ -302,13 +305,13 @@ cdef class NDFWrapperClass:
         data_types = ('_INTEGER', '_INT64', '_REAL', '_DOUBLE', '_WORD', '_UWORD', '_BYTE', '_UBYTE',
                       '_LOGICAL', '_CHAR', '_CHAR*')
         if mmod.upper() not in mapping_modes:
-            raise hds.StarlinkWarning('Unsupported NDF axis mapping mode: must be one of {}'.format(
+            raise hds.StarlinkError('Unsupported NDF axis mapping mode: must be one of {}'.format(
                 mapping_modes))
         if comp.upper() not in axis_comps:
-            raise hds.StarlinkWarning('Unsupported NDF axis data component: must be one of {}'.format(
+            raise hds.StarlinkError('Unsupported NDF axis data component: must be one of {}'.format(
                 axis_comps))
         if type_.upper() not in data_types:
-            raise hds.StarlinkWarning('Unsupported NDF data type: must be one of {}'.format(
+            raise hds.StarlinkError('Unsupported NDF data type: must be one of {}'.format(
                 data_types))
 
         comp = comp.encode('ascii')
@@ -327,7 +330,7 @@ cdef class NDFWrapperClass:
 
         # Get the axis number and expected number elements in correct format.
         cdef int naxis = len(self.dim) - iaxis
-        nelem = self.dim[naxis]
+        nelem = self.dim[iaxis]
 
 
         # Map the data
@@ -339,7 +342,7 @@ cdef class NDFWrapperClass:
         # Raise an error if its not the correct size.
         hds.raiseStarlinkException(status)
         if el != nelem:
-            raise hds.StarlinkException('ndfAmap: number of elements (%i) mapped different from number expected (%i)'
+            raise hds.StarlinkError('ndfAmap: number of elements (%i) mapped different from number expected (%i)'
                                         %(el, nelem))
         return NDFMapped.from_pointer(self._ndfid, ptr, comp, type_, mmod, nelem, iaxis=iaxis)
 
@@ -349,6 +352,10 @@ cdef class NDFWrapperClass:
 
         Return None if it doesn't exist
         """
+        axis_comps = ('CENTRE', 'WIDTH', 'VARIANCE', 'ERROR')
+        if comp.upper() not in axis_comps:
+            raise hds.StarlinkError('Unsupported NDF axis data component: must be one of {}'.format(
+                axis_comps))
         comp = comp.encode('ascii')
         cdef int status = hds.SAI__OK
         hds.errBegin(&status)
@@ -359,8 +366,8 @@ cdef class NDFWrapperClass:
             return None
 
         idim = self.dim
-        ndim = len(self.dim)
-        nelem = idim[naxis -1]
+        ndim = 1
+        nelem = idim[iaxis]
 
         #// Determine the data type
         cdef char type_[cndf.DAT__SZTYP+1]
@@ -374,19 +381,30 @@ cdef class NDFWrapperClass:
         pydim[0] = <cnp.npy_intp>nelem
 
 
-        # Get the data.
+        # Allocate a numpy array to hold the data
         cdef cnp.ndarray arr
         cdef size_t nread
         arr = cnp.PyArray_SimpleNew(ndim, pydim, np_type)
+        cdef size_t nbyte = arr.dtype.itemsize
+        cdef void * pntr[1]
+
+        # Map a pointer to the data
         hds.errBegin(&status)
-        cndf.ndfAmap(self._ndfid, comp, naxis, type_, b'READ', <void **>&arr.data, &nread, &status)
+        cndf.ndfAmap(self._ndfid, comp, naxis, type_, b'READ', pntr, &nread, &status)
         hds.raiseStarlinkException(status)
         if nelem != nread:
-            raise hds.StarlinkException('ndf_aread: number of elements (%i) different from number expected (%i)'
+            raise hds.StarlinkError('ndf_aread: number of elements (%i) different from number expected (%i)'
                                         % (nread, nelem))
+
+        # Copy the data into the numpy array
+        memcpy(arr.data, pntr[0], nread * nbyte)
+
+
+        # Unmap the data
         hds.errBegin(&status)
         cndf.ndfAunmp(self._ndfid, comp, naxis, &status)
         hds.raiseStarlinkException(status)
+
         return arr
 
     def new(self, type_, ndim, lbnd, ubnd):
@@ -549,7 +567,6 @@ cdef class NDFWrapperClass:
 
         # Create array of correct dimensions and type.
         cdef int np_type = hds._hdstype2numpy(type_[:])
-        #print('NP_TYPE is', np_type, 'HDS type is', type_)
         cdef cnp.npy_intp pydim[hds.DAT__MXDIM]
 
         cdef cnp.ndarray mypyarray
@@ -574,7 +591,7 @@ cdef class NDFWrapperClass:
         hds.raiseStarlinkException(status)
 
         if nelem != npix:
-            raise hds.StarlinkException('error reading NDF: number of elements differs from number expected')
+            raise hds.StarlinkError('error reading NDF: number of elements differs from number expected')
 
         memcpy(mypyarray.data, pntr[0], npix * nbyte)
         cndf.errBegin(&status)
