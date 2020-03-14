@@ -72,10 +72,10 @@ def create_hds(testobj):
 
         if comploc.type.startswith('_CHAR'):
             if exp_dims:
-                flatvalue = [i.decode('ascii') for i in value.flatten()]
+                flatvalue = [i for i in value.flatten()]
                 value = np.asarray(flatvalue).reshape(value.shape)
             else:
-                value = [i.decode('ascii') for i in np.asarray(value).flatten()][0]
+                value = [i for i in np.asarray(value).flatten()][0]
         if comploc.type in ['_DOUBLE', '_REAL']:
             np.testing.assert_allclose(value,exp_value, verbose=True)
         else:

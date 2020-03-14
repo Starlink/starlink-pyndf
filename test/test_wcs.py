@@ -12,7 +12,7 @@ class TestWcs(unittest.TestCase):
 
     def test_gtwcs(self):
         self.assertIsInstance( self.ndf.wcs, starlink.Ast.FrameSet )
-        self.assertEqual( self.ndf.wcs.Domain, "PIXEL" )
+        self.assertEqual( self.ndf.wcs.Domain, "SKY" )
 
         NdfI = self.ndf
         GridFrame =  starlink.Ast.Frame(2,"Domain=PIXEL")
