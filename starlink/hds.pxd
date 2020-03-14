@@ -1,4 +1,4 @@
-from libc.stdint cimport uint32_t, int64_t
+from libc.stdint cimport uint32_t, int64_t, int32_t
 
 cdef extern from "hds_types.h":
     ctypedef struct HDSLoc:
@@ -24,15 +24,14 @@ cdef extern from "merswrap.h":
 
 # Use anonymous enums to define constants -- from cython readthedocs language basics.
 cdef extern from "prm_par.h":
-     cdef enum:
-         VAL__BADUB
-         VAL__BADB
-         VAL__BADUW
-         VAL__BADW
-         VAL__BADI
-         VAL__BADK
-         VAL__BADR
-         VAL__BADD
+    cdef int VAL__BADUB
+    cdef int VAL__BADB
+    cdef int VAL__BADUW
+    cdef int VAL__BADW
+    cdef int32_t VAL__BADI
+    cdef int64_t VAL__BADK
+    cdef float VAL__BADR
+    cdef double VAL__BADD
 
 
 cdef extern from "dat_par.h":
