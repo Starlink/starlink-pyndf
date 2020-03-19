@@ -27,27 +27,25 @@ class TestSimpleNDF(unittest.TestCase):
         self.assertEqual(indf.xnumb, 1)
         self.assertEqual(indf.dim, [5, 3])
 
-        # Xtension sutf
-        # xnumb (property), xname, xloc,  xstat, xdel,  xnew
+        # Xtension stuff
         self.assertEqual(indf.xname(0), 'FITS')
-        self.assertEqual(indf.xstat('FITS'), True)
-        self.assertEqual(indf.xstat('NONEXISTENT'), False)
+        self.assertTrue(indf.xstat('FITS'))
+        self.assertFalse(indf.xstat('NONEXISTENT'))
         self.assertIsInstance(indf.xloc('FITS', 'READ'),
                               hds.HDSWrapperClass)
 
-        # AXSIS  stuff
-        # aform, astat, acget, anorm, amap,  aread,
-        self.assertEqual(indf.astat('LABEL', 0), True)
-        self.assertEqual(indf.astat('UNIT', 0), True)
-        self.assertEqual(indf.astat('WIDTH', 0), False)
-        self.assertEqual(indf.astat('CENTRE', 0), True)
-        self.assertEqual(indf.astat('VARIANCE', 0), False)
+        # axis stuff
+        self.assertTrue(indf.astat('LABEL', 0))
+        self.assertTrue(indf.astat('UNIT', 0))
+        self.assertFalse(indf.astat('WIDTH', 0))
+        self.assertTrue(indf.astat('CENTRE', 0))
+        self.assertFalse(indf.astat('VARIANCE', 0))
 
-        self.assertEqual(indf.astat('LABEL', 1), True)
-        self.assertEqual(indf.astat('UNIT', 1), True)
-        self.assertEqual(indf.astat('WIDTH', 1), False)
-        self.assertEqual(indf.astat('CENTRE', 1), True)
-        self.assertEqual(indf.astat('VARIANCE', 1), False)
+        self.assertTrue(indf.astat('LABEL', 1))
+        self.assertTrue(indf.astat('UNIT', 1))
+        self.assertFalse(indf.astat('WIDTH', 1))
+        self.assertTrue(indf.astat('CENTRE', 1))
+        self.assertFalse(indf.astat('VARIANCE', 1))
 
         self.assertEqual(indf.acget('LABEL', 1), 'Right ascension')
         self.assertEqual(indf.acget('LABEL', 0), 'Declination')
@@ -65,15 +63,13 @@ class TestSimpleNDF(unittest.TestCase):
         data_shouldbe = (np.ones([5, 3])*-3.4028235e+38).astype(np.float32)
         self.assertSequenceEqual(data.tolist(), data_shouldbe.tolist())
 
-        #  cget, , new, map (and using it to change comp),
-        #  annul, , state
         from starlink import Ast
         self.assertIsInstance(indf.gtwcs(), Ast.FrameSet)
 
-        self.assertEqual(indf.state('LABEL'), True)
-        self.assertEqual(indf.state('QUALITY'), False)
+        self.assertTrue(indf.state('LABEL'))
+        self.assertFalse(indf.state('QUALITY'))
         with self.assertRaises(hds.StarlinkError):
-            indf.state('NONEXISTANT')
+            indf.state('NONEXISTENT')
 
         indf.annul()
 
