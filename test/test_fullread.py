@@ -2,21 +2,25 @@ import unittest
 from starlink.ndfpack import Ndf
 import os.path
 import pathlib
+
 fulldir = pathlib.Path(__file__).parent.absolute().as_posix()
+
+
 class TestFullRead(unittest.TestCase):
 
     def setUp(self):
         # Read the NDF for each test
-        self.ndf = Ndf( os.path.join(fulldir, 'data','ndf_test.sdf') )
+        self.ndf = Ndf(os.path.join(fulldir, 'data', 'ndf_test.sdf'))
 
     def test_label(self):
-        self.assertEqual( self.ndf.label, 'Signal' )
+        self.assertEqual(self.ndf.label, 'Signal')
 
     def test_title(self):
-        self.assertEqual( self.ndf.title, 'Test Data' )
+        self.assertEqual(self.ndf.title, 'Test Data')
 
     def test_units(self):
-        self.assertEqual( self.ndf.units, 'counts' )
+        self.assertEqual(self.ndf.units, 'counts')
+
 
 """
 License

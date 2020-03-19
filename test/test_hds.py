@@ -22,19 +22,25 @@ attributes_to_write = {
     'INTEGER': ('_INTEGER', None, 42),
     'BYTE': ('_BYTE', None, np.byte(2)),
     'UBYTE': ('_UBYTE', None, np.ubyte(3)),
-    'DOUBLE_ARRAY': ('_DOUBLE', [3,2], [[-1.0, np.nan],[1.2, 2.3],[3.4, 4.5]]),
-    'CHARARRAY':('_CHAR*32',[5], char_array),
-    'INT_ARRAY': ('_INTEGER', [10,20], np.arange(10*20).reshape((10,20))),
-    'BOOL_ARRAY': ('_LOGICAL', [1,2,3], [[[ True, False,  True],[False,  False, False]]]),
-    'BOOL_ARRAY2': ('_LOGICAL', [1,2,3], [[[ False, True,  True],[True,  True, True]]])
+    'DOUBLE_ARRAY': (
+        '_DOUBLE',
+        [3, 2],
+        [[-1.0, np.nan], [1.2, 2.3], [3.4, 4.5]]
+        ),
+    'CHARARRAY': ('_CHAR*32', [5], char_array),
+    'INT_ARRAY': ('_INTEGER', [10, 20], np.arange(10*20).reshape((10, 20))),
+    'BOOL_ARRAY': ('_LOGICAL', [1, 2, 3],
+                   [[[True, False, True], [False, False, False]]]),
+    'BOOL_ARRAY2': ('_LOGICAL', [1, 2, 3],
+                    [[[False, True, True], [True, True, True]]])
 }
 
 keys = list(attributes_to_write.keys())
 keys.sort()
 
-def create_hds(testobj):
-    version = os.environ.get('HDS_VERSION',4)
 
+def create_hds(testobj):
+    version = os.environ.get('HDS_VERSION', 4)
 
     filename = 'test-{}.sdf'.format(version)
     loc = hds.new(filename, 'HDS_TEST', 'HDSEXAMPLE')
@@ -45,7 +51,7 @@ def create_hds(testobj):
 
         # Create the locator for the new component
         if dims is not None:
-            comploc = loc.new(attribute,  type_, dims)
+            comploc = loc.new(attribute, type_, dims)
         else:
             comploc = loc.new(attribute, type_)
 
@@ -54,7 +60,6 @@ def create_hds(testobj):
         # Annul the locator.
         comploc.annul()
     loc.annul()
-
 
     # Now open the written HDS and read each component.
     loc = hds.open(filename, 'READ')
@@ -66,7 +71,9 @@ def create_hds(testobj):
 
         testobj.assertEqual(comploc.type, exp_type)
         if exp_dims:
-            testobj.assertSequenceEqual(list(comploc.shape), np.asarray(exp_dims).tolist())
+            testobj.assertSequenceEqual(
+                list(comploc.shape), np.asarray(exp_dims).tolist()
+                )
 
         value = comploc.get()
 
@@ -77,11 +84,9 @@ def create_hds(testobj):
             else:
                 value = [i for i in np.asarray(value).flatten()][0]
         if comploc.type in ['_DOUBLE', '_REAL']:
-            np.testing.assert_allclose(value,exp_value, verbose=True)
+            np.testing.assert_allclose(value, exp_value, verbose=True)
         else:
             np.testing.assert_equal(value, exp_value)
-
-
 
 
 class TestHds(TestCase):
@@ -92,4 +97,3 @@ class TestHds(TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -4,21 +4,23 @@ from starlink.ndfpack import Ndf
 import os.path
 import pathlib
 fulldir = pathlib.Path(__file__).parent.absolute().as_posix()
+
+
 class TestWcs(unittest.TestCase):
 
     def setUp(self):
         # Read the NDF for each test
-        self.ndf = Ndf( os.path.join(fulldir, 'data','ndf_test.sdf') )
+        self.ndf = Ndf(os.path.join(fulldir, 'data', 'ndf_test.sdf'))
 
     def test_gtwcs(self):
-        self.assertIsInstance( self.ndf.wcs, starlink.Ast.FrameSet )
-        self.assertEqual( self.ndf.wcs.Domain, "SKY" )
+        self.assertIsInstance(self.ndf.wcs, starlink.Ast.FrameSet)
+        self.assertEqual(self.ndf.wcs.Domain, "SKY")
 
         NdfI = self.ndf
-        GridFrame =  starlink.Ast.Frame(2,"Domain=PIXEL")
-        BoxI = starlink.Ast.Box(GridFrame, 1, NdfI.bound[0][::-1], NdfI.bound[1][::-1])
-
-
+        GridFrame = starlink.Ast.Frame(2, "Domain=PIXEL")
+        BoxI = starlink.Ast.Box(GridFrame, 1,
+                                NdfI.bound[0][::-1],
+                                NdfI.bound[1][::-1])
 
 
 """
