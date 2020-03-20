@@ -10,177 +10,163 @@ def get_starlink_macros(osx=False):
     define_macros = []
     compiler = ccompiler.new_compiler()
 
-    # Force using 8bit integers?
-    #define_macros.append(('NDF_I8', 1))
+    define_macros.append(('NDF_I8', 1))
     define_macros.append(('HAVE_AST', 1))
 
-    #undef SIZEOF_INT
+    # SIZEOF_INT
     define_macros.append(('SIZEOF_INT', ctypes.sizeof(ctypes.c_int)))
 
-    #undef SIZEOF_LONG
+    # SIZEOF_LONG
     define_macros.append(('SIZEOF_LONG', ctypes.sizeof(ctypes.c_long)))
 
-    #undef SIZEOF_LONG_DOUBLE
+    # SIZEOF_LONG_DOUBLE
     define_macros.append(('SIZEOF_LONG_DOUBLE', ctypes.sizeof(ctypes.c_longdouble)))
 
-    #undef SIZEOF_LONG_LONG
+    # SIZEOF_LONG_LONG
     define_macros.append(('SIZEOF_LONG_LONG', ctypes.sizeof(ctypes.c_longlong)))
 
-    #undef SIZEOF_OFF_T
-    # don't know how to do this one.
+    # SIZEOF_OFF_T
+    # I don't know how to do this one.
 
-    #undef SIZEOF_SIZE_T
+    # SIZEOF_SIZE_T
     define_macros.append(('SIZEOF_SIZE_T', ctypes.sizeof(ctypes.c_size_t)))
 
-    #undef SIZEOF_TRAILARG
-    #I THINK THIS is only needed in the fortran interfaces?
+    # SIZEOF_TRAILARG
+    # I THINK THIS is only needed in the fortran interfaces?
 
-    #undef SIZEOF_UINT32_T
+    # SIZEOF_UINT32_T
     define_macros.append(('SIZEOF_UINT32_T', ctypes.sizeof(ctypes.c_uint32)))
-    #undef SIZEOF_VOIDP
+    # SIZEOF_VOIDP
     define_macros.append(('SIZEOF_VOIDP', ctypes.sizeof(ctypes.c_voidp)))
 
-    #undef AC_APPLE_UNIVERSAL_BUILD
-    #undef FC_MAIN
-    #only needed in fortran?
+    # AC_APPLE_UNIVERSAL_BUILD
+    # FC_MAIN
+    # These 2 Only needed in fortran?
 
-
-    #undef HAVE_ATEXIT
+    # HAVE_ATEXIT
     if compiler.has_function('atexit'):
         define_macros.append(('HAVE_ATEXIT', '1'))
 
-    #undef HAVE_BCOPY
-    #bcopy is on both test OSX and Linux systems, but has_function on
+    # HAVE_BCOPY
+    # bcopy is on both test OSX and Linux systems, but has_function on
     # linux raises an 'error: too few arguments to function
     # 'bcopy'',. Works fine on clang. However, bcopy only used if memmove
     # doesn't exist, so maybe don't worry about it?
     if compiler.has_function('bcopy'):
         define_macros.append(('HAVE_BCOPY', '1'))
 
-    #undef HAVE_CRT_EXTERNS_H
-    # Not clear how to do. It looks like OSX should ahve these, but I
+    # HAVE_CRT_EXTERNS_H
+    # Not clear how to do. It looks like OSX should have these, but I
     # don't know if that is universal. Defaulting to not setting for now?
 
-    #undef HAVE_DECL_CONFSTR
+    # HAVE_DECL_CONFSTR
     if compiler.has_function('confstr'):
         define_macros.append(('HAVE_DECL_CONFSTR', '1'))
 
-    #These systems aren't quite right: not sure how to check for declaration?
-    #undef HAVE_DECL_FSYNC
+    # These systems aren't quite right: not sure how to check for declaration?
+    # HAVE_DECL_FSYNC
     if compiler.has_function('fsync'):
         define_macros.append(('HAVE_DECL_FSYNC', '1'))
 
-    #undef HAVE_DECL_GETWD
-    #This one I may not want to declare? Looks like most systems think it isn't...
+    # HAVE_DECL_GETWD
+    # This one I may not want to declare? Looks like most systems think it isn't...
 
-    #undef HAVE_DECL_STRERROR_R
+    # HAVE_DECL_STRERROR_R
     # Don't know what to do with this.
 
+    # HAVE_DLFCN_H
+    # Only used in configuring scripts???
 
-    #undef HAVE_DLFCN_H
-    #Only used in configuring scripts???
-
-    #undef HAVE_FCNTL
+    # HAVE_FCNTL
     if compiler.has_function('fcntl'):
         define_macros.append(('HAVE_FCNTL', '1'))
 
-    #undef HAVE_FC_MAIN
+    # HAVE_FC_MAIN
     # Only needed in fortran?
 
-    #undef HAVE_FORK
-    #Not used.
+    # HAVE_FORK
+    # Not used.
 
-    #undef HAVE_FSEEKO
+    # HAVE_FSEEKO
     if compiler.has_function('fseeko'):
         define_macros.append(('HAVE_FSEEKO', '1'))
 
-    #undef HAVE_FSYNC
+    # HAVE_FSYNC
     if compiler.has_function('fsync'):
         define_macros.append(('HAVE_FSYNC', '1'))
 
-    #undef HAVE_GC_H
+    # HAVE_GC_H
     # Not clear how to do these ones, but currently looks like both our
     # linux and our OSX build don't set them, so assume its okay to skip
     # for now.
 
-
-    #undef HAVE_GETCWD
+    # HAVE_GETCWD
     if compiler.has_function('getcwd'):
         define_macros.append(('HAVE_GETCWD', '1'))
 
-    #undef HAVE_GETPAGESIZE
+    # HAVE_GETPAGESIZE
     if compiler.has_function('getpagesize'):
         define_macros.append(('HAVE_GETPAGESIZE', '1'))
 
-    #undef HAVE_GETWD
+    # HAVE_GETWD
     if compiler.has_function('getwd'):
         define_macros.append(('HAVE_GETWD', '1'))
 
-
-    #undef HAVE_INTTYPES_H
-    if sysconfig.get_config_var('HAVE_INTTYPES_H')==1:
+    # HAVE_INTTYPES_H
+    if sysconfig.get_config_var('HAVE_INTTYPES_H') == 1:
         define_macros.append(('HAVE_INTTYPES_H', '1'))
 
-
-
-    #undef HAVE_LONG_DOUBLE
-    if sysconfig.get_config_var('HAVE_LONG_DOUBLE')==1:
+    # HAVE_LONG_DOUBLE
+    if sysconfig.get_config_var('HAVE_LONG_DOUBLE') == 1:
         define_macros.append(('HAVE_LONG_DOUBLE', '1'))
 
-    #
-
-    #undef HAVE_MEMMOVE
+    # HAVE_MEMMOVE
     define_macros.append(('HAVE_MEMMOVE', '1'))
     # Cannot get this to work test... fix would be to compile a short bit
     # of code that uses it correctly?
 
-
-
-    #undef HAVE_MMAP
+    # HAVE_MMAP
     if compiler.has_function('mmap'):
         define_macros.append(('HAVE_MMAP', '1'))
 
-
-    #undef HAVE_ON_EXIT
+    # HAVE_ON_EXIT
     if compiler.has_function('on_exit'):
         define_macros.append(('HAVE_ON_EXIT', '1'))
 
-
-
-    #undef HAVE_SIGNED_CHAR
+    # HAVE_SIGNED_CHAR
     # Not sure how to test for this. Try assuming its true? (note that
     # lots of the code uses unsignedchar without checking...)
     define_macros.append(('HAVE_SIGNED_CHAR', '1'))
 
-
-
-    #Define to 1 if you have the <stddef.h> header file.
-    # Lots of things just include it without paying attention tot his
+    # Define to 1 if you have the <stddef.h> header file.
+    # Lots of things just include it without paying attention to this
     # variable, so just define it as true.
     define_macros.append(('HAVE_STDDEF_H', '1'))
 
-    #For  OSX, we need the following macros.
+    # For  OSX, we need the following macros.
     if osx:
         define_macros.append(('HAVE_STRLCAT', '1'))
         define_macros.append(('HAVE_STRLCPY', '1'))
 
-    #undef HAVE_STRERROR_R
+    # HAVE_STRERROR_R
     if compiler.has_function('strerror_r'):
         define_macros.append(('HAVE_STRERROR_R', '1'))
 
-    #undef HAVE_STRTOK_R
+    # HAVE_STRTOK_R
     if compiler.has_function('strtok_r'):
         define_macros.append(('HAVE_STRTOK_R', '1'))
 
-    #undef HAVE_SYS_WAIT_H
-    if sysconfig.get_config_var('HAVE_SYS_WAIT_H')==1:
+    # HAVE_SYS_WAIT_H
+    if sysconfig.get_config_var('HAVE_SYS_WAIT_H') == 1:
         define_macros.append(('HAVE_SYS_WAIT_H', '1'))
 
-    #undef HAVE_UNISTD_H
-    if sysconfig.get_config_var('HAVE_UNISTD_H')==1:
+    # HAVE_UNISTD_H
+    if sysconfig.get_config_var('HAVE_UNISTD_H') == 1:
         define_macros.append(('HAVE_UNISTD_H', '1'))
-    #undef TRAIL_TYPE
-    #Used in fortran, but probably needed to build -- set to int, which is what configure sets it to on linux.
+
+    # TRAIL_TYPE
+    # Used in fortran, but probably needed to build -- set to int, which is
+    # what configure sets it to on linux.
     define_macros.append(('TRAIL_TYPE', 'int'))
 
     # various others.
@@ -192,11 +178,9 @@ def get_starlink_macros(osx=False):
     define_macros.append(('ERR__SZMSG', '200'))
     define_macros.append(('ERR__SZPAR', '15'))
     define_macros.append(('_GNU_SOURCE', 1))
-    #define_macros.append(('HAVE_CUSERID', 1))
+    # define_macros.append(('HAVE_CUSERID', 1))
     define_macros.append(('HAVE_DECL_CUSERID_GETUSERNAME', 0))
-    #define_macros.append(('HAVE_DECL_CUSERID',0))
-
-
+    # define_macros.append(('HAVE_DECL_CUSERID',0))
 
     if compiler.has_function('cuserid'):
         define_macros.append(('HAVE_CUSERID', '1'))
@@ -207,9 +191,8 @@ def get_starlink_macros(osx=False):
     if compiler.has_function('geteuid'):
         define_macros.append(('HAVE_GETEUID', '1'))
 
-    #define_macros.append(('DEBUG_HDS', '1'))
+    # define_macros.append(('DEBUG_HDS', '1'))
     return define_macros
-
 
 
 def get_source(name_):
@@ -228,16 +211,32 @@ def get_source(name_):
             source = ['ndf/' + i.strip() for i in f.readlines()]
 
     elif name_ == 'ast':
-        cminpack_source = ['enorm.c', 'lmder.c', 'qrfac.c', 'dpmpar.c', 'lmder1.c',
-                           'lmpar.c', 'qrsolv.c' ]
+        cminpack_source = ['enorm.c', 'lmder.c', 'qrfac.c', 'dpmpar.c',
+                           'lmder1.c', 'lmpar.c', 'qrsolv.c']
         cminpack_source = ['ast/cminpack/' + i for i in cminpack_source]
-        ast_exclude_files = ['ast/ast_test.c', 'ast/c2f77.c', 'ast/err_drama.c', 'ast/grf_null.c', 'ast/grf_pgplot.c',  'ast/grf3d_pgplot.c', 'ast/stcschan-demo1.c', 'ast/stcschan-demo2.c', 'ast/stcschan-demo3.c', 'ast/stcschan-demo4.c', 'ast/stcschan-demo5.c', 'ast/templateclass.c', 'ast/err_null.c', 'ast/huge.c', 'ast/astbad.c',]
-        erfa_exclude_files = ['ast/erfa/t_erfa_c.c',]
+        ast_exclude_files = [
+            'ast/ast_test.c',
+            'ast/c2f77.c',
+            'ast/err_drama.c',
+            'ast/grf_null.c',
+            'ast/grf_pgplot.c',
+            'ast/grf3d_pgplot.c',
+            'ast/stcschan-demo1.c',
+            'ast/stcschan-demo2.c',
+            'ast/stcschan-demo3.c',
+            'ast/stcschan-demo4.c',
+            'ast/stcschan-demo5.c',
+            'ast/templateclass.c',
+            'ast/err_null.c',
+            'ast/huge.c',
+            'ast/astbad.c',
+            ]
+        erfa_exclude_files = ['ast/erfa/t_erfa_c.c']
         ast_fortran_files = [
             'ast/fbox.c',
             'ast/fchannel.c',
             'ast/fchebymap.c',
-        'ast/fcircle.c',
+            'ast/fcircle.c',
             'ast/fcmpframe.c',
             'ast/fcmpmap.c',
             'ast/fcmpregion.c',
@@ -326,17 +325,17 @@ def get_source(name_):
 
         starmem_PRIVATE_C_FILES = ['mem1_globals.c', 'dlmalloc.c']
         source = [os.path.join(name_, i)
-                          for i in
-                          starmem_PRIVATE_C_FILES + starmem_PUBLIC_C_FILES]
+                  for i in
+                  starmem_PRIVATE_C_FILES + starmem_PUBLIC_C_FILES]
 
     elif name_ == 'one':
 
         source = [
-        'one/one_snprintf.c',
-        'one/one_strlcat.c',
-        'one/one_strlcpy.c',
-        'one/one_strtod.c',
-        'one/one_wordexp_noglob_c.c',
+            'one/one_snprintf.c',
+            'one/one_strlcat.c',
+            'one/one_strlcpy.c',
+            'one/one_strtod.c',
+            'one/one_wordexp_noglob_c.c',
         ]
 
     elif name_ == 'chr':
@@ -360,22 +359,26 @@ def get_source(name_):
         source = [i for i in source if 'adam' not in i]
         source = [i for i in source if ('_' not in i or i in mers_stand)]
 
-
     elif name_ == 'hds-v4':
         source = glob.glob('hds-v4/*.c')
-        skip = ['hds-v4/make-hds-types.c','hds-v4/hdsTest.c', 'hds-v4/hds_machine.c', 'hds-v4/hds_test_prm.c']
+        skip = ['hds-v4/make-hds-types.c', 'hds-v4/hdsTest.c',
+                'hds-v4/hds_machine.c', 'hds-v4/hds_test_prm.c']
 
         source = [i for i in source if i not in skip]
 
     elif name_ == 'hds-v5':
         source = glob.glob('hds-v5/*.c')
-        skip = ['hds-v5/make-hds-types.c','hds-v5/hdsTest.c', 'hds-v5/hds_machine.c', 'hds-v5/fortran_interface.c', 'hds-v5/datExportFloc.c', 'hds-v5/datImportFloc.c']
+        skip = ['hds-v5/make-hds-types.c', 'hds-v5/hdsTest.c', 'hds-v5/hds_machine.c',
+                'hds-v5/fortran_interface.c', 'hds-v5/datExportFloc.c',
+                'hds-v5/datImportFloc.c']
         source = [i for i in source if 'test' not in i and i not in skip]
 
     elif name_ == 'hds':
         source = glob.glob('hds/*.c')
         source = [i for i in source if 'fortran' not in i.lower() and 'test' not in i.lower()]
-        exclude = ['hds/hds_dat_par_f.c', 'hds/dat_par_f.c', 'hds/datLocked.c','hds/datLock.c', 'hds/datUnlock.c', 'hds/datNolock.c', 'hds/dat1emsSetHdsdim.c', 'hds/make-hds-types.c', 'hds/hds_run.c', 'hds/fortran_interface.c']
+        exclude = ['hds/hds_dat_par_f.c', 'hds/dat_par_f.c', 'hds/datLocked.c', 'hds/datLock.c',
+                   'hds/datUnlock.c', 'hds/datNolock.c', 'hds/dat1emsSetHdsdim.c',
+                   'hds/make-hds-types.c', 'hds/hds_run.c', 'hds/fortran_interface.c']
         source = [i for i in source if i not in exclude]
 
     elif name_ == 'ary':
@@ -384,11 +387,9 @@ def get_source(name_):
         source = [i for i in source if i not in exclude]
 
     else:
-        raise StandardError('Unknown library name %s; source list not supported for this library', name_)
-
+        raise Exception('Unknown library name %s; source list not supported for this library', name_)
 
     return source
-
 
 
 def setup_building():

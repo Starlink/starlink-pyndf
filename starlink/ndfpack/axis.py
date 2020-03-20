@@ -22,4 +22,4 @@ class Axis(object):
         self.label = indf.acget('Label',iaxis)
 
         #: units of the axis
-        self.units = indf.acget('Units',iaxis)
+        self.units = indf.acget('Unit',iaxis)

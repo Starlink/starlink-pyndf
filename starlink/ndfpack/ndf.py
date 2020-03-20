@@ -117,7 +117,7 @@ def _read_hds(loc, head, array=False):
         dims = loc.shape
         if dims != None:
             head[name] = _create_md_struc(dims)
-            sub = n.zeros(dims.size, n.int32)
+            sub = n.zeros(len(dims), n.int32)
             _read_md_struc(head[name], loc, dims, sub)
         else:
             if array:

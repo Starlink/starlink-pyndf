@@ -22,40 +22,44 @@ attributes_to_write = {
     'INTEGER': ('_INTEGER', None, 42),
     'BYTE': ('_BYTE', None, np.byte(2)),
     'UBYTE': ('_UBYTE', None, np.ubyte(3)),
-    'DOUBLE_ARRAY': ('_DOUBLE', [3,2], [[-1.0, np.nan],[1.2, 2.3],[3.4, 4.5]]),
-    'CHARARRAY':('_CHAR*32',[5], char_array),
-    'INT_ARRAY': ('_INTEGER', [10,20], np.arange(10*20).reshape((10,20))),
-    'BOOL_ARRAY': ('_LOGICAL', [1,2,3], [[[ True, False,  True],[False,  False, False]]])
+    'DOUBLE_ARRAY': (
+        '_DOUBLE',
+        [3, 2],
+        [[-1.0, np.nan], [1.2, 2.3], [3.4, 4.5]]
+        ),
+    'CHARARRAY': ('_CHAR*32', [5], char_array),
+    'INT_ARRAY': ('_INTEGER', [10, 20], np.arange(10*20).reshape((10, 20))),
+    'BOOL_ARRAY': ('_LOGICAL', [1, 2, 3],
+                   [[[True, False, True], [False, False, False]]]),
+    'BOOL_ARRAY2': ('_LOGICAL', [1, 2, 3],
+                    [[[False, True, True], [True, True, True]]])
 }
 
 keys = list(attributes_to_write.keys())
 keys.sort()
 
+
 def create_hds(testobj):
     version = os.environ.get('HDS_VERSION', 4)
-
 
     filename = 'test-{}.sdf'.format(version)
     loc = hds.new(filename, 'HDS_TEST', 'HDSEXAMPLE')
 
     # Write each attribute as a new component in the HDS.
     for attribute in keys:
-
         type_, dims, value = attributes_to_write[attribute]
 
         # Create the locator for the new component
-        if dims:
-            comploc = loc.new(attribute,  type_, dims)
+        if dims is not None:
+            comploc = loc.new(attribute, type_, dims)
         else:
             comploc = loc.new(attribute, type_)
-
 
         comploc.put(value)
 
         # Annul the locator.
         comploc.annul()
     loc.annul()
-
 
     # Now open the written HDS and read each component.
     loc = hds.open(filename, 'READ')
@@ -67,23 +71,22 @@ def create_hds(testobj):
 
         testobj.assertEqual(comploc.type, exp_type)
         if exp_dims:
-            testobj.assertSequenceEqual(comploc.shape.tolist(), np.asarray(exp_dims).tolist())
+            testobj.assertSequenceEqual(
+                list(comploc.shape), np.asarray(exp_dims).tolist()
+                )
 
         value = comploc.get()
 
         if comploc.type.startswith('_CHAR'):
             if exp_dims:
-                flatvalue = [i.decode('ascii') for i in value.flatten()]
+                flatvalue = [i for i in value.flatten()]
                 value = np.asarray(flatvalue).reshape(value.shape)
             else:
-                value = value.decode('ascii')
-
+                value = [i for i in np.asarray(value).flatten()][0]
         if comploc.type in ['_DOUBLE', '_REAL']:
-            np.testing.assert_allclose(value,exp_value, verbose=True)
+            np.testing.assert_allclose(value, exp_value, verbose=True)
         else:
-
             np.testing.assert_equal(value, exp_value)
-
 
 
 class TestHds(TestCase):
@@ -94,4 +97,3 @@ class TestHds(TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
